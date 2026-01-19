@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Define allowed emails for admin access
-const ADMIN_EMAILS = ['litian1980@gmail.com'];
+const ADMIN_EMAILS = ['litian1980@gmail.com', 'joezhuu@gmail.com'];
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
