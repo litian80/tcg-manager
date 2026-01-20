@@ -6,8 +6,10 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { hasPermission, Role } from "@/lib/rbac";
 
 import { Badge } from "@/components/ui/badge";
+import { MatchCard } from "@/components/tournament/match-card";
 
 export interface Player {
     first_name: string;
@@ -25,6 +27,9 @@ export interface Match {
     winner_tom_id?: string | null;
     division?: string | null;
     is_finished: boolean;
+    outcome?: number;
+    p1_display_record?: string;
+    p2_display_record?: string;
 }
 
 export interface Tournament {
@@ -40,6 +45,7 @@ interface TournamentViewProps {
     matches: Match[];
     currentRound: number;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
+    userRole?: Role;
 }
 
 export default function TournamentView({
@@ -47,7 +53,9 @@ export default function TournamentView({
     matches,
     currentRound,
     stats,
+    userRole,
 }: TournamentViewProps) {
+    const canEditMatch = hasPermission(userRole, 'match.edit_result');
     const [searchQuery, setSearchQuery] = useState("");
 
     // extract unique divisions, default to first one found or "Masters" if none specific
@@ -182,102 +190,14 @@ export default function TournamentView({
                                     </div>
                                 ) : (
                                     <div className="divide-y divide-border border-b">
-                                        {roundMatches.map((match) => {
-                                            const isFinished = match.is_finished;
-                                            const winnerId = match.winner_tom_id;
-                                            const p1Id = match.player1_tom_id;
-                                            const p2Id = match.player2_tom_id;
-                                            const isTie = isFinished && !winnerId;
-
-                                            // Determine styles based on result
-                                            const getPlayerStyle = (playerId: string | undefined, otherPlayerId: string | undefined) => {
-                                                // Unfinished matches: Use font-medium to allow Bold to stand out more
-                                                if (!isFinished) return "text-foreground font-medium";
-
-                                                if (isTie) {
-                                                    // Tie: Light Gray background (lighter than loser), standard text
-                                                    return "bg-gray-50 dark:bg-gray-900/50 text-foreground";
-                                                }
-
-                                                if (winnerId === playerId) {
-                                                    // Winner: Bold, standard text, subtle/no background
-                                                    return "font-bold text-foreground";
-                                                }
-
-                                                if (winnerId === otherPlayerId) {
-                                                    // Loser: Gray text, Gray background (more visible than muted/50)
-                                                    return "text-muted-foreground bg-gray-100 dark:bg-gray-800";
-                                                }
-
-                                                return "text-foreground";
-                                            };
-
-                                            const p1Style = getPlayerStyle(p1Id, p2Id);
-                                            const p2Style = getPlayerStyle(p2Id, p1Id);
-
-                                            return (
-                                                <div key={match.id} className="flex items-stretch bg-card hover:bg-muted/50 transition-colors py-2">
-                                                    {/* Left: Table Number (Anchor) */}
-                                                    <div className="flex-none w-12 sm:w-16 flex items-center justify-center border-r border-border/50 mr-2 sm:mr-4">
-                                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground/40">
-                                                            {match.table_number}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Right: The Match */}
-                                                    <div className="flex-1 pr-4 py-1 flex items-center">
-                                                        <div className="w-full grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] md:gap-4 items-center gap-2">
-                                                            {/* Player 1 */}
-                                                            <div className={cn(
-                                                                "flex items-center justify-between md:justify-end gap-2 p-2 rounded-md transition-colors",
-                                                                p1Style
-                                                            )}>
-                                                                <div className="flex flex-col items-start md:items-end min-w-0 flex-1">
-                                                                    <div className="flex items-center gap-2 w-full md:justify-end">
-                                                                        {isFinished && winnerId === p1Id && <Check className="w-4 h-4 text-green-500 shrink-0" />}
-                                                                        <span className="truncate">
-                                                                            {match.p1 ? `${match.p1.first_name} ${match.p1.last_name}` : <span className="text-muted-foreground italic">Bye</span>}
-                                                                        </span>
-                                                                    </div>
-                                                                    {match.p1 && match.player1_tom_id && (
-                                                                        <span className="text-xs text-muted-foreground font-normal opacity-80">
-                                                                            {match.player1_tom_id} • ({stats[match.player1_tom_id]?.wins ?? 0}-{stats[match.player1_tom_id]?.losses ?? 0}-{stats[match.player1_tom_id]?.ties ?? 0})
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* VS Separator */}
-                                                            <div className="flex justify-center items-center py-1 md:py-0">
-                                                                <span className="text-xs font-medium text-muted-foreground/70 uppercase tracking-widest bg-muted/10 px-2 py-0.5 rounded-full">
-                                                                    VS
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Player 2 */}
-                                                            <div className={cn(
-                                                                "flex items-center justify-between md:justify-start gap-2 p-2 rounded-md transition-colors",
-                                                                p2Style
-                                                            )}>
-                                                                <div className="flex flex-col items-start min-w-0 flex-1">
-                                                                    <div className="flex items-center gap-2 w-full md:justify-start">
-                                                                        <span className="truncate order-2 md:order-1">
-                                                                            {match.p2 ? `${match.p2.first_name} ${match.p2.last_name}` : <span className="text-muted-foreground italic">Bye</span>}
-                                                                        </span>
-                                                                        {isFinished && winnerId === p2Id && <Check className="w-4 h-4 text-green-500 shrink-0 order-1 md:order-2" />}
-                                                                    </div>
-                                                                    {match.p2 && match.player2_tom_id && (
-                                                                        <span className="text-xs text-muted-foreground font-normal opacity-80">
-                                                                            {match.player2_tom_id} • ({stats[match.player2_tom_id]?.wins ?? 0}-{stats[match.player2_tom_id]?.losses ?? 0}-{stats[match.player2_tom_id]?.ties ?? 0})
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                        {roundMatches.map((match) => (
+                                            <MatchCard
+                                                key={match.id}
+                                                match={match}
+                                                stats={stats}
+                                                canEdit={canEditMatch}
+                                            />
+                                        ))}
                                     </div>
                                 )}
                             </TabsContent>

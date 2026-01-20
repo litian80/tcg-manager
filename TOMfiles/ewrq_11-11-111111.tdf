@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tournament type="2" stage="4" version="1.80" gametype="TRADING_CARD_GAME" mode="LEAGUECHALLENGE">
+	<data>
+		<name>ewrq</name>
+		<id>11-11-111111</id>
+		<city>Auckland</city>
+		<state></state>
+		<country>New Zealand</country>
+		<roundtime>30</roundtime>
+		<finalsroundtime>75</finalsroundtime>
+		<organizer popid="3212892" name="Tian Li"/>
+		<startdate>09/01/2025</startdate>
+		<lessswiss>false</lessswiss>
+		<autotablenumber>false</autotablenumber>
+		<overflowtablestart>19</overflowtablestart>
+	</data>
+	<timeelapsed>6155</timeelapsed>
+	<players>
+		<player userid="1">
+			<firstname>Player1</firstname>
+			<lastname>1</lastname>
+			<birthdate>02/27/2013</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:42:22</creationdate>
+			<lastmodifieddate>07/02/2024 22:46:47</lastmodifieddate>
+		</player>
+		<player userid="3546">
+			<firstname>old 1 master</firstname>
+			<lastname>master</lastname>
+			<birthdate>02/27/1990</birthdate>
+			<starter>true</starter>
+			<creationdate>11/10/2024 11:26:06</creationdate>
+			<lastmodifieddate>11/10/2024 11:26:06</lastmodifieddate>
+		</player>
+		<player userid="82572">
+			<firstname>Master</firstname>
+			<lastname>Old1</lastname>
+			<birthdate>02/27/1970</birthdate>
+			<starter>true</starter>
+			<creationdate>11/10/2024 11:26:53</creationdate>
+			<lastmodifieddate>11/10/2024 11:26:53</lastmodifieddate>
+		</player>
+		<player userid="5">
+			<firstname>player 5</firstname>
+			<lastname>mmdmdm</lastname>
+			<birthdate>02/27/2012</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:54:56</creationdate>
+			<lastmodifieddate>07/15/2023 10:54:56</lastmodifieddate>
+		</player>
+		<player userid="123456">
+			<firstname>Master</firstname>
+			<lastname>2000</lastname>
+			<birthdate>02/27/2001</birthdate>
+			<starter>true</starter>
+			<creationdate>11/10/2024 11:26:24</creationdate>
+			<lastmodifieddate>11/10/2024 11:26:24</lastmodifieddate>
+		</player>
+		<player userid="7">
+			<firstname>player 7</firstname>
+			<lastname>player</lastname>
+			<birthdate>02/27/2013</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:55:45</creationdate>
+			<lastmodifieddate>07/15/2023 10:55:45</lastmodifieddate>
+		</player>
+		<player userid="3947612">
+			<firstname>Sienna</firstname>
+			<lastname>Li</lastname>
+			<birthdate>02/27/2014</birthdate>
+			<starter>true</starter>
+			<creationdate>04/28/2023 22:20:29</creationdate>
+			<lastmodifieddate>07/02/2024 22:47:02</lastmodifieddate>
+		</player>
+		<player userid="2">
+			<firstname>player 2</firstname>
+			<lastname>jin</lastname>
+			<birthdate>02/27/2016</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:51:25</creationdate>
+			<lastmodifieddate>10/04/2023 11:04:48</lastmodifieddate>
+		</player>
+		<player userid="3128603">
+			<firstname>Chance</firstname>
+			<lastname>Ma</lastname>
+			<birthdate>02/27/2010</birthdate>
+			<starter>true</starter>
+			<creationdate>04/28/2023 22:19:23</creationdate>
+			<lastmodifieddate>04/28/2023 22:19:23</lastmodifieddate>
+		</player>
+		<player userid="3719731">
+			<firstname>Sienna</firstname>
+			<lastname>Li</lastname>
+			<birthdate>02/27/2016</birthdate>
+			<starter>true</starter>
+			<creationdate>04/28/2023 22:20:01</creationdate>
+			<lastmodifieddate>04/28/2023 22:20:01</lastmodifieddate>
+		</player>
+		<player userid="8">
+			<firstname>player 8</firstname>
+			<lastname>player</lastname>
+			<birthdate>02/27/2015</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:57:04</creationdate>
+			<lastmodifieddate>07/02/2024 22:47:14</lastmodifieddate>
+		</player>
+		<player userid="6">
+			<firstname>player 6</firstname>
+			<lastname>6</lastname>
+			<birthdate>02/27/2014</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:54:24</creationdate>
+			<lastmodifieddate>07/02/2024 22:47:24</lastmodifieddate>
+		</player>
+		<player userid="509">
+			<firstname>Master</firstname>
+			<lastname>Old</lastname>
+			<birthdate>02/27/1980</birthdate>
+			<starter>true</starter>
+			<creationdate>11/10/2024 11:26:37</creationdate>
+			<lastmodifieddate>11/10/2024 11:26:37</lastmodifieddate>
+		</player>
+		<player userid="2342">
+			<firstname>old</firstname>
+			<lastname>master</lastname>
+			<birthdate>02/27/2000</birthdate>
+			<starter>true</starter>
+			<creationdate>11/10/2024 11:25:57</creationdate>
+			<lastmodifieddate>11/10/2024 11:25:57</lastmodifieddate>
+		</player>
+		<player userid="3122950">
+			<firstname>Sebastian</firstname>
+			<lastname>Li</lastname>
+			<birthdate>02/27/2013</birthdate>
+			<starter>true</starter>
+			<creationdate>04/28/2023 22:18:26</creationdate>
+			<lastmodifieddate>04/28/2023 22:18:26</lastmodifieddate>
+		</player>
+		<player userid="4">
+			<firstname>player 4</firstname>
+			<lastname>4</lastname>
+			<birthdate>02/27/2005</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:53:38</creationdate>
+			<lastmodifieddate>07/15/2023 10:53:38</lastmodifieddate>
+		</player>
+		<player userid="3">
+			<firstname>Ju</firstname>
+			<lastname>LI</lastname>
+			<birthdate>02/27/2016</birthdate>
+			<starter>true</starter>
+			<creationdate>07/15/2023 10:43:24</creationdate>
+			<lastmodifieddate>07/15/2023 10:43:24</lastmodifieddate>
+		</player>
+	</players>
+	<pods>
+		<pod category="0" stage="0">
+			<poddata>
+				<startingtable>1</startingtable>
+				<playoff3rd4th>false</playoff3rd4th>
+				<subgroupcount>1</subgroupcount>
+				<additionalrounds>0</additionalrounds>
+			</poddata>
+			<subgroups>
+				<subgroup number="1">
+					<players>
+						<player userid="3947612" />
+						<player userid="2" />
+						<player userid="8" />
+						<player userid="6" />
+						<player userid="3" />
+						<player userid="3719731" />
+					</players>
+				</subgroup>
+			</subgroups>
+			<rounds>
+				<round number="1" type="2" stage="4" >
+					<timeleft>0</timeleft>
+					<pairtime>09/01/2025 10:22:53</pairtime>
+					<starttime>09/01/2025 10:24:50</starttime>
+					<matches>
+						<match outcome="0">
+							<player1 userid="8"/>
+							<player2 userid="3719731"/>
+							<timestamp>09/01/2025 10:22:53</timestamp>
+							<tablenumber>1</tablenumber>
+						</match>
+						<match outcome="2">
+							<player1 userid="2"/>
+							<player2 userid="3947612"/>
+							<timestamp>01/20/2026 21:20:24</timestamp>
+							<tablenumber>2</tablenumber>
+						</match>
+						<match outcome="3">
+							<player1 userid="6"/>
+							<player2 userid="3"/>
+							<timestamp>01/20/2026 21:20:21</timestamp>
+							<tablenumber>3</tablenumber>
+						</match>
+					</matches>
+				</round>
+			</rounds>
+		</pod>
+		<pod category="9" stage="0">
+			<poddata>
+				<startingtable>4</startingtable>
+				<playoff3rd4th>false</playoff3rd4th>
+				<subgroupcount>1</subgroupcount>
+				<additionalrounds>0</additionalrounds>
+			</poddata>
+			<subgroups>
+				<subgroup number="1">
+					<players>
+						<player userid="1" />
+						<player userid="5" />
+						<player userid="123456" />
+						<player userid="7" />
+						<player userid="3128603" />
+						<player userid="82572" />
+						<player userid="509" />
+						<player userid="2342" />
+						<player userid="3546" />
+						<player userid="4" />
+						<player userid="3122950" />
+					</players>
+				</subgroup>
+			</subgroups>
+			<rounds>
+				<round number="1" type="2" stage="4" >
+					<timeleft>0</timeleft>
+					<pairtime>09/01/2025 10:22:53</pairtime>
+					<starttime>09/01/2025 10:24:50</starttime>
+					<matches>
+						<match outcome="5">
+							<player userid="3128603"/>
+							<timestamp>09/01/2025 10:22:53</timestamp>
+							<tablenumber>0</tablenumber>
+						</match>
+						<match outcome="0">
+							<player1 userid="2342"/>
+							<player2 userid="3546"/>
+							<timestamp>09/01/2025 10:22:53</timestamp>
+							<tablenumber>4</tablenumber>
+						</match>
+						<match outcome="0">
+							<player1 userid="4"/>
+							<player2 userid="82572"/>
+							<timestamp>09/01/2025 10:22:53</timestamp>
+							<tablenumber>5</tablenumber>
+						</match>
+						<match outcome="3">
+							<player1 userid="123456"/>
+							<player2 userid="509"/>
+							<timestamp>01/20/2026 21:20:35</timestamp>
+							<tablenumber>6</tablenumber>
+						</match>
+						<match outcome="1">
+							<player1 userid="3122950"/>
+							<player2 userid="7"/>
+							<timestamp>01/20/2026 21:20:32</timestamp>
+							<tablenumber>7</tablenumber>
+						</match>
+						<match outcome="0">
+							<player1 userid="5"/>
+							<player2 userid="1"/>
+							<timestamp>09/01/2025 10:22:53</timestamp>
+							<tablenumber>8</tablenumber>
+						</match>
+					</matches>
+				</round>
+			</rounds>
+		</pod>
+	</pods>
+	<finalsoptions>
+		<categorycut key="2">
+			<options>
+				<value>0</value>
+			</options>
+			<cut>0</cut>
+			<playercount>6</playercount>
+			<paired3rd4th>false</paired3rd4th>
+		</categorycut>
+		<categorycut key="1">
+			<options>
+				<value>0</value>
+			</options>
+			<cut>0</cut>
+			<playercount>5</playercount>
+			<paired3rd4th>false</paired3rd4th>
+		</categorycut>
+		<categorycut key="0">
+			<options>
+				<value>0</value>
+			</options>
+			<cut>0</cut>
+			<playercount>6</playercount>
+			<paired3rd4th>false</paired3rd4th>
+		</categorycut>
+	</finalsoptions>
+</tournament>

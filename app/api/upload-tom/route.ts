@@ -151,8 +151,6 @@ export async function POST(req: NextRequest) {
 
         // --- Step C: Matches ---
         // <tournament><pods><pod>...<rounds><round>...</round></rounds>...</pod></pods>
-        // Use recursive search for rounds if structure varies? 
-        // Based on JSON: tournament.pods.pod.rounds.round[...]
 
         await supabase.from('matches').delete().eq('tournament_id', tournamentId);
 
@@ -160,12 +158,22 @@ export async function POST(req: NextRequest) {
         const matchesToInsert: any[] = [];
         let maxRoundNumber = 0;
 
-        pods.forEach((pod: any) => {
-            // Extract category attribute (e.g. "0", "1", "2")
-            // With ignoreAttributes: false, attributes might be properties on the object
-            // or prefixed depending on config. We set attributeNamePrefix: ''.
-            const category = pod.category?.toString() || 'Unknown';
+        // Global stats tracker for this tournament parse
+        // Map<PlayerID, { w, l, d }>
+        const playerStats = new Map<string, { w: number; l: number; d: number }>();
 
+        const getStat = (id: string) => playerStats.get(id) || { w: 0, l: 0, d: 0 };
+        const updateStat = (id: string, result: 'w' | 'l' | 'd') => {
+            const s = getStat(id);
+            if (result === 'w') s.w++;
+            if (result === 'l') s.l++;
+            if (result === 'd') s.d++;
+            playerStats.set(id, s);
+        };
+        const formatRecord = (s: { w: number; l: number; d: number }) => `${s.w}-${s.l}-${s.d}`;
+
+        pods.forEach((pod: any) => {
+            const category = pod.category?.toString() || 'Unknown';
             let division = `Division ${category}`;
             if (category === '0') division = 'Junior';
             else if (category === '1') division = 'Senior';
@@ -174,29 +182,117 @@ export async function POST(req: NextRequest) {
             else if (category === '9') division = 'Master/Senior';
             else if (category === '10') division = 'Junior/Senior/Master';
 
-            const rounds = asArray(pod.rounds?.round);
+            // Ensure rounds are processed in chronological order
+            let rounds = asArray(pod.rounds?.round);
+            rounds = rounds.sort((a: any, b: any) => {
+                const ra = parseInt(a.number || '0');
+                const rb = parseInt(b.number || '0');
+                return ra - rb;
+            });
+
             rounds.forEach((r: any) => {
                 const roundNumber = parseInt(r.number || '0');
                 if (roundNumber > maxRoundNumber) maxRoundNumber = roundNumber;
 
-                // r.matches might be object wrapper { match: [...] }
                 const matches = asArray(r.matches?.match);
 
                 matches.forEach((m: any) => {
-                    // Check outcome/result
-                    // JSON: outcome: "1" (Player 1 wins?), timestamp, tablenumber
-                    // Players are objects: player1: { userid: "4" }
+                    const outcome = parseInt(m.outcome?.toString() || '0');
+                    let p1Id = m.player1?.userid?.toString();
+                    let p2Id = m.player2?.userid?.toString();
 
-                    const p1Id = m.player1?.userid?.toString();
-                    const p2Id = m.player2?.userid?.toString();
-                    const outcome = m.outcome; // "1" -> p1, "2" -> p2? "0" -> draw?
+                    if (outcome === 5) {
+                        p1Id = m.player?.userid?.toString();
+                        p2Id = null;
+                    }
 
-                    let winnerId = null;
-                    if (outcome === '1' || outcome === 1) winnerId = p1Id;
-                    else if (outcome === '2' || outcome === 2) winnerId = p2Id;
-                    else if (outcome === '0' || outcome === 0) winnerId = null; // Draw
+                    let winnerId: string | null = null;
+                    let isFinished = false;
 
-                    if (!p1Id || !p2Id) {
+                    // Temporary stats for this match (to calculate "After Match" record without mutating global state immediately if needed, 
+                    // though we do need to mutate global state for NEXT matches).
+
+                    // Logic:
+                    // If Running: Display Record = Current Stats.
+                    // If Finished: Display Record = Current Stats + Result. 
+                    // THEN execute the update to global stats.
+
+                    let p1Res: 'w' | 'l' | 'd' | null = null;
+                    let p2Res: 'w' | 'l' | 'd' | null = null;
+
+                    switch (outcome) {
+                        case 1: // P1 Wins
+                            winnerId = p1Id;
+                            isFinished = true;
+                            p1Res = 'w';
+                            p2Res = 'l';
+                            break;
+                        case 2: // P2 Wins
+                            winnerId = p2Id;
+                            isFinished = true;
+                            p1Res = 'l';
+                            p2Res = 'w';
+                            break;
+                        case 3: // Tie
+                            winnerId = null;
+                            isFinished = true;
+                            p1Res = 'd';
+                            p2Res = 'd';
+                            break;
+                        case 5: // Bye
+                            winnerId = p1Id;
+                            isFinished = true;
+                            p1Res = 'w'; // Bye counts as Win usually? Or just free points? Standard is Win.
+                            break;
+                        case 0: // Running
+                        default:
+                            winnerId = null;
+                            isFinished = false;
+                            break;
+                    }
+
+                    // Calculate Display Records
+                    let p1Display = "";
+                    let p2Display = "";
+
+                    if (p1Id) {
+                        const s = getStat(p1Id);
+                        if (isFinished && p1Res) {
+                            // Calculate hypothetical "after" stats
+                            const after = { ...s };
+                            if (p1Res === 'w') after.w++;
+                            if (p1Res === 'l') after.l++;
+                            if (p1Res === 'd') after.d++;
+                            p1Display = formatRecord(after);
+                        } else {
+                            // Running -> Entering stats
+                            p1Display = formatRecord(s);
+                        }
+                    }
+
+                    if (p2Id) {
+                        const s = getStat(p2Id);
+                        if (isFinished && p2Res) {
+                            const after = { ...s };
+                            if (p2Res === 'w') after.w++;
+                            if (p2Res === 'l') after.l++;
+                            if (p2Res === 'd') after.d++;
+                            p2Display = formatRecord(after);
+                        } else {
+                            p2Display = formatRecord(s);
+                        }
+                    }
+
+                    // UPDATE Global Stats (only if finished)
+                    if (isFinished) {
+                        if (p1Id && p1Res) updateStat(p1Id, p1Res);
+                        if (p2Id && p2Res) updateStat(p2Id, p2Res);
+                    }
+
+                    if (!p1Id && outcome !== 5) {
+                        // warning handled below or skipped
+                    }
+                    if (!p1Id && !p2Id) {
                         console.warn(`Skipping match with missing player(s): Match R${roundNumber}-T${m.tablenumber}`);
                         return;
                     }
@@ -208,8 +304,11 @@ export async function POST(req: NextRequest) {
                         player1_tom_id: p1Id,
                         player2_tom_id: p2Id,
                         winner_tom_id: winnerId,
-                        is_finished: outcome !== null && outcome !== undefined && outcome !== '',
-                        division: division
+                        outcome: outcome,
+                        is_finished: isFinished,
+                        division: division,
+                        p1_display_record: p1Display,
+                        p2_display_record: p2Display
                     });
                 });
             });

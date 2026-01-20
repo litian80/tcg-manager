@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import TournamentView, { Match, Tournament } from "./tournament-view";
+import { Role } from "@/lib/rbac";
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -20,6 +21,23 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     const tournament = tournamentData as unknown as Tournament;
 
+    // 1.5 Fetch User Role
+    const { data: { user } } = await supabase.auth.getUser();
+    let userRole: Role | undefined = undefined; // Default to undefined (no role/guest)
+
+    if (user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        // Cast the string from DB to Role type if it matches
+        if (profile?.role) {
+            userRole = profile.role as Role;
+        }
+    }
+
     // 2. Fetch all matches 
     const { data: matchesData, error: matchesError } = await supabase
         .from("matches")
@@ -32,6 +50,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       winner_tom_id,
       division,
       is_finished,
+      outcome,
+      p1_display_record,
+      p2_display_record,
       p1:players!player1_tom_id(first_name, last_name),
       p2:players!player2_tom_id(first_name, last_name)
     `)
@@ -69,16 +90,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         if (!stats[p1]) stats[p1] = { wins: 0, losses: 0, ties: 0 };
         if (!stats[p2]) stats[p2] = { wins: 0, losses: 0, ties: 0 };
 
-        if (winner) {
-            if (winner === p1) {
-                stats[p1].wins++;
-                stats[p2].losses++;
-            } else {
-                stats[p2].wins++;
-                stats[p1].losses++;
-            }
-        } else {
-            // Tie (finished but no winner)
+        if (winner === p1) {
+            stats[p1].wins++;
+            stats[p2].losses++;
+        } else if (winner === p2) {
+            stats[p2].wins++;
+            stats[p1].losses++;
+        } else if (match.outcome === 3 || winner === 'tie' || winner === 'draw' || !winner) {
+            // Tie (outcome 3, or explicit tie string, or null winner if finished)
             stats[p1].ties++;
             stats[p2].ties++;
         }
@@ -90,6 +109,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             matches={allMatches}
             currentRound={currentRound}
             stats={stats}
+            userRole={userRole}
         />
     );
 }
