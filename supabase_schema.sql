@@ -4,7 +4,7 @@ CREATE TABLE tournaments (
     name TEXT NOT NULL,
     date DATE NOT NULL,
     total_rounds INTEGER NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('ongoing', 'finished')),
+    status TEXT NOT NULL CHECK (status IN ('running', 'completed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 

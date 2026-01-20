@@ -32,7 +32,7 @@ export function Header({ initialUser }: { initialUser: User | null }) {
                         <UserNav user={user} />
                     ) : (
                         <Link href="/login">
-                            <Button variant="outline">Admin Login</Button>
+                            <Button variant="outline">Login</Button>
                         </Link>
                     )}
                 </div>

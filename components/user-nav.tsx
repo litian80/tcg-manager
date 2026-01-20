@@ -14,6 +14,9 @@ import { User } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+
+import { hasPermission, Role } from '@/lib/rbac'
 
 interface UserNavProps {
     user: User
@@ -22,6 +25,24 @@ interface UserNavProps {
 export function UserNav({ user }: UserNavProps) {
     const supabase = createClient()
     const router = useRouter()
+    const [role, setRole] = useState<Role>('user')
+
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (data?.role) {
+                setRole(data.role as Role)
+            }
+        }
+        fetchRole()
+    }, [user.id, supabase])
+
+    const canUploadTom = hasPermission(role, 'tom.upload')
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -49,11 +70,13 @@ export function UserNav({ user }: UserNavProps) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/upload" className="w-full cursor-pointer">
-                        Admin Upload
-                    </Link>
-                </DropdownMenuItem>
+                {canUploadTom && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/upload" className="w-full cursor-pointer">
+                            Admin Upload
+                        </Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                     Log out

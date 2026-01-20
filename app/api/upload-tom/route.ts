@@ -40,6 +40,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid XML: Missing tournament tag' }, { status: 400 });
         }
 
+        // --- Determine Status ---
+        let tournamentStatus = 'running';
+        const standingsRoot = tournamentRoot.standings;
+        if (standingsRoot) {
+            const standingsPods = asArray(standingsRoot.pod);
+            // If we have standings pods, check if they are all finished
+            if (standingsPods.length > 0) {
+                const allFinished = standingsPods.every((p: any) => p.type === 'finished');
+                if (allFinished) {
+                    tournamentStatus = 'completed';
+                }
+            }
+        }
+
         // --- Step A: Tournament ---
         // XML Structure: <tournament><data><name>...</name><startdate>...</startdate></data> ... </tournament>
         const tournamentData = tournamentRoot.data;
@@ -86,7 +100,7 @@ export async function POST(req: NextRequest) {
             await supabase
                 .from('tournaments')
                 .update({
-                    // Update status or other fields if needed
+                    status: tournamentStatus
                 })
                 .eq('id', tournamentId);
         } else {
@@ -96,7 +110,7 @@ export async function POST(req: NextRequest) {
                     name: name,
                     date: date,
                     total_rounds: roundCount, // Placeholder
-                    status: 'ongoing'
+                    status: tournamentStatus
                 })
                 .select('id')
                 .single();
@@ -153,6 +167,8 @@ export async function POST(req: NextRequest) {
             else if (category === '1') division = 'Senior';
             else if (category === '2') division = 'Masters';
             else if (category === '0/1' || category === '8') division = 'Junior/Senior';
+            else if (category === '9') division = 'Master/Senior';
+            else if (category === '10') division = 'Junior/Senior/Master';
 
             const rounds = asArray(pod.rounds?.round);
             rounds.forEach((r: any) => {
@@ -219,7 +235,6 @@ export async function POST(req: NextRequest) {
         // Wait, JSON says `id` instead of `userid` for standings players?
         // JSON: "player": [ { "id": "4", "place": "1" }, ... ]
 
-        const standingsRoot = tournamentRoot.standings;
         if (standingsRoot) {
             const standingsPods = asArray(standingsRoot.pod);
 
