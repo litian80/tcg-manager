@@ -1,16 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { createAdminClient } from '@/utils/supabase/admin';
-
-// --- Interfaces for XML Data ---
-// Only for type checking hints, structure is dynamic
-interface TomPlayer {
-    userid: string;
-    firstname: string;
-    lastname: string;
-    birthdate?: string;
-}
 
 // Helper to handle single vs array in XML parser
 const asArray = <T>(item: T | T[] | undefined): T[] => {
@@ -41,15 +33,30 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Determine Status ---
+        // Default to 'running'
         let tournamentStatus = 'running';
+
+        // Requirements:
+        // 1. Locate <standings>
+        // 2. Condition for 'completed': <standings> tag exists AND every single pod has type="finished"
+        // 3. Condition for 'running': All other cases
         const standingsRoot = tournamentRoot.standings;
         if (standingsRoot) {
             const standingsPods = asArray(standingsRoot.pod);
-            // If we have standings pods, check if they are all finished
+            console.log('Parsed Standings:', JSON.stringify(standingsPods, null, 2));
+
+            // If standings exist checking if all pods are finished
+            // Note: If standingsPods is empty (e.g. empty standings tag), semantics imply not completed.
             if (standingsPods.length > 0) {
-                const allFinished = standingsPods.every((p: any) => p.type === 'finished');
-                if (allFinished) {
-                    tournamentStatus = 'completed';
+                // Filter out 'dnf' pods as they are not indicative of the running state (just dropped players)
+                const activePods = standingsPods.filter((p: any) => p.type !== 'dnf');
+
+                // If we have active pods, check if they are all finished
+                if (activePods.length > 0) {
+                    const allFinished = activePods.every((p: any) => p.type === 'finished');
+                    if (allFinished) {
+                        tournamentStatus = 'completed';
+                    }
                 }
             }
         }
@@ -73,16 +80,13 @@ export async function POST(req: NextRequest) {
                 date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
             }
         } else if (startDateStr && startDateStr.includes(' ')) {
-            // Handle "07/02/2024 22:47:24" if simpler date field missing? No, data.startdate looks like "07/02/2024"
+            // Handle "07/02/2024 22:47:24"
             const parts = startDateStr.split(' ')[0].split('/');
             if (parts.length === 3) {
                 date = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
             }
         }
 
-        // Calculate round count? XML has tournament.data.roundtime etc, but maybe derived from matches?
-        // Or just omit total_rounds update if unknown. The initial XML had roundCount tag, new one doesn't seem to in `data`.
-        // We'll calculate it from rounds or set default.
         const roundCount = 0; // Will update if we find rounds
 
         // Upsert tournament
@@ -109,7 +113,7 @@ export async function POST(req: NextRequest) {
                 .insert({
                     name: name,
                     date: date,
-                    total_rounds: roundCount, // Placeholder
+                    total_rounds: roundCount,
                     status: tournamentStatus
                 })
                 .select('id')
@@ -204,7 +208,7 @@ export async function POST(req: NextRequest) {
                         player1_tom_id: p1Id,
                         player2_tom_id: p2Id,
                         winner_tom_id: winnerId,
-                        is_finished: !!outcome,
+                        is_finished: outcome !== null && outcome !== undefined && outcome !== '',
                         division: division
                     });
                 });
@@ -268,13 +272,13 @@ export async function POST(req: NextRequest) {
             // Or maybe just insert all if `standings` doesn't enforce uniqueness per tournament.
             // Likely we only want one entry per player. 
             // Map userid -> standing
-            const uniqueStandings = new Map<string, any>();
+            const uniqueStandings = new Map<string, { player_tom_id: string; rank: number; points: number }>();
             rawStandings.forEach(s => {
                 if (!uniqueStandings.has(s.player_tom_id)) {
                     uniqueStandings.set(s.player_tom_id, s);
                 } else {
                     // Keep better rank?
-                    const existing = uniqueStandings.get(s.player_tom_id);
+                    const existing = uniqueStandings.get(s.player_tom_id)!;
                     if (s.rank < existing.rank) {
                         uniqueStandings.set(s.player_tom_id, s);
                     }

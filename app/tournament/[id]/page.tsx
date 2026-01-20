@@ -29,6 +29,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       table_number,
       player1_tom_id,
       player2_tom_id,
+      winner_tom_id,
       division,
       is_finished,
       p1:players!player1_tom_id(first_name, last_name),

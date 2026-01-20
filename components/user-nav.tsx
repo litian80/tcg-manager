@@ -29,7 +29,7 @@ export function UserNav({ user }: UserNavProps) {
 
     useEffect(() => {
         const fetchRole = async () => {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('profiles')
                 .select('role')
                 .eq('id', user.id)
@@ -43,6 +43,7 @@ export function UserNav({ user }: UserNavProps) {
     }, [user.id, supabase])
 
     const canUploadTom = hasPermission(role, 'tom.upload')
+    const canManageUsers = hasPermission(role, 'user.manage')
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -77,6 +78,18 @@ export function UserNav({ user }: UserNavProps) {
                         </Link>
                     </DropdownMenuItem>
                 )}
+                {canManageUsers && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/users" className="w-full cursor-pointer">
+                            User Management
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                    <Link href="/profile" className="w-full cursor-pointer">
+                        Profile
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                     Log out

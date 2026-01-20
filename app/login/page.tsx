@@ -9,10 +9,15 @@ export default function LoginPage() {
     const supabase = createClient()
 
     const handleLogin = async () => {
+        const params = new URLSearchParams(window.location.search)
+        const next = params.get('next')
+        // Pass the 'next' param to the callback URL so it can redirect correctly
+        const redirectTo = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`
+
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo,
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
@@ -28,9 +33,9 @@ export default function LoginPage() {
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                         <Video className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Welcome to TCG Manager</CardTitle>
                     <CardDescription>
-                        Sign in to manage tournaments and upload data
+                        Sign in to access your profile and tournaments.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
