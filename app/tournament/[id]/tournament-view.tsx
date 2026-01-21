@@ -1,13 +1,13 @@
 "use client";
 
+import { UserResult } from "@/app/tournament/actions";
 import { useState } from "react";
-import { Search, ArrowLeft, Check } from "lucide-react";
+import { Search, ArrowLeft, Settings } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { hasPermission, Role } from "@/lib/rbac";
-
 import { Badge } from "@/components/ui/badge";
 import { MatchCard } from "@/components/tournament/match-card";
 
@@ -46,6 +46,7 @@ interface TournamentViewProps {
     currentRound: number;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
     userRole?: Role;
+    canManageStaff: boolean;
 }
 
 export default function TournamentView({
@@ -54,14 +55,13 @@ export default function TournamentView({
     currentRound,
     stats,
     userRole,
+    canManageStaff,
 }: TournamentViewProps) {
     const canEditMatch = hasPermission(userRole, 'match.edit_result');
     const [searchQuery, setSearchQuery] = useState("");
 
     // extract unique divisions, default to first one found or "Masters" if none specific
     const divisions = Array.from(new Set(matches.map(m => m.division).filter(Boolean))) as string[];
-    // If no divisions found in matches, we might fallback to a default or just hide the selector
-    // But for now let's assume if divisions exist we use them.
 
     // Sort divisions to ensure Masters is first if present, otherwise alphabetical
     const sortedDivisions = divisions.sort((a, b) => {
@@ -124,7 +124,16 @@ export default function TournamentView({
                                 Round {currentRound} of {tournament.total_rounds}
                             </p>
                         </div>
-                        <div className="w-5" /> {/* Spacer for centering */}
+                        <div className="w-5 flex justify-end">
+                            {canManageStaff && (
+                                <Link href={`/organizer/tournaments/${tournament.id}/staff`}>
+                                    <Badge variant="outline" className="cursor-pointer hover:bg-muted gap-1">
+                                        <Settings className="w-3 h-3" />
+                                        <span className="sr-only sm:not-sr-only sm:inline-block">Manage</span>
+                                    </Badge>
+                                </Link>
+                            )}
+                        </div>
                     </div>
 
                     {/* Sticky Search */}

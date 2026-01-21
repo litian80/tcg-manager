@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import TournamentView, { Match, Tournament } from "./tournament-view";
 import { Role } from "@/lib/rbac";
+import { UserResult } from "@/app/tournament/actions";
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -24,19 +25,33 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // 1.5 Fetch User Role
     const { data: { user } } = await supabase.auth.getUser();
     let userRole: Role | undefined = undefined; // Default to undefined (no role/guest)
+    let profile: any = null;
 
     if (user) {
-        const { data: profile } = await supabase
+        const { data } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, pokemon_player_id')
             .eq('id', user.id)
             .single();
+
+        profile = data;
 
         // Cast the string from DB to Role type if it matches
         if (profile?.role) {
             userRole = profile.role as Role;
         }
     }
+
+
+    // Permission check for showing the "Manage" button
+    const tournamentRecord = tournamentData as any; // Access raw fields
+    const isOrganizer = user && userRole !== 'admin' && tournamentRecord.organizer_popid &&
+        (profile?.pokemon_player_id === tournamentRecord.organizer_popid);
+
+    const canManageStaff = userRole === 'admin' || !!isOrganizer;
+
+    // Judges fetching removed from public view as per new architecture
+
 
     // 2. Fetch all matches 
     const { data: matchesData, error: matchesError } = await supabase
@@ -110,6 +125,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             currentRound={currentRound}
             stats={stats}
             userRole={userRole}
+            canManageStaff={canManageStaff}
         />
     );
 }

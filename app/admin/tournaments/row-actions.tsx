@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Row } from '@tanstack/react-table'
-import { Trash } from 'lucide-react'
+import { Trash, Eye } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
     AlertDialog,
@@ -51,6 +52,12 @@ export function DataTableRowActions<TData>({
 
     return (
         <div className="flex items-center">
+            <Link href={`/tournament/${tournament.id}`} title="View Public Page">
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">View</span>
+                </Button>
+            </Link>
             <EditTournamentDialog tournament={tournament} />
 
             <Button

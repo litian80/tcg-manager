@@ -104,7 +104,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                             readOnly={isIdLocked}
                             className={isIdLocked ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                         />
-                        {isIdLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an organizer to change.</p>}
+                        {isIdLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an administrator to change.</p>}
                         {isIdSet && isAdmin && <p className="text-xs text-green-600 flex items-center gap-1">(Admin Override Active)</p>}
                         {state.errors?.pokemon_player_id && <p className="text-sm text-red-500">{state.errors.pokemon_player_id}</p>}
                     </div>
@@ -120,7 +120,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                             readOnly={isYearLocked}
                             className={isYearLocked ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                         />
-                        {isYearLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an organizer to change.</p>}
+                        {isYearLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an administrator to change.</p>}
                         {isYearSet && isAdmin && <p className="text-xs text-green-600 flex items-center gap-1">(Admin Override Active)</p>}
                         {state.errors?.birth_year && <p className="text-sm text-red-500">{state.errors.birth_year}</p>}
                     </div>
