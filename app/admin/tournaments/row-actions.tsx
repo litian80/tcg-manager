@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Row } from '@tanstack/react-table'
 import { Trash } from 'lucide-react'
@@ -28,6 +29,7 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
     row,
 }: DataTableRowActionsProps<TData>) {
+    const router = useRouter()
     const tournament = row.original as Tournament
     const [showDeleteAlert, setShowDeleteAlert] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -37,10 +39,11 @@ export function DataTableRowActions<TData>({
         try {
             await deleteTournament(tournament.id)
             toast.success('Tournament deleted successfully')
+            router.refresh()
             setShowDeleteAlert(false)
         } catch (error) {
-            toast.error('Failed to delete tournament')
             console.error(error)
+            toast.error(error instanceof Error ? error.message : 'Failed to delete tournament')
         } finally {
             setIsDeleting(false)
         }

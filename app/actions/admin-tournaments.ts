@@ -88,8 +88,9 @@ export async function deleteTournament(id: string) {
         .eq('id', id);
 
     if (error) {
-        console.error('Error deleting tournament:', error);
-        throw new Error('Failed to delete tournament');
+        console.error('Delete tournament error:', error);
+        // Throwing the error message allows the client to display it
+        throw new Error(error.message || 'Failed to delete tournament');
     }
 
     revalidatePath('/admin/tournaments');
