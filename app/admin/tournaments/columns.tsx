@@ -76,7 +76,10 @@ export const columns: ColumnDef<Tournament>[] = [
         cell: ({ row }) => {
             const status = row.getValue('status') as string
             return (
-                <Badge variant={status === 'running' ? 'default' : 'secondary'}>
+                <Badge
+                    variant={status === 'running' ? 'default' : 'secondary'}
+                    className={status === 'running' ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
                     {status === 'running' ? 'Live' : 'Completed'}
                 </Badge>
             )
@@ -91,7 +94,7 @@ export const columns: ColumnDef<Tournament>[] = [
         cell: ({ row }) => {
             const isPublished = row.getValue('is_published') as boolean
             return (
-                <Badge variant={isPublished ? 'outline' : 'destructive'}>
+                <Badge variant="outline">
                     {isPublished ? 'Published' : 'Hidden'}
                 </Badge>
             )
