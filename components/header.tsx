@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from './ui/button'
 import { UserNav } from './user-nav'
 import { User } from '@supabase/supabase-js'
@@ -23,8 +24,18 @@ export function Header({ initialUser }: { initialUser: User | null }) {
     return (
         <header className="border-b bg-white dark:bg-gray-950">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    TCG Manager
+                <Link href="/" className="flex items-center gap-2">
+                    <div className="relative h-8 w-8">
+                        <Image
+                            src="/logo.png"
+                            alt="TCG Manager Logo"
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
+                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        TCG Manager
+                    </span>
                 </Link>
 
                 <div className="flex items-center gap-4">
