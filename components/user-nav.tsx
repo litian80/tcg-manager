@@ -72,7 +72,7 @@ export function UserNav({ user }: UserNavProps) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {(canUploadTom || canManageUsers || canManageTournaments) && (
+                {(canManageUsers || canManageTournaments) && (
                     <>
                         <DropdownMenuLabel>Admin Functions</DropdownMenuLabel>
                         {canManageUsers && (
@@ -89,13 +89,17 @@ export function UserNav({ user }: UserNavProps) {
                                 </Link>
                             </DropdownMenuItem>
                         )}
-                        {canUploadTom && (
-                            <DropdownMenuItem asChild>
-                                <Link href="/admin/upload" className="w-full cursor-pointer">
-                                    Admin Upload
-                                </Link>
-                            </DropdownMenuItem>
-                        )}
+                        <DropdownMenuSeparator />
+                    </>
+                )}
+                {canUploadTom && (
+                    <>
+                        <DropdownMenuLabel>Organiser Functions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/upload" className="w-full cursor-pointer">
+                                Organiser TOM Upload
+                            </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                     </>
                 )}
