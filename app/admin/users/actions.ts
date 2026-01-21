@@ -86,3 +86,57 @@ export async function adminUpdateUser(targetUserId: string, payload: UpdatePaylo
     revalidatePath('/admin/users')
     return { success: true }
 }
+
+import { z } from 'zod'
+
+const RoleSchema = z.enum(['admin', 'organizer', 'judge', 'user'])
+export type AppRole = z.infer<typeof RoleSchema>
+
+export async function updateUserRole(targetUserId: string, newRole: AppRole) {
+    const supabase = await createClient()
+
+    // 1. Authentication
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('Unauthorized')
+    }
+
+    // 2. Authorization (Check if caller is admin)
+    const { data: currentUserProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    if (profileError || !currentUserProfile) {
+        throw new Error('Failed to verify permissions')
+    }
+
+    if (currentUserProfile.role !== 'admin') {
+        throw new Error('Unauthorized: Only admins can change roles')
+    }
+
+    // 3. Self-Protection
+    if (targetUserId === user.id) {
+        throw new Error('Cannot change your own role to prevent lockout.')
+    }
+
+    // 4. Operation
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', targetUserId)
+
+    if (updateError) {
+        console.error('Error updating role:', updateError)
+        throw new Error('Failed to update role')
+    }
+
+    // 5. Revalidation
+    revalidatePath('/admin/users')
+
+    return { success: true }
+}

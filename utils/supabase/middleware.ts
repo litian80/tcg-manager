@@ -2,7 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Define allowed emails for admin access
-const ADMIN_EMAILS = ['litian1980@gmail.com', 'joezhuu@gmail.com'];
+// Define allowed emails for admin access - REMOVED in favor of RBAC
+// const ADMIN_EMAILS = [];
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
@@ -47,15 +48,19 @@ export async function updateSession(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // 2. Check if user.email is in ADMIN_EMAILS
-        const userEmail = user.email?.toLowerCase();
-        const allowedEmails = ADMIN_EMAILS.map(e => e.toLowerCase());
+        // 2. Check RBAC (Admin or Organizer)
+        // We need to fetch the user's role from the profiles table
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-        console.log(`Middleware: Checking admin access for ${userEmail}`);
+        const userRole = profile?.role;
+        const allowedRoles = ['admin', 'organizer'];
 
-        if (!userEmail || !allowedEmails.includes(userEmail)) {
-            console.log('Middleware: Access denied for email:', userEmail);
-            console.log('Middleware: Allowed emails:', allowedEmails);
+        if (profileError || !userRole || !allowedRoles.includes(userRole)) {
+            console.log(`Middleware: Access denied for user ${user.email}. Role: ${userRole || 'None'}`);
             const url = request.nextUrl.clone()
             url.pathname = '/login'
             return NextResponse.redirect(url)

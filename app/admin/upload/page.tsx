@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function UploadPage() {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [isPublished, setIsPublished] = useState(true);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -24,7 +27,7 @@ export default function UploadPage() {
         setStatus('Uploading...');
 
         try {
-            const response = await fetch('/api/upload-tom', {
+            const response = await fetch(`/api/upload-tom?published=${isPublished}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/xml',
@@ -65,6 +68,20 @@ export default function UploadPage() {
                         file:bg-blue-50 file:text-blue-700
                         hover:file:bg-blue-100"
                     />
+                </div>
+
+                <div className="mb-6 flex items-center space-x-4">
+                    <Switch
+                        id="published-mode"
+                        checked={isPublished}
+                        onCheckedChange={setIsPublished}
+                    />
+                    <Label htmlFor="published-mode" className="flex flex-col">
+                        <span>Publish Tournament</span>
+                        <span className="font-normal text-xs text-muted-foreground">
+                            If enabled, the tournament will be visible to players immediately.
+                        </span>
+                    </Label>
                 </div>
 
                 <button

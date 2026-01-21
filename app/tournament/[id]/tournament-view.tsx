@@ -116,7 +116,7 @@ export default function TournamentView({
                                 )}
                                 {tournament.status === 'completed' && (
                                     <Badge variant="secondary">
-                                        Finalized
+                                        Completed
                                     </Badge>
                                 )}
                             </div>

@@ -1,16 +1,18 @@
-import { createClient } from "@/utils/supabase/server";
+import { getTournaments } from "@/app/actions/get-tournaments";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  const supabase = await createClient();
+  let tournaments: any[] = [];
+  let error;
 
-  const { data: tournaments, error } = await supabase
-    .from("tournaments")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    tournaments = await getTournaments();
+  } catch (e: any) {
+    error = { message: e.message || "Failed to load tournaments" };
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground p-8">
@@ -38,8 +40,8 @@ export default async function Home() {
                       <CardTitle className="line-clamp-1 text-xl group-hover:text-primary transition-colors">
                         {tournament.name}
                       </CardTitle>
-                      <Badge variant={tournament.status === 'ongoing' ? "default" : "secondary"}>
-                        {tournament.status}
+                      <Badge variant={tournament.status === 'running' ? "default" : "secondary"} className={tournament.status === 'running' ? "bg-green-600 hover:bg-green-700" : ""}>
+                        {tournament.status === 'running' ? "Live" : (tournament.status === 'completed' ? "Completed" : tournament.status)}
                       </Badge>
                     </div>
                     <CardDescription className="flex items-center gap-2 pt-2">

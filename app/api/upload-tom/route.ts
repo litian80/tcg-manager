@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient } from '@/utils/supabase/server';
 
 // Helper to handle single vs array in XML parser
 const asArray = <T>(item: T | T[] | undefined): T[] => {
@@ -12,6 +13,9 @@ const asArray = <T>(item: T | T[] | undefined): T[] => {
 
 export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
+    const supabaseAuth = await createClient();
+    const { searchParams } = new URL(req.url);
+    const isPublished = searchParams.get('published') !== 'false'; // Default to true if missing
 
     try {
         const xmlData = await req.text();
@@ -70,6 +74,53 @@ export async function POST(req: NextRequest) {
 
         const name = tournamentData.name;
         const startDateStr = tournamentData.startdate; // MM/DD/YYYY
+        const city = tournamentData.city || 'Unknown';
+        const country = tournamentData.country || 'Unknown';
+        const tomUid = tournamentData.id?.toString() || ''; // XML uses 'id' inside data tag usually? or tournament attributes? 
+        // Checking XML sample structure if available, usually <data><id>...</id></data> or <tournament id="...">
+        // Assuming <data><id>... from context or standard TOM files. 
+        // Re-reading user request: "xml文件里面的 id" -> likely top level or data level. 
+        // "organizer的popid" -> <organizer popid="..."> or <organizer><popid>...
+
+        let organizerPopId = 'Unknown';
+        if (tournamentData.organizer) {
+            // Check if attribute or child
+            organizerPopId = tournamentData.organizer.popid || tournamentData.organizer['@_popid'] || 'Unknown';
+            // fast-xml-parser with ignoreAttributes: false, attributeNamePrefix: '' -> attributes are properties
+        }
+
+        // --- Step B: Fetch Uploader Profile & Apply Strict Guard Clauses ---
+        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized: You must be logged in to upload.' }, { status: 401 });
+        }
+
+        const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, pokemon_player_id')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !userProfile) {
+            return NextResponse.json({ error: 'Forbidden: User profile not found.' }, { status: 403 });
+        }
+
+        const isAdmin = userProfile.role === 'admin';
+        const isOrganizer = userProfile.role === 'organizer';
+        const isMatchingOrganizer = isOrganizer && userProfile.pokemon_player_id === organizerPopId;
+
+        if (!isAdmin && !isMatchingOrganizer) {
+            return NextResponse.json({
+                error: `Upload Rejected. You must be the Organizer listed in the TDF file (PID Match: ${organizerPopId}) or an Admin to perform this action.`
+            }, { status: 403 });
+        }
+
+        // Use structure from previous file view:
+        // const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+
+        // Let's refine simple extraction assuming standard TDF/XML
+        // Update: User said "id, city, country, organizer的popid and startdate"
 
         // Convert MM/DD/YYYY to YYYY-MM-DD
         let date = startDateStr;
@@ -89,11 +140,18 @@ export async function POST(req: NextRequest) {
 
         const roundCount = 0; // Will update if we find rounds
 
-        // Upsert tournament
+        // STRICT IDENTIFICATION CHECK
+        // We use tom_uid, city, country, organizer_popid, date to identify.
+        // Falls back to just Name+Date if these are missing? 
+        // Valid TDF should have them. 
+
         const { data: existingTournament, error: fetchError } = await supabase
             .from('tournaments')
             .select('id')
-            .eq('name', name)
+            .eq('tom_uid', tomUid)
+            .eq('city', city)
+            .eq('country', country)
+            .eq('organizer_popid', organizerPopId)
             .eq('date', date)
             .single();
 
@@ -101,10 +159,13 @@ export async function POST(req: NextRequest) {
 
         if (existingTournament) {
             tournamentId = existingTournament.id;
+            // Update mutable fields like status, total_rounds (later), and maybe name if changed?
             await supabase
                 .from('tournaments')
                 .update({
-                    status: tournamentStatus
+                    status: tournamentStatus,
+                    name: name, // Update name just in case
+                    is_published: isPublished
                 })
                 .eq('id', tournamentId);
         } else {
@@ -114,7 +175,12 @@ export async function POST(req: NextRequest) {
                     name: name,
                     date: date,
                     total_rounds: roundCount,
-                    status: tournamentStatus
+                    status: tournamentStatus,
+                    tom_uid: tomUid,
+                    city: city,
+                    country: country,
+                    organizer_popid: organizerPopId,
+                    is_published: isPublished
                 })
                 .select('id')
                 .single();
@@ -131,10 +197,13 @@ export async function POST(req: NextRequest) {
         const playersRoot = tournamentRoot.players;
         const xmlPlayers = asArray(playersRoot?.player);
 
+        const tournamentPlayersToInsert: any[] = [];
+
         for (const p of xmlPlayers) {
             const userid = p.userid ? p.userid.toString() : null;
             if (!userid) continue;
 
+            // Existing logic: Upsert into global players table
             const { error: playerError } = await supabase
                 .from('players')
                 .upsert({
@@ -146,6 +215,26 @@ export async function POST(req: NextRequest) {
 
             if (playerError) {
                 console.error(`Error syncing player ${userid}:`, playerError);
+            }
+
+            // New logic: Collect for tournament_players index
+            tournamentPlayersToInsert.push({
+                tournament_id: tournamentId,
+                player_id: userid
+            });
+        }
+
+        // Bulk insert into tournament_players
+        if (tournamentPlayersToInsert.length > 0) {
+            const { error: tpError } = await supabase
+                .from('tournament_players')
+                .upsert(tournamentPlayersToInsert, {
+                    onConflict: 'tournament_id, player_id',
+                    ignoreDuplicates: true
+                });
+
+            if (tpError) {
+                console.error('Error populating tournament_players:', tpError);
             }
         }
 

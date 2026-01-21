@@ -22,7 +22,8 @@ import {
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Pencil } from 'lucide-react'
-import { useDebounce } from '@/hooks/use-debounce' // We might need to implement this hook if not exists, but I'll write inline debounce for now to be safe.
+import { RoleSelect } from './role-select'
+import { useDebounce } from '@/hooks/use-debounce'
 
 // Inline debounce hook since I'm not sure if the project has one
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -132,7 +133,7 @@ export default function UserTable() {
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    <span className="capitalize">{user.role}</span>
+                                    <RoleSelect userId={user.id} currentRole={user.role} />
                                 </TableCell>
                                 <TableCell>{user.pokemon_player_id || '-'}</TableCell>
                                 <TableCell>{user.birth_year || '-'}</TableCell>

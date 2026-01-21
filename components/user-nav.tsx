@@ -44,6 +44,7 @@ export function UserNav({ user }: UserNavProps) {
 
     const canUploadTom = hasPermission(role, 'tom.upload')
     const canManageUsers = hasPermission(role, 'user.manage')
+    const canManageTournaments = hasPermission(role, 'tournament.manage')
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
@@ -71,19 +72,32 @@ export function UserNav({ user }: UserNavProps) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {canUploadTom && (
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin/upload" className="w-full cursor-pointer">
-                            Admin Upload
-                        </Link>
-                    </DropdownMenuItem>
-                )}
-                {canManageUsers && (
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin/users" className="w-full cursor-pointer">
-                            User Management
-                        </Link>
-                    </DropdownMenuItem>
+                {(canUploadTom || canManageUsers || canManageTournaments) && (
+                    <>
+                        <DropdownMenuLabel>Admin Functions</DropdownMenuLabel>
+                        {canManageUsers && (
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin/users" className="w-full cursor-pointer">
+                                    User Management
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {canManageTournaments && (
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin/tournaments" className="w-full cursor-pointer">
+                                    Tournament Management
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {canUploadTom && (
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin/upload" className="w-full cursor-pointer">
+                                    Admin Upload
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                    </>
                 )}
                 <DropdownMenuItem asChild>
                     <Link href="/profile" className="w-full cursor-pointer">

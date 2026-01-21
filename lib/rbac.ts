@@ -5,10 +5,11 @@ export type Permission =
     | 'judge.view_panel'  // Can access Judge Dashboard
     | 'match.edit_result' // Can edit match results manually
     | 'user.manage'       // Can change other users' roles
-    | 'profile.view_all'; // Can view other people's detailed profiles
+    | 'profile.view_all'  // Can view other people's detailed profiles
+    | 'tournament.manage'; // Can manage tournament settings (publish/unpublish)
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-    admin: ['tom.upload', 'judge.view_panel', 'match.edit_result', 'user.manage', 'profile.view_all'],
+    admin: ['tom.upload', 'judge.view_panel', 'match.edit_result', 'user.manage', 'profile.view_all', 'tournament.manage'],
     organizer: ['tom.upload', 'judge.view_panel', 'match.edit_result'],
     judge: ['judge.view_panel', 'match.edit_result'],
     user: []

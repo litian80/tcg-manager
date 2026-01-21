@@ -76,6 +76,12 @@ export interface Database {
                     organizer_id: string
                     status: string
                     parsed_data: Json | null
+                    tom_uid: string | null
+                    city: string | null
+                    country: string | null
+                    organizer_popid: string | null
+                    total_rounds: number | null
+                    is_published: boolean | null
                 }
                 Insert: {
                     id?: string
@@ -85,9 +91,15 @@ export interface Database {
                     location?: string | null
                     prizes?: Json | null
                     description?: string | null
-                    organizer_id: string
+                    organizer_id?: string
                     status?: string
                     parsed_data?: Json | null
+                    tom_uid?: string | null
+                    city?: string | null
+                    country?: string | null
+                    organizer_popid?: string | null
+                    total_rounds?: number | null
+                    is_published?: boolean | null
                 }
                 Update: {
                     id?: string
@@ -100,6 +112,12 @@ export interface Database {
                     organizer_id?: string
                     status?: string
                     parsed_data?: Json | null
+                    tom_uid?: string | null
+                    city?: string | null
+                    country?: string | null
+                    organizer_popid?: string | null
+                    total_rounds?: number | null
+                    is_published?: boolean | null
                 }
             }
         }
