@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Search, ArrowLeft, Settings } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { hasPermission, Role } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { MatchCard } from "@/components/tournament/match-card";
+import { StandingsView } from "@/components/tournament/standings-view";
 
 export interface Player {
     first_name: string;
@@ -96,123 +98,174 @@ export default function TournamentView({
         ));
     };
 
+    const [viewMode, setViewMode] = useState<'pairings' | 'standings'>('pairings');
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Sticky Header & Search */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
                 <div className="p-4 pb-2 max-w-md mx-auto w-full space-y-3">
                     {/* Top Navigation & Title */}
-                    <div className="flex items-center justify-between">
-                        <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                        <div className="text-center flex flex-col items-center">
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-lg font-bold leading-tight line-clamp-1">{tournament.name}</h1>
-                                {tournament.status === 'running' && (
-                                    <Badge className="bg-green-600 hover:bg-green-700 animate-pulse border-transparent text-white">
-                                        Live
-                                    </Badge>
-                                )}
-                                {tournament.status === 'completed' && (
-                                    <Badge variant="secondary">
-                                        Completed
-                                    </Badge>
-                                )}
+                    <div className="flex items-center justify-between gap-4 w-full">
+                        {/* Left Side: Back Button + Title */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Link>
+                            <div className="flex flex-col min-w-0">
+                                <h1 className="text-xl font-bold truncate leading-tight">{tournament.name}</h1>
+                                <p className="text-xs text-muted-foreground font-medium truncate">
+                                    Round {currentRound} of {tournament.total_rounds}
+                                </p>
                             </div>
-                            <p className="text-xs text-muted-foreground font-medium">
-                                Round {currentRound} of {tournament.total_rounds}
-                            </p>
                         </div>
-                        <div className="w-5 flex justify-end">
+
+                        {/* Right Side: Badge + Action Button */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {tournament.status === 'running' && (
+                                <Badge className="bg-green-600 hover:bg-green-700 animate-pulse border-transparent text-white">
+                                    Live
+                                </Badge>
+                            )}
+                            {tournament.status === 'completed' && (
+                                <Badge variant="secondary">
+                                    Completed
+                                </Badge>
+                            )}
                             {canManageStaff && (
                                 <Link href={`/organizer/tournaments/${tournament.id}/staff`}>
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-muted gap-1">
-                                        <Settings className="w-3 h-3" />
-                                        <span className="sr-only sm:not-sr-only sm:inline-block">Manage</span>
-                                    </Badge>
+                                    <Button variant="ghost" size="icon">
+                                        <Settings className="h-5 w-5" />
+                                        <span className="sr-only">Manage</span>
+                                    </Button>
                                 </Link>
                             )}
                         </div>
                     </div>
 
-                    {/* Sticky Search */}
-                    <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Find your name..."
-                            className="pl-9 h-9 text-base shadow-none bg-muted/50 focus-visible:bg-background rounded-full"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
+                    {/* View Toggle - Only show if completed */}
+                    {tournament.status === 'completed' && (
+                        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+                            <button
+                                onClick={() => setViewMode('pairings')}
+                                className={cn(
+                                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                    viewMode === 'pairings'
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Pairings
+                            </button>
+                            <button
+                                onClick={() => setViewMode('standings')}
+                                className={cn(
+                                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                    viewMode === 'standings'
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Standings
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Sticky Search (Only for Pairings) */}
+                    {viewMode === 'pairings' && (
+                        <div className="relative">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Find your name..."
+                                className="pl-9 h-9 text-base shadow-none bg-muted/50 focus-visible:bg-background rounded-full"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Tabs and Matches List */}
+            {/* Main Content */}
             <div className="flex-1 max-w-md mx-auto w-full pb-8">
-                {/* Division Selector */}
-                {sortedDivisions.length > 0 && (
-                    <div className="px-4 py-2 sticky top-[125px] z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                        <div className="flex p-1 bg-muted rounded-lg">
-                            {sortedDivisions.map((division) => (
-                                <button
-                                    key={division}
-                                    onClick={() => setSelectedDivision(division)}
-                                    className={cn(
-                                        "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                                        selectedDivision === division
-                                            ? "bg-background text-foreground shadow-sm"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                                    )}
-                                >
-                                    {division}
-                                </button>
-                            ))}
-                        </div>
+                {viewMode === 'standings' ? (
+                    <div className="p-4">
+                        <StandingsView tournamentId={tournament.id} />
                     </div>
+                ) : (
+                    <>
+                        {/* Division Selector */}
+                        {sortedDivisions.length > 0 && (
+                            <div className={cn(
+                                "px-4 py-2 sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+                                tournament.status === 'completed' ? "top-[125px]" : "top-[80px]"
+                            )}>
+                                <div className="flex p-1 bg-muted rounded-lg">
+                                    {sortedDivisions.map((division) => (
+                                        <button
+                                            key={division}
+                                            onClick={() => setSelectedDivision(division)}
+                                            className={cn(
+                                                "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                                selectedDivision === division
+                                                    ? "bg-background text-foreground shadow-sm"
+                                                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                                            )}
+                                        >
+                                            {division}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <Tabs defaultValue={String(currentRound)} className="w-full">
+                            <div className={cn(
+                                "sticky z-10 bg-background border-b px-4",
+                                sortedDivisions.length > 0
+                                    ? (tournament.status === 'completed' ? "top-[180px]" : "top-[135px]")
+                                    : (tournament.status === 'completed' ? "top-[125px]" : "top-[80px]")
+                            )}>
+                                <TabsList className="w-full flex overflow-x-auto justify-start h-auto p-1 bg-transparent hide-scrollbar">
+                                    {rounds.map((round) => (
+                                        <TabsTrigger
+                                            key={round}
+                                            value={String(round)}
+                                            className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-shrink-0 mr-2"
+                                        >
+                                            Round {round}
+                                        </TabsTrigger>
+                                    ))}
+                                </TabsList>
+                            </div>
+
+                            {rounds.map((round) => {
+                                const roundMatches = getRoundMatches(round);
+
+                                return (
+                                    <TabsContent key={round} value={String(round)} className="mt-0">
+                                        {roundMatches.length === 0 ? (
+                                            <div className="text-center py-12 text-muted-foreground">
+                                                <p>No matches found for &quot;{searchQuery}&quot; in Round {round}</p>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-border border-b">
+                                                {roundMatches.map((match) => (
+                                                    <MatchCard
+                                                        key={match.id}
+                                                        match={match}
+                                                        stats={stats}
+                                                        canEdit={canEditMatch}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </TabsContent>
+                                );
+                            })}
+                        </Tabs>
+                    </>
                 )}
-
-                <Tabs defaultValue={String(currentRound)} className="w-full">
-                    <div className={cn("sticky z-10 bg-background border-b px-4", sortedDivisions.length > 0 ? "top-[180px]" : "top-[125px]")}>
-                        <TabsList className="w-full flex overflow-x-auto justify-start h-auto p-1 bg-transparent hide-scrollbar">
-                            {rounds.map((round) => (
-                                <TabsTrigger
-                                    key={round}
-                                    value={String(round)}
-                                    className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-shrink-0 mr-2"
-                                >
-                                    Round {round}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </div>
-
-                    {rounds.map((round) => {
-                        const roundMatches = getRoundMatches(round);
-
-                        return (
-                            <TabsContent key={round} value={String(round)} className="mt-0">
-                                {roundMatches.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <p>No matches found for &quot;{searchQuery}&quot; in Round {round}</p>
-                                    </div>
-                                ) : (
-                                    <div className="divide-y divide-border border-b">
-                                        {roundMatches.map((match) => (
-                                            <MatchCard
-                                                key={match.id}
-                                                match={match}
-                                                stats={stats}
-                                                canEdit={canEditMatch}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </TabsContent>
-                        );
-                    })}
-                </Tabs>
             </div>
         </div>
     );

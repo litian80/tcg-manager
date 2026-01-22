@@ -427,73 +427,81 @@ export async function POST(req: NextRequest) {
         // Wait, JSON says `id` instead of `userid` for standings players?
         // JSON: "player": [ { "id": "4", "place": "1" }, ... ]
 
+        // --- Step D: Standings ---
+        // Requirement:
+        // 1. Map `category` to Division Name (Junior/Senior/Master).
+        // 2. Iterate players in <standings><pod>.
+        // 3. Merge with calculated stats (Pass 1) from `playerStats`.
+        // 4. Update `tournament_players`.
+
         if (standingsRoot) {
             const standingsPods = asArray(standingsRoot.pod);
 
-            // We want final standings, usually category="0" (all ages) or the main one.
-            // JSON shows multiple pods for categories. We might want to sync all?
-            // Or just flatten them. Duplicate entries for players?
-            // Let's take checking for category "0" (Master/All) if available, or just all unique players.
-            // JSON has category="0", "1", "2".
-            // We'll collect best rank for each player? Or just Insert all and let DB constraints handle?
-            // `standings` table likely has (tournament_id, player_tom_id) unique?
-            // Let's assume we just want the main standings.
-            // Or filter valid players.
+            const tpUpdates: any[] = [];
 
-            const rawStandings: any[] = [];
-            standingsPods.forEach((sp: any) => {
-                // Only process "finished" pods? type="finished" in JSON
-                const spPlayers = asArray(sp.player);
-                spPlayers.forEach((p: any) => {
-                    if (p.id && p.place) {
-                        rawStandings.push({
-                            player_tom_id: p.id.toString(),
-                            rank: parseInt(p.place.toString()),
-                            points: 0 // Points not in standings JSON shown?
-                        });
-                    }
+            standingsPods.forEach((pod: any) => {
+                const category = pod.category?.toString();
+                let divisionName = "Unknown";
+
+                // Mappings from requirements
+                if (category === "0") divisionName = "Junior";
+                else if (category === "1") divisionName = "Senior";
+                else if (category === "2") divisionName = "Master";
+                // Add play for others effectively defaulting to Unknown or skipping? 
+                // Let's assume standard only for now based on prompt, but keep others?
+                // If the user didn't specify, maybe just stringify?
+                // Requirement says: 0->Junior, 1->Senior, 2->Master.
+
+                // Skip if not strictly one of these?
+                // Or just use it if mapped, else 'Other'?
+                // Safe to include others if they exist.
+                if (category === "0/1" || category === "8") divisionName = "Junior/Senior"; // Legacy/Mix support
+                if (!["Junior", "Senior", "Master"].includes(divisionName)) {
+                    // If we strictly only want J/S/M as tabs, we might want to filter.
+                    // But for data integrity, let's keep valid divisions.
+                }
+
+                const podPlayers = asArray(pod.player);
+                podPlayers.forEach((p: any) => {
+                    const playerId = p.id?.toString();
+                    if (!playerId) return;
+
+                    const rank = parseInt(p.place?.toString() || '0');
+
+                    // Retrieve stats calculated from matches
+                    const stats = getStat(playerId);
+                    // Calculate points: W=3, T=1, L=0
+                    // Note: 'd' in our map assumes Tie.
+                    const points = (stats.w * 3) + (stats.d * 1);
+
+                    tpUpdates.push({
+                        tournament_id: tournamentId,
+                        player_id: playerId,
+                        rank: rank,
+                        division: divisionName,
+                        wins: stats.w,
+                        losses: stats.l,
+                        ties: stats.d,
+                        points: points
+                    });
                 });
             });
 
-            // Deduplicate: If player appears in multiple categories, which one to keep?
-            // The one with lowest rank (highest place)?
-            // Or maybe just insert all if `standings` doesn't enforce uniqueness per tournament.
-            // Likely we only want one entry per player. 
-            // Map userid -> standing
-            const uniqueStandings = new Map<string, { player_tom_id: string; rank: number; points: number }>();
-            rawStandings.forEach(s => {
-                if (!uniqueStandings.has(s.player_tom_id)) {
-                    uniqueStandings.set(s.player_tom_id, s);
+            // Perform Bulk Upsert to tournament_players
+            // We use upsert because the rows likely exist from Step B, but we are adding metadata.
+            if (tpUpdates.length > 0) {
+                const { error: standingsError } = await supabase
+                    .from('tournament_players')
+                    .upsert(tpUpdates, {
+                        onConflict: 'tournament_id, player_id',
+                        ignoreDuplicates: false // We WANT to update
+                    });
+
+                if (standingsError) {
+                    console.error('Error updating standings in tournament_players:', standingsError);
                 } else {
-                    // Keep better rank?
-                    const existing = uniqueStandings.get(s.player_tom_id)!;
-                    if (s.rank < existing.rank) {
-                        uniqueStandings.set(s.player_tom_id, s);
-                    }
+                    console.log(`Updated standings for ${tpUpdates.length} players.`);
                 }
-            });
-
-            try {
-                await supabase.from('standings').delete().eq('tournament_id', tournamentId);
-
-                const standingsToInsert = Array.from(uniqueStandings.values()).map(s => ({
-                    tournament_id: tournamentId,
-                    player_tom_id: s.player_tom_id,
-                    rank: s.rank,
-                    points: 0 // default
-                }));
-
-                if (standingsToInsert.length > 0) {
-                    const { error: standingsError } = await supabase
-                        .from('standings')
-                        .insert(standingsToInsert);
-
-                    if (standingsError) {
-                        console.error('Error inserting standings:', standingsError);
-                    }
-                }
-            } catch (e) {
-                console.warn('Standings table might not exist or schema mismatch', e);
             }
         }
 

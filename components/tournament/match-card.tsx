@@ -55,7 +55,7 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
                     {player.first_name} {player.last_name}
                 </span>
                 <span className="text-xs text-muted-foreground font-mono truncate">
-                    {tomId || "?"} • {record || "0-0-0"}
+                    {record || "0-0-0"}
                 </span>
             </div>
         );
