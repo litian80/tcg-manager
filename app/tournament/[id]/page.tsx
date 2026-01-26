@@ -1,8 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import TournamentView, { Match, Tournament } from "./tournament-view";
+import TournamentView, { Match, Tournament, RosterPlayer } from "./tournament-view";
 import { Role } from "@/lib/rbac";
 import { UserResult } from "@/app/tournament/actions";
+import { RealtimeListener } from "@/components/tournament/realtime-listener";
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -45,8 +46,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     // Permission check for showing the "Manage" button
     const tournamentRecord = tournamentData as any; // Access raw fields
-    const isOrganizer = user && userRole !== 'admin' && tournamentRecord.organizer_popid &&
-        (profile?.pokemon_player_id === tournamentRecord.organizer_popid);
+    const isOrganizer = user && userRole !== 'admin' && (
+        tournamentRecord.organizer_id === user.id ||
+        (tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid)
+    );
 
     const canManageStaff = userRole === 'admin' || !!isOrganizer;
 
@@ -118,14 +121,42 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     });
 
+    // 3. Fetch Roster if Matches are empty (Pre-Tournament)
+    let rosterPlayers: RosterPlayer[] = [];
+    if (matches.length === 0) {
+        const { data: rosterData, error: rosterError } = await supabase
+            .from("tournament_players")
+            .select(`
+                player_id,
+                player:players!player_id(first_name, last_name, tom_player_id)
+            `)
+            .eq("tournament_id", id);
+
+        if (rosterError) {
+            console.error("Error fetching roster:", rosterError);
+        } else if (rosterData) {
+            // Map to flat structure
+            rosterPlayers = rosterData.map((item: any) => ({
+                id: item.player?.tom_player_id || item.player_id, // Use TOM ID if available as simpler ID, or UUID
+                first_name: item.player?.first_name || "Unknown",
+                last_name: item.player?.last_name || "Unknown",
+                tom_player_id: item.player?.tom_player_id
+            }));
+        }
+    }
+
     return (
-        <TournamentView
-            tournament={tournament}
-            matches={allMatches}
-            currentRound={currentRound}
-            stats={stats}
-            userRole={userRole}
-            canManageStaff={canManageStaff}
-        />
+        <>
+            <RealtimeListener tournamentId={id} />
+            <TournamentView
+                tournament={tournament}
+                matches={allMatches}
+                currentRound={currentRound}
+                stats={stats}
+                userRole={userRole}
+                canManageStaff={canManageStaff}
+                rosterPlayers={rosterPlayers}
+            />
+        </>
     );
 }

@@ -100,6 +100,11 @@ export function UserNav({ user }: UserNavProps) {
                                 Organiser TOM Upload
                             </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/organizer/tournaments" className="w-full cursor-pointer">
+                                My Tournaments
+                            </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                     </>
                 )}

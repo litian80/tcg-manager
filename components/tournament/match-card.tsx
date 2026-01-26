@@ -3,6 +3,12 @@
 import { cn } from "@/lib/utils";
 import { Check, Handshake } from "lucide-react";
 import { type Match } from "@/app/tournament/[id]/tournament-view";
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useSecretTrigger } from "@/hooks/use-secret-trigger";
+import { createOrJoinGame } from "@/actions/minigame";
+import { toast } from "sonner";
+import { ConnectFourModal } from "./connect-four-modal";
 
 interface MatchCardProps {
     match: Match;
@@ -15,6 +21,54 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
     const winnerId = match.winner_tom_id;
     const p1Id = match.player1_tom_id;
     const p2Id = match.player2_tom_id;
+
+    // Easter Egg Logic
+    const [myTomId, setMyTomId] = useState<string | null>(null);
+    const [isGameOpen, setIsGameOpen] = useState(false);
+    const [gameData, setGameData] = useState<any>(null);
+    const { trigger: triggerSecret, reset: resetSecret } = useSecretTrigger(async () => {
+        if (!myTomId) return;
+
+        // Determine if valid player
+        if (myTomId !== p1Id && myTomId !== p2Id) return;
+
+        // Fetch or create game
+        try {
+            const { game, error } = await createOrJoinGame(match.id, myTomId);
+            if (error) {
+                toast.error("Failed to start secret game");
+                return;
+            }
+            setGameData(game);
+            setIsGameOpen(true);
+            toast.success("Secret Unlocked: Connect 4!");
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: profile } = await supabase.from('profiles').select('pokemon_player_id').eq('id', user.id).single();
+            if (profile?.pokemon_player_id) {
+                setMyTomId(profile.pokemon_player_id);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const isMyOpponent = (targetId: string | undefined) => {
+        if (!myTomId || !targetId) return false;
+        // If I am P1, opponent is P2. Target must be P2.
+        if (myTomId === p1Id && targetId === p2Id) return true;
+        // If I am P2, opponent is P1. Target must be P1.
+        if (myTomId === p2Id && targetId === p1Id) return true;
+        return false;
+    };
 
     // Outcome 3 is Tie/Draw. Fallback to 'tie' check for backward compat if outcome missing.
     const isTie = match.outcome === 3 || winnerId === 'tie' || winnerId === 'draw';
@@ -49,8 +103,13 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
     const renderPlayerBlock = (player: typeof match.p1, tomId: string | undefined, record: string | undefined, styleClass: string) => {
         if (!player) return <span className="text-muted-foreground italic">Bye</span>;
 
+        const isTarget = isFinished && isMyOpponent(tomId);
+
         return (
-            <div className={cn("flex flex-col items-start justify-center min-w-0", styleClass)}>
+            <div
+                className={cn("flex flex-col items-start justify-center min-w-0 select-none", styleClass, isTarget && "cursor-pointer active:scale-95 transition-transform")} // Added cursor/active for feedback logic
+                onClick={isTarget ? (e) => { e.preventDefault(); triggerSecret(); } : undefined}
+            >
                 <span className="truncate text-base leading-tight">
                     {player.first_name} {player.last_name}
                 </span>
@@ -108,6 +167,24 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
                     </>
                 )}
             </div>
+
+            {/* Easter Egg Modal */}
+            {myTomId && (
+                <ConnectFourModal
+                    isOpen={isGameOpen}
+                    onClose={() => setIsGameOpen(false)}
+                    matchId={match.id}
+                    currentUserTomId={myTomId}
+                    p1Id={p1Id || ""}
+                    p2Id={p2Id || ""}
+                    startPlayerId={match.outcome === 1 ? match.player2_tom_id! : (match.outcome === 2 ? match.player1_tom_id! : (match.player1_tom_id!))}
+                    // Outcome 1 = P1 Win (so P2 starts), Outcome 2 = P2 Win (so P1 starts). Default P1.
+                    // Assuming match.outcome 1 is P1 win, 2 is P2 win. 
+                    // Wait, match.winner_tom_id is safer.
+                    // If winner == p1, start = p2. If winner == p2, start = p1.
+                    gameData={gameData}
+                />
+            )}
         </div>
     );
 }

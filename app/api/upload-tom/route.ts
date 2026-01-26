@@ -505,6 +505,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Final Touch: Update updated_at to trigger Realtime listeners (even if no other data changed)
+        await supabase
+            .from('tournaments')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', tournamentId);
+
         return NextResponse.json({ success: true, tournamentId });
 
     } catch (error) {

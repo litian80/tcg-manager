@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tournament type="2" stage="1" version="1.80" gametype="TRADING_CARD_GAME" mode="LEAGUECHALLENGE">
+	<data>
+		<name>Challenge TEST</name>
+		<id>26-01-123456</id>
+		<city>Auckland</city>
+		<state></state>
+		<country>New Zealand</country>
+		<roundtime>0</roundtime>
+		<finalsroundtime>0</finalsroundtime>
+		<organizer popid="3212892" name="Tian Li"/>
+		<startdate>01/23/2026</startdate>
+		<lessswiss>false</lessswiss>
+		<autotablenumber>true</autotablenumber>
+		<overflowtablestart>0</overflowtablestart>
+	</data>
+	<timeelapsed>0</timeelapsed>
+	<players>
+		<player userid="6">
+			<firstname>player 6</firstname>
+			<lastname>6</lastname>
+			<birthdate>02/27/2014</birthdate>
+			<creationdate>07/15/2023 10:54:24</creationdate>
+			<lastmodifieddate>07/02/2024 22:47:24</lastmodifieddate>
+		</player>
+		<player userid="7">
+			<firstname>player 7</firstname>
+			<lastname>player</lastname>
+			<birthdate>02/27/2013</birthdate>
+			<creationdate>07/15/2023 10:55:45</creationdate>
+			<lastmodifieddate>07/15/2023 10:55:45</lastmodifieddate>
+		</player>
+		<player userid="3128603">
+			<firstname>Chance</firstname>
+			<lastname>Ma</lastname>
+			<birthdate>02/27/2010</birthdate>
+			<creationdate>04/28/2023 22:19:23</creationdate>
+			<lastmodifieddate>04/28/2023 22:19:23</lastmodifieddate>
+		</player>
+		<player userid="5">
+			<firstname>player 5</firstname>
+			<lastname>mmdmdm</lastname>
+			<birthdate>02/27/2012</birthdate>
+			<creationdate>07/15/2023 10:54:56</creationdate>
+			<lastmodifieddate>07/15/2023 10:54:56</lastmodifieddate>
+		</player>
+	</players>
+	<pods>
+	</pods>
+	<finalsoptions>
+	</finalsoptions>
+</tournament>
