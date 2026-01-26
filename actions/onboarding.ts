@@ -1,15 +1,15 @@
-"use server";
+'use server';
 
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { z } from "zod";
+import { createClient } from '@/utils/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
 
-const profileSchema = z.object({
+const onboardingSchema = z.object({
     first_name: z.string().min(1, "First Name is required"),
     last_name: z.string().min(1, "Last Name is required"),
-    pokemon_player_id: z.string().min(4, "Player ID must be valid"),
-    birth_year: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 3, "Must be at least 3 years old"),
+    pokemon_player_id: z.string().min(1, "Pokemon Player ID is required").regex(/^\d+$/, "Player ID must be numeric"),
+    birth_year: z.string().min(4, "Birth Year is required").transform((val) => parseInt(val, 10)),
 });
 
 type State = {
@@ -20,47 +20,60 @@ type State = {
         birth_year?: string[];
         server?: string[];
     };
+    message?: string;
 };
 
-export async function completeProfile(prevState: any, formData: FormData): Promise<State> {
+export async function completeOnboarding(prevState: any, formData: FormData): Promise<State> {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect("/login");
+        return { message: 'Not authenticated' };
     }
 
     const rawData = {
-        first_name: formData.get("first_name"),
-        last_name: formData.get("last_name"),
-        pokemon_player_id: formData.get("pokemon_player_id"),
-        birth_year: formData.get("birth_year"),
+        first_name: formData.get('first_name'),
+        last_name: formData.get('last_name'),
+        pokemon_player_id: formData.get('pokemon_player_id'),
+        birth_year: formData.get('birth_year'),
     };
 
-    const result = profileSchema.safeParse(rawData);
+    const validatedFields = onboardingSchema.safeParse(rawData);
 
-    if (!result.success) {
-        return { errors: result.error.flatten().fieldErrors };
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Missing Fields. Failed to Complete Onboarding.',
+        };
     }
 
-    const { first_name, last_name, pokemon_player_id, birth_year } = result.data;
+    const { first_name, last_name, pokemon_player_id, birth_year } = validatedFields.data;
+
+    // Validate Birth Year Range
+    if (birth_year < 1950 || birth_year > 2020) {
+        return {
+            errors: { birth_year: ['Birth year must be between 1950 and 2020'] },
+            message: 'Invalid Birth Year',
+        }
+    }
 
     const { error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
             first_name,
             last_name,
             pokemon_player_id,
             birth_year,
-            // updated_at: new Date().toISOString(), 
         })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
     if (error) {
-        console.error("Profile update error:", error);
-        return { errors: { server: ["Failed to update profile. Player ID might be taken."] } };
+        console.error('Error updating profile:', error);
+        return { message: 'Database Error: Failed to update profile.' };
     }
 
-    revalidatePath("/", "layout");
-    redirect("/");
+    revalidatePath('/', 'layout');
+    redirect('/');
 }

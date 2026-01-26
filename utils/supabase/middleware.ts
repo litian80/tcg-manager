@@ -67,5 +67,20 @@ export async function updateSession(request: NextRequest) {
         }
     }
 
+    // MANDATORY ONBOARDING GATE
+    if (user && !request.nextUrl.pathname.startsWith('/onboarding') && !request.nextUrl.pathname.startsWith('/auth') && !request.nextUrl.pathname.startsWith('/login')) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, pokemon_player_id, birth_year')
+            .eq('id', user.id)
+            .single();
+
+        if (!profile?.first_name || !profile?.last_name || !profile?.pokemon_player_id || !profile?.birth_year) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/onboarding'
+            return NextResponse.redirect(url)
+        }
+    }
+
     return supabaseResponse
 }
