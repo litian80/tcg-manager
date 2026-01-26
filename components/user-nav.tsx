@@ -108,6 +108,16 @@ export function UserNav({ user }: UserNavProps) {
                         <DropdownMenuSeparator />
                     </>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Help</DropdownMenuLabel>
+                {canUploadTom && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/help/organizer" className="w-full cursor-pointer">
+                            Organizer Manuals
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link href="/profile" className="w-full cursor-pointer">
                         Profile
