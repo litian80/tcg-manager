@@ -68,12 +68,12 @@ export default function OnboardingPage() {
                 <form action={formAction}>
                     <CardContent className="space-y-4">
                         {/* Global Error */}
-                        {state?.error?.server && (
+                        {state?.errors?.server && (
                             <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertTitle>Error</AlertTitle>
                                 <AlertDescription>
-                                    {state.error.server[0]}
+                                    {state.errors.server[0]}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -89,7 +89,7 @@ export default function OnboardingPage() {
                                     onChange={e => setFirstName(e.target.value)}
                                     required
                                 />
-                                {state?.error?.first_name && <p className="text-xs text-red-500">{state.error.first_name[0]}</p>}
+                                {state?.errors?.first_name && <p className="text-xs text-red-500">{state.errors.first_name[0]}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="last_name">Last Name</Label>
@@ -101,7 +101,7 @@ export default function OnboardingPage() {
                                     onChange={e => setLastName(e.target.value)}
                                     required
                                 />
-                                {state?.error?.last_name && <p className="text-xs text-red-500">{state.error.last_name[0]}</p>}
+                                {state?.errors?.last_name && <p className="text-xs text-red-500">{state.errors.last_name[0]}</p>}
                             </div>
                         </div>
 
@@ -113,7 +113,7 @@ export default function OnboardingPage() {
                                 placeholder="1234567"
                                 required
                             />
-                            {state?.error?.pokemon_player_id && <p className="text-xs text-red-500">{state.error.pokemon_player_id[0]}</p>}
+                            {state?.errors?.pokemon_player_id && <p className="text-xs text-red-500">{state.errors.pokemon_player_id[0]}</p>}
                             <p className="text-[10px] text-muted-foreground">This is your official Play! Pokemon ID.</p>
                         </div>
 
@@ -131,7 +131,7 @@ export default function OnboardingPage() {
                                     <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
-                            {state?.error?.birth_year && <p className="text-xs text-red-500">{state.error.birth_year[0]}</p>}
+                            {state?.errors?.birth_year && <p className="text-xs text-red-500">{state.errors.birth_year[0]}</p>}
                         </div>
                     </CardContent>
                     <CardFooter>

@@ -12,7 +12,17 @@ const profileSchema = z.object({
     birth_year: z.coerce.number().int().min(1900).max(new Date().getFullYear() - 3, "Must be at least 3 years old"),
 });
 
-export async function completeProfile(prevState: any, formData: FormData) {
+type State = {
+    errors?: {
+        first_name?: string[];
+        last_name?: string[];
+        pokemon_player_id?: string[];
+        birth_year?: string[];
+        server?: string[];
+    };
+};
+
+export async function completeProfile(prevState: any, formData: FormData): Promise<State> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
