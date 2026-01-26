@@ -14,13 +14,27 @@ interface MatchCardProps {
     match: Match;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
     canEdit?: boolean;
+    myPlayerId?: string;
 }
 
-export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
+export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps) {
     const isFinished = match.is_finished;
     const winnerId = match.winner_tom_id;
     const p1Id = match.player1_tom_id;
     const p2Id = match.player2_tom_id;
+
+    // Is this my match?
+    const isMe = (p1Id === myPlayerId || p2Id === myPlayerId);
+
+    // Auto-scroll effect
+    useEffect(() => {
+        if (isMe) {
+            const element = document.getElementById("current-user-row");
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+    }, [isMe]);
 
     // Easter Egg Logic
     const [myTomId, setMyTomId] = useState<string | null>(null);
@@ -75,12 +89,15 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
 
     // Determine styles based on result
     const getPlayerStyle = (playerId: string | undefined, otherPlayerId: string | undefined) => {
+        const isSelf = playerId === myPlayerId;
+        const baseClass = isSelf ? "font-bold text-foreground" : "text-foreground";
+
         // Unfinished matches: Use standard text (High Contrast)
-        if (!isFinished) return "text-foreground font-bold";
+        if (!isFinished) return isSelf ? "text-foreground font-black" : "text-foreground font-medium";
 
         if (isTie) {
             // Draw: Gray / Muted (Opacity 0.6)
-            return "text-muted-foreground opacity-60";
+            return isSelf ? "text-muted-foreground font-bold" : "text-muted-foreground opacity-60";
         }
 
         if (winnerId === playerId) {
@@ -90,10 +107,10 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
 
         if (winnerId === otherPlayerId) {
             // Loser: Dimmed text
-            return "text-muted-foreground opacity-60";
+            return isSelf ? "text-muted-foreground font-semibold" : "text-muted-foreground opacity-60";
         }
 
-        return "text-foreground";
+        return baseClass;
     };
 
     const p1Style = getPlayerStyle(p1Id, p2Id);
@@ -121,7 +138,13 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
     };
 
     return (
-        <div className="grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 border-b py-2 px-4 hover:bg-muted/50 transition-colors">
+        <div
+            id={isMe ? "current-user-row" : undefined}
+            className={cn(
+                "grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 border-b py-2 px-4 transition-colors",
+                isMe ? "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500 pl-3" : "hover:bg-muted/50"
+            )}
+        >
             {/* Table Number */}
             <div className="font-bold text-center text-muted-foreground text-lg">
                 {match.table_number}
@@ -178,10 +201,6 @@ export function MatchCard({ match, stats, canEdit }: MatchCardProps) {
                     p1Id={p1Id || ""}
                     p2Id={p2Id || ""}
                     startPlayerId={match.outcome === 1 ? match.player2_tom_id! : (match.outcome === 2 ? match.player1_tom_id! : (match.player1_tom_id!))}
-                    // Outcome 1 = P1 Win (so P2 starts), Outcome 2 = P2 Win (so P1 starts). Default P1.
-                    // Assuming match.outcome 1 is P1 win, 2 is P2 win. 
-                    // Wait, match.winner_tom_id is safer.
-                    // If winner == p1, start = p2. If winner == p2, start = p1.
                     gameData={gameData}
                 />
             )}

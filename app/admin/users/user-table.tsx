@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { searchUsers, adminUpdateUser } from './actions'
+import { deleteUser } from './delete-user'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,9 +20,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Pencil } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { RoleSelect } from './role-select'
 import { useDebounce } from '@/hooks/use-debounce'
 
@@ -49,6 +60,8 @@ export default function UserTable() {
     const [loading, setLoading] = useState(false)
     const [editingUser, setEditingUser] = useState<any>(null)
     const [open, setOpen] = useState(false)
+    const [deleteUserOpen, setDeleteUserOpen] = useState(false)
+    const [userToDelete, setUserToDelete] = useState<any>(null)
 
     // Form State
     const [pid, setPid] = useState('')
@@ -91,6 +104,26 @@ export default function UserTable() {
             fetchUsers(debouncedSearch) // Refresh list
         } catch (err: any) {
             toast.error(err.message || "Failed to update user")
+        }
+    }
+
+    const handleDeleteClick = (user: any) => {
+        setUserToDelete(user)
+        setDeleteUserOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
+
+        try {
+            await deleteUser(userToDelete.id)
+            toast.success("User deleted successfully")
+            setDeleteUserOpen(false)
+            setUserToDelete(null)
+            fetchUsers(debouncedSearch) // Refresh list
+        } catch (err: any) {
+            console.error(err)
+            toast.error(err.message || "Failed to delete user")
         }
     }
 
@@ -137,9 +170,19 @@ export default function UserTable() {
                                 </TableCell>
                                 <TableCell>{user.pokemon_player_id || '-'}</TableCell>
                                 <TableCell>{user.birth_year || '-'}</TableCell>
-                                <TableCell>
+                                <TableCell className="flex gap-2">
                                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
                                         <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Edit user</span>
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => handleDeleteClick(user)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Delete user</span>
                                     </Button>
                                 </TableCell>
                             </TableRow>
@@ -179,6 +222,28 @@ export default function UserTable() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={deleteUserOpen} onOpenChange={setDeleteUserOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the user
+                            <span className="font-semibold text-foreground"> {userToDelete?.first_name} {userToDelete?.last_name} </span>
+                            and remove their data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                        >
+                            Delete Account
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

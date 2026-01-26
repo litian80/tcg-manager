@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Table,
@@ -30,12 +31,26 @@ interface Standing {
 
 interface StandingsViewProps {
     tournamentId: string;
+    myPlayerId?: string;
 }
 
-export function StandingsView({ tournamentId }: StandingsViewProps) {
+export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) {
     const [standings, setStandings] = useState<Standing[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<string>("Master");
+
+    // Auto-scroll effect
+    useEffect(() => {
+        if (!loading && standings.length > 0 && myPlayerId) {
+            // Tiny timeout to ensure DOM is ready after rendering
+            setTimeout(() => {
+                const element = document.getElementById("current-user-standing-row");
+                if (element) {
+                    element.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 100);
+        }
+    }, [loading, standings, myPlayerId]);
 
     useEffect(() => {
         const fetchStandings = async () => {
@@ -50,7 +65,7 @@ export function StandingsView({ tournamentId }: StandingsViewProps) {
                     losses,
                     ties,
                     points,
-                    player:players(first_name, last_name)
+                    player:players(first_name, last_name, tom_player_id)
                 `)
                 .eq('tournament_id', tournamentId)
                 .not('rank', 'is', null) // Only show players with a rank
@@ -82,11 +97,6 @@ export function StandingsView({ tournamentId }: StandingsViewProps) {
     const hasSeniors = divisions.Senior.length > 0;
     const hasMasters = divisions.Master.length > 0;
 
-    // Determine default tab if currently active one is empty
-    // (Managed by Tabs component logic usually, but good to be safe)
-
-    // Sort logic within groups is already handled by SQL .order('rank')
-
     return (
         <Card className="w-full">
             <CardContent className="p-6">
@@ -116,29 +126,38 @@ export function StandingsView({ tournamentId }: StandingsViewProps) {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            players.map((s) => (
-                                                <TableRow key={s.player_id}>
-                                                    <TableCell className="font-medium">
-                                                        <div className="flex items-center gap-2">
-                                                            {s.rank === 1 && <Trophy className="h-4 w-4 text-yellow-500" />}
-                                                            {s.rank}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="font-semibold">
-                                                            {s.player?.first_name} {s.player?.last_name}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="font-mono">
-                                                            {s.wins}-{s.losses}-{s.ties}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {s.points} pts
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
+                                            players.map((s) => {
+                                                const isMe = myPlayerId && s.player && (s.player as any).tom_player_id === myPlayerId;
+                                                return (
+                                                    <TableRow
+                                                        key={s.player_id}
+                                                        id={isMe ? "current-user-standing-row" : undefined}
+                                                        className={cn(
+                                                            isMe && "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500"
+                                                        )}
+                                                    >
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-2">
+                                                                {s.rank === 1 && <Trophy className="h-4 w-4 text-yellow-500" />}
+                                                                {s.rank}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className={cn("font-semibold", isMe && "font-black")}>
+                                                                {s.player?.first_name} {s.player?.last_name}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="font-mono">
+                                                                {s.wins}-{s.losses}-{s.ties}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {s.points} pts
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
                                         )}
                                     </TableBody>
                                 </Table>

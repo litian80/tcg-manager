@@ -58,6 +58,7 @@ interface TournamentViewProps {
     userRole?: Role;
     canManageStaff: boolean;
     rosterPlayers?: RosterPlayer[];
+    myPlayerId?: string;
 }
 
 export default function TournamentView({
@@ -68,6 +69,7 @@ export default function TournamentView({
     userRole,
     canManageStaff,
     rosterPlayers = [],
+    myPlayerId,
 }: TournamentViewProps) {
     const canEditMatch = hasPermission(userRole, 'match.edit_result');
     const [searchQuery, setSearchQuery] = useState("");
@@ -223,7 +225,7 @@ export default function TournamentView({
                     <>
                         {viewMode === 'standings' ? (
                             <div className="p-4">
-                                <StandingsView tournamentId={tournament.id} />
+                                <StandingsView tournamentId={tournament.id} myPlayerId={myPlayerId} />
                             </div>
                         ) : (
                             <>
@@ -289,6 +291,7 @@ export default function TournamentView({
                                                                 match={match}
                                                                 stats={stats}
                                                                 canEdit={canEditMatch}
+                                                                myPlayerId={myPlayerId}
                                                             />
                                                         ))}
                                                     </div>

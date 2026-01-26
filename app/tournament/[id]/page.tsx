@@ -156,6 +156,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 userRole={userRole}
                 canManageStaff={canManageStaff}
                 rosterPlayers={rosterPlayers}
+                myPlayerId={profile?.pokemon_player_id}
             />
         </>
     );
