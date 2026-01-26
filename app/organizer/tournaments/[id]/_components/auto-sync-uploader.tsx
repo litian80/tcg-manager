@@ -8,6 +8,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+declare global {
+    interface Window {
+        showOpenFilePicker: (options?: any) => Promise<FileSystemFileHandle[]>;
+    }
+}
+
 interface AutoSyncUploaderProps {
     tournamentId?: string;
     isPublished?: boolean;
