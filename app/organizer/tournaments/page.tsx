@@ -40,16 +40,13 @@ export default async function OrganizerTournamentsListPage() {
         .order("date", { ascending: false });
 
     if (profile.role !== 'admin') {
-        // If not admin, restrict to own tournaments
-        // Logic: organizer_id = user.id OR organizer_popid = profile.pokemon_player_id
-        // Supabase OR syntax: .or(`organizer_id.eq.${user.id},organizer_popid.eq.${profile.pokemon_player_id}`)
-        // Note: organizer_popid might be null in DB or profile.
-
-        const conditions = [`organizer_id.eq.${user.id}`];
+        // If not admin, restrict to own tournaments via POP ID
         if (profile.pokemon_player_id) {
-            conditions.push(`organizer_popid.eq.${profile.pokemon_player_id}`);
+            query = query.eq('organizer_popid', profile.pokemon_player_id);
+        } else {
+            // Use a dummy ID ensuring no results are returned if user has no POP ID
+            query = query.eq('organizer_popid', 'NO_POP_ID_ASSIGNED');
         }
-        query = query.or(conditions.join(','));
     }
 
     const { data: tournaments, error } = await query;

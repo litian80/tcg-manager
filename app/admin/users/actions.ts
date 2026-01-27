@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function searchUsers(query: string) {
@@ -71,7 +72,9 @@ export async function adminUpdateUser(targetUserId: string, payload: UpdatePaylo
 
     // 2. Perform Update
     // Note: Database trigger 'check_sensitive_updates' allows admins to modify these fields.
-    const { error } = await supabase
+    // Use Admin Client to bypass RLS policies that restrict updates to "own profile only"
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
         .from('profiles')
         .update({
             pokemon_player_id: payload.pokemon_player_id || null,
@@ -125,7 +128,9 @@ export async function updateUserRole(targetUserId: string, newRole: AppRole) {
     }
 
     // 4. Operation
-    const { error: updateError } = await supabase
+    // Use Admin Client to bypass RLS
+    const adminSupabase = createAdminClient()
+    const { error: updateError } = await adminSupabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', targetUserId)
