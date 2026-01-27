@@ -30,11 +30,20 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
     }
 
     // Authorization check
-    if (tournament.organizer_id !== user.id) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'admin') {
-            redirect("/"); // unauthorized
+    let isAuthorized = tournament.organizer_id === user.id;
+
+    if (!isAuthorized) {
+        const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
+        
+        if (profile?.role === 'admin') {
+            isAuthorized = true;
+        } else if (tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid) {
+            isAuthorized = true;
         }
+    }
+
+    if (!isAuthorized) {
+        redirect("/"); // unauthorized
     }
 
     // Check if tournament has matches (Active/Imported from TOM)
