@@ -114,7 +114,7 @@ export function StaffManager({ tournamentId, judges }: StaffManagerProps) {
                                             className="flex items-center gap-2 cursor-pointer"
                                         >
                                             <Avatar className="h-6 w-6">
-                                                <AvatarImage src={user.avatar_url || ""} />
+                                                <AvatarImage src={""} />
                                                 <AvatarFallback>{(user.display_name || "?")[0]}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col">
@@ -150,7 +150,7 @@ export function StaffManager({ tournamentId, judges }: StaffManagerProps) {
                             <div key={judge.id} className="flex items-center justify-between p-4">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={judge.avatar_url || ""} />
+                                        <AvatarImage src={""} />
                                         <AvatarFallback>{(judge.display_name || "?")[0]}</AvatarFallback>
                                     </Avatar>
                                     <div>

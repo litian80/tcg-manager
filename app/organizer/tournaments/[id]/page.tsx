@@ -5,8 +5,11 @@ import { ArrowLeft, AlertTriangle, Printer } from "lucide-react";
 import { TournamentSettingsForm } from "./_components/tournament-settings-form";
 import { TdfExportCard } from "./_components/tdf-export-card";
 import { RosterManager } from "./_components/roster-manager";
+import { Role } from "@/lib/rbac";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AutoSyncUploader } from "./_components/auto-sync-uploader";
+import { StaffManager } from "@/components/tournament/staff-manager";
+import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
 
 export default async function OrganizerTournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -34,7 +37,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
 
     if (!isAuthorized) {
         const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
-        
+
         if (profile?.role === 'admin') {
             isAuthorized = true;
         } else if (tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid) {
@@ -73,6 +76,42 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         birth_year: tp.players.birth_year || null // Assuming players might have it? No, players table likely doesn't. 
         // We will just omit it for the list view if valid.
     })) || [];
+
+    // Fetch Current Judges
+    const { data: judgeLinks, error: judgeLinkError } = await supabase
+        .from('tournament_judges')
+        .select('user_id')
+        .eq('tournament_id', id);
+
+    console.log('--- DEBUG JUDGE FETCH ---');
+    console.log('User ID:', user.id);
+    console.log('Organizer ID (from tournament):', tournament.organizer_id);
+    console.log('Organizer POP ID:', tournament.organizer_popid);
+    if (judgeLinkError) console.error('Judge Link Error:', judgeLinkError);
+    console.log('Judge Links Found:', judgeLinks?.length, judgeLinks);
+
+    let judges: any[] = [];
+
+    if (judgeLinks && judgeLinks.length > 0) {
+        const judgeIds = judgeLinks.map(j => j.user_id);
+        const { data: profiles, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, email, first_name, last_name, nick_name, pokemon_player_id, role')
+            .in('id', judgeIds);
+
+        if (profileError) console.error('Profile Fetch Error:', profileError);
+        console.log('Profiles Found:', profiles?.length, profiles);
+
+        judges = profiles?.map(p => ({
+            id: p.id,
+            email: p.email,
+            display_name: p.nick_name
+                ? `${p.first_name} ${p.last_name} (${p.nick_name})`
+                : `${p.first_name} ${p.last_name}`,
+            role: p.role as Role,
+            pokemon_player_id: p.pokemon_player_id
+        })) || [];
+    }
 
     return (
         <div className="container max-w-4xl py-8 space-y-8">
@@ -117,8 +156,12 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                                 <TdfExportCard tournament={tournament} />
                             </div>
                         </div>
-                        <div className="opacity-50 pointer-events-none grayscale">
-                            <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+                        <div className="space-y-6">
+                            <div className="opacity-50 pointer-events-none grayscale">
+                                <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+                            </div>
+                            <StaffManager tournamentId={tournament.id} judges={judges} />
+                            <ExportPenaltyCard tournamentId={tournament.id} />
                         </div>
                     </div>
                 </div>
@@ -132,8 +175,10 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                         </div>
                         <TdfExportCard tournament={tournament} />
                     </div>
-                    <div>
+                    <div className="space-y-6">
                         <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+                        <StaffManager tournamentId={tournament.id} judges={judges} />
+                        <ExportPenaltyCard tournamentId={tournament.id} />
                     </div>
                 </div>
             )}

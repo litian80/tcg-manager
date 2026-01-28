@@ -145,6 +145,24 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     }
 
+    // 4. Fetch Penalty Counts (For Judges)
+    // We fetch all penalties for this tournament and aggregate by player_id
+    let penaltyCounts: Record<string, number> = {};
+    if (userRole === 'judge' || canManageStaff) { // Only fetch for staff
+        const { data: penalties, error: penaltyError } = await supabase
+            .from('player_penalties')
+            .select('player_id')
+            .eq('tournament_id', id);
+
+        if (penaltyError) {
+            console.error("Error fetching penalties:", penaltyError);
+        } else if (penalties) {
+            penalties.forEach((p: { player_id: string }) => {
+                penaltyCounts[p.player_id] = (penaltyCounts[p.player_id] || 0) + 1;
+            });
+        }
+    }
+
     return (
         <>
             <RealtimeListener tournamentId={id} />
@@ -157,6 +175,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 canManageStaff={canManageStaff}
                 rosterPlayers={rosterPlayers}
                 myPlayerId={profile?.pokemon_player_id}
+                penaltyCounts={penaltyCounts}
             />
         </>
     );

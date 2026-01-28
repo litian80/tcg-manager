@@ -9,7 +9,6 @@ export type UserResult = {
     id: string;
     email: string | null;
     display_name: string | null;
-    avatar_url: string | null;
     pokemon_player_id: string | null;
     role: Role;
 };
@@ -102,7 +101,6 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
             id: user.id,
             email: user.email,
             display_name: displayName, // Synthesized field
-            avatar_url: null, // Removed from schema
             pokemon_player_id: user.pokemon_player_id,
             role: user.role
         };
@@ -197,6 +195,7 @@ export async function addJudge(tournamentId: string, targetUserId: string) {
     }
 
     revalidatePath(`/tournament/${tournamentId}`);
+    revalidatePath(`/organizer/tournaments/${tournamentId}`);
     return { success: true };
 }
 
@@ -230,5 +229,6 @@ export async function removeJudge(tournamentId: string, targetUserId: string) {
     // "This deletes the link... but does NOT revert the user's global role" - Done (we only delete link)
 
     revalidatePath(`/tournament/${tournamentId}`);
+    revalidatePath(`/organizer/tournaments/${tournamentId}`);
     return { success: true };
 }

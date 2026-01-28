@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Check, Handshake } from "lucide-react";
+import { Check, Handshake, Gavel, Search } from "lucide-react";
 import { type Match } from "@/app/tournament/[id]/tournament-view";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -15,9 +15,14 @@ interface MatchCardProps {
     stats: Record<string, { wins: number; losses: number; ties: number }>;
     canEdit?: boolean;
     myPlayerId?: string;
+    isJudge?: boolean;
+    onPenalty?: (player: { id: string; name: string; tomId: string }) => void;
+    onDeckCheck?: (player: { id: string; name: string; tomId: string }) => void;
+    p1Penalties?: number;
+    p2Penalties?: number;
 }
 
-export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps) {
+export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPenalty, onDeckCheck, p1Penalties = 0, p2Penalties = 0 }: MatchCardProps) {
     const isFinished = match.is_finished;
     const winnerId = match.winner_tom_id;
     const p1Id = match.player1_tom_id;
@@ -117,22 +122,48 @@ export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps)
     const p2Style = getPlayerStyle(p2Id, p1Id);
 
     // Helper to render player block
-    const renderPlayerBlock = (player: typeof match.p1, tomId: string | undefined, record: string | undefined, styleClass: string) => {
+    const renderPlayerBlock = (player: typeof match.p1, tomId: string | undefined, record: string | undefined, styleClass: string, penalties: number = 0) => {
         if (!player) return <span className="text-muted-foreground italic">Bye</span>;
 
         const isTarget = isFinished && isMyOpponent(tomId);
 
         return (
-            <div
-                className={cn("flex flex-col items-start justify-center min-w-0 select-none", styleClass, isTarget && "cursor-pointer active:scale-95 transition-transform")} // Added cursor/active for feedback logic
-                onClick={isTarget ? (e) => { e.preventDefault(); triggerSecret(); } : undefined}
-            >
-                <span className="truncate text-base leading-tight">
-                    {player.first_name} {player.last_name}
-                </span>
-                <span className="text-xs text-muted-foreground font-mono truncate">
-                    {record || "0-0-0"}
-                </span>
+            <div className="flex items-center gap-2 max-w-full">
+                <div
+                    className={cn("flex flex-col items-start justify-center min-w-0 select-none flex-1", styleClass, isTarget && "cursor-pointer active:scale-95 transition-transform")} // Added cursor/active for feedback logic
+                    onClick={isTarget ? (e) => { e.preventDefault(); triggerSecret(); } : undefined}
+                >
+                    <span className="truncate text-base leading-tight">
+                        {player.first_name} {player.last_name}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-mono truncate">
+                        {record || "0-0-0"}
+                    </span>
+                    {penalties > 0 && (
+                        <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200">
+                            {penalties} Penalty
+                        </span>
+                    )}
+                </div>
+
+                {canEdit && isJudge && tomId && onPenalty && onDeckCheck && (
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            title="Add Penalty"
+                            onClick={(e) => { e.stopPropagation(); onPenalty({ id: tomId, name: `${player.first_name} ${player.last_name}`, tomId }); }}
+                            className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded"
+                        >
+                            <Gavel className="w-3 h-3" />
+                        </button>
+                        <button
+                            title="Deck Check"
+                            onClick={(e) => { e.stopPropagation(); onDeckCheck({ id: tomId, name: `${player.first_name} ${player.last_name}`, tomId }); }}
+                            className="p-1 hover:bg-blue-500/10 text-muted-foreground hover:text-blue-500 rounded"
+                        >
+                            <Search className="w-3 h-3" />
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -141,7 +172,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps)
         <div
             id={isMe ? "current-user-row" : undefined}
             className={cn(
-                "grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 border-b py-2 px-4 transition-colors",
+                "grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 border-b py-2 px-4 transition-colors group",
                 isMe ? "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500 pl-3" : "hover:bg-muted/50"
             )}
         >
@@ -152,7 +183,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps)
 
             {/* Player 1 - STRICT LEFT ALIGN */}
             <div className="flex items-center gap-2 min-w-0 pr-2">
-                {renderPlayerBlock(match.p1, match.player1_tom_id, match.p1_display_record, p1Style)}
+                {renderPlayerBlock(match.p1, match.player1_tom_id, match.p1_display_record, p1Style, p1Penalties)}
                 {isFinished && winnerId === p1Id && !isTie && (
                     <Check className="w-4 h-4 text-green-500 shrink-0" />
                 )}
@@ -183,7 +214,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId }: MatchCardProps)
             <div className="flex items-center gap-2 min-w-0 pl-2">
                 {match.outcome !== 5 && (
                     <>
-                        {renderPlayerBlock(match.p2, match.player2_tom_id, match.p2_display_record, p2Style)}
+                        {renderPlayerBlock(match.p2, match.player2_tom_id, match.p2_display_record, p2Style, p2Penalties)}
                         {isFinished && winnerId === p2Id && !isTie && (
                             <Check className="w-4 h-4 text-green-500 shrink-0" />
                         )}

@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { MatchCard } from "@/components/tournament/match-card";
 import { StandingsView } from "@/components/tournament/standings-view";
 import { PlayerRoster } from "@/components/tournament/player-roster";
+import { PenaltyModal } from "@/components/judge/penalty-modal";
+import { addDeckCheck } from "@/actions/judge";
+import { toast } from "sonner";
 
 export interface Player {
     first_name: string;
@@ -59,6 +62,7 @@ interface TournamentViewProps {
     canManageStaff: boolean;
     rosterPlayers?: RosterPlayer[];
     myPlayerId?: string;
+    penaltyCounts?: Record<string, number>;
 }
 
 export default function TournamentView({
@@ -70,6 +74,7 @@ export default function TournamentView({
     canManageStaff,
     rosterPlayers = [],
     myPlayerId,
+    penaltyCounts = {},
 }: TournamentViewProps) {
     const canEditMatch = hasPermission(userRole, 'match.edit_result');
     const [searchQuery, setSearchQuery] = useState("");
@@ -114,6 +119,18 @@ export default function TournamentView({
     };
 
     const [viewMode, setViewMode] = useState<'pairings' | 'standings'>('pairings');
+
+    // Judge Actions Logic
+    const isJudge = hasPermission(userRole, 'match.edit_result');
+    const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string; tomId: string } | null>(null);
+
+    const onPenalty = (player: { id: string; name: string; tomId: string }) => {
+        setSelectedPlayer(player);
+        setPenaltyModalOpen(true);
+    };
+
+    const { addDeckCheck } = require("@/actions/judge");
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -292,6 +309,28 @@ export default function TournamentView({
                                                                 stats={stats}
                                                                 canEdit={canEditMatch}
                                                                 myPlayerId={myPlayerId}
+                                                                isJudge={isJudge} // Pass Judge Status
+                                                                onPenalty={(player) => {
+                                                                    setSelectedPlayer(player);
+                                                                    setPenaltyModalOpen(true);
+                                                                }}
+                                                                onDeckCheck={async (player) => {
+                                                                    const formData = new FormData();
+                                                                    formData.append("tournament_id", tournament.id);
+                                                                    formData.append("player_id", player.tomId);
+                                                                    formData.append("round_number", String(currentRound));
+
+                                                                    // Optional note logic could go here, or just basic log
+                                                                    const result = await addDeckCheck(formData);
+                                                                    if (result.error) {
+                                                                        toast.error(result.error);
+                                                                    } else {
+                                                                        toast.success("Deck check logged");
+                                                                    }
+                                                                }}
+
+                                                                p1Penalties={penaltyCounts[match.player1_tom_id || ""] || 0}
+                                                                p2Penalties={penaltyCounts[match.player2_tom_id || ""] || 0}
                                                             />
                                                         ))}
                                                     </div>
@@ -305,6 +344,37 @@ export default function TournamentView({
                     </>
                 )}
             </div>
+
+            {/* Penalty Modal */}
+            {selectedPlayer && (
+                <PenaltyModal
+                    isOpen={penaltyModalOpen}
+                    onClose={() => {
+                        setPenaltyModalOpen(false);
+                        setSelectedPlayer(null);
+                    }}
+                    tournamentId={tournament.id}
+                    playerId={selectedPlayer.tomId} // Using TOM ID as player identifier
+                    playerName={selectedPlayer.name}
+                    roundNumber={currentRound}
+                />
+            )}
+            {/* Penalty Modal */}
+            {selectedPlayer && (
+                <PenaltyModal
+                    isOpen={penaltyModalOpen}
+                    onClose={() => {
+                        setPenaltyModalOpen(false);
+                        setSelectedPlayer(null);
+                    }}
+                    tournamentId={tournament.id}
+                    playerId={selectedPlayer.tomId}
+                    playerName={selectedPlayer.name}
+                    roundNumber={currentRound}
+                />
+            )}
         </div>
     );
 }
+
+// I will actually use multi_replace to do this cleanly.
