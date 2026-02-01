@@ -1,0 +1,489 @@
+Path                                                                             | Mode                 | Stage | Type  | Name
+------------------------------------------------------------------------------------------------------------------------------------------------------
+2025 DG Nov Cup_25-11-024905.tdf                                                 | TCG1DAY              | 5     | 3     | 2025 DG Nov Cup
+2026 CMWC Jan Cup 26-01-004635.tdf                                               | TCG1DAY              | 5     | 3     | 2026 Card Merchant West City pre-SPC TCG Cup
+Challenge TEST_26-01-123456.tdf                                                  | LEAGUECHALLENGE      | 1     | 2     | Challenge TEST
+Completed2025 DG Nov Cup_25-11-024905.tdf                                        | TCG1DAY              | 5     | 3     | 2025 DG Nov Cup
+ewrq_11-11-111111.tdf                                                            | LEAGUECHALLENGE      | 4     | 2     | ewrq
+10-05-DG-TCG-Challenge_24-05-000940\10-05-DG-TCG-Challenge_24-05-000940_r1-      | LEAGUECHALLENGE      | 4     | 2     | 10-05-DG-TCG-Challenge
+10-05-DG-TCG-Challenge_24-05-000940\10-05-DG-TCG-Challenge_24-05-000940_r1-      | LEAGUECHALLENGE      | 4     | 2     | 10-05-DG-TCG-Challenge
+10-05-DG-TCG-Challenge_24-05-000940\10-05-DG-TCG-Challenge_24-05-000940_r2-      | LEAGUECHALLENGE      | 4     | 2     | 10-05-DG-TCG-Challenge
+10-05-DG-TCG-Challenge_24-05-000940\10-05-DG-TCG-Challenge_24-05-000940_r2-      | LEAGUECHALLENGE      | 4     | 2     | 10-05-DG-TCG-Challenge
+10-05-DG-TCG-Challenge_24-05-000940\10-05-DG-TCG-Challenge_24-05-000940_r3-      | LEAGUECHALLENGE      | 4     | 2     | 10-05-DG-TCG-Challenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+12-07-24JulyDiceChallenge_24-07-002387\12-07-24JulyDiceChallenge_24-07-0023      | LEAGUECHALLENGE      | 4     | 2     | 12-07-24JulyDiceChallenge
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r1-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r1-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r2-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r2-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r3-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r3-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r4-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r4-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r5-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r5-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r6-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r6-end.tdf         | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG March Cup_24-03-003871\2024 DG March Cup_24-03-003871_r7-begin.tdf       | TCG1DAY              | 4     | 3     | 2024 DG March Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2024 DG September League Cup_24-09-000811\2024 DG September League Cup_24-0      | TCG1DAY              | 4     | 3     | 2024 DG September League Cup
+2025\2025_r1-begin.tdf                                                           | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r1-end.tdf                                                             | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r2-begin.tdf                                                           | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r2-end.tdf                                                             | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r3-begin.tdf                                                           | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r3-end.tdf                                                             | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\2025_r4-begin.tdf                                                           | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAprilTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallengeCompleted_25-05-002887.tdf              | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887.tdf                       | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChal      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMayTCGChallenge
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r0-start.tdf           | TCG1DAY              | 3     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r1-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r1-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r2-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r2-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r3-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r3-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r4-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r4-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r5-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r5-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r6-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r6-end.tdf             | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r7-begin.tdf           | TCG1DAY              | 4     | 3     | 2025 DG Nov Cup
+2025EventsPokemon\CompletedDGDecLeagueCHallenge2025_25-12-001403.tdf             | LEAGUECHALLENGE      | 5     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\CompletedLeaugechallengeSeptember.tdf                          | LEAGUECHALLENGE      | 5     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\CupEvents.tdf                                                  | TCG1DAY              | 5     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403.tdf                      | LEAGUECHALLENGE      | 5     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283.tdf                  | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallengeCopleted_25-02-000981.tdf        | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981.tdf                | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025Completed_25-01-001822.t      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822.tdf             | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinMarchTCGChallengeCompleted_25-03-000800.tdf          | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800.tdf                   | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904.tdf                        | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallengeCompleted_25-10-004973.tdf        | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973.tdf                 | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\LeaugechallengeSeptember.tdf                                   | LEAGUECHALLENGE      | 5     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\CupEvents\CupEvents_r1-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r1-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r2-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r2-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r3-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r3-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r4-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r4-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r5-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r5-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r6-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r6-end.tdf                                 | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\CupEvents_r7-begin.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinAprilTCGCup2025
+2025EventsPokemon\CupEvents\November1q'\DGNovemberCup_25-11-024905.tdf           | TCG1DAY              | 1     | 2     | DGNovemberCup
+2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025.tdf                      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinAprilTCGChallenge
+2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025Completed.tdf             | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinAprilTCGChallenge
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 3     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 4     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 4     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 4     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 4     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHalleng      | LEAGUECHALLENGE      | 4     | 2     | DGDecLeagueCHallenge2025
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJULYTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 3     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUS      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinAUGUSTTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981\DiceGoblinFeb      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981\DiceGoblinFeb      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981\DiceGoblinFeb      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981\DiceGoblinFeb      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981\DiceGoblinFeb      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinFebruaryTCGChallenge
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822\DiceGoblin      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinJanuaryTCGChallenge2025
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800\DiceGoblinMarchT      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinMarchTCGChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 3     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChalleng      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 3     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTO      | LEAGUECHALLENGE      | 4     | 2     | DiceGoblinOCTOBERTCGChallenge
+2025EventsPokemon\Hallloween\CompletedPokeweenDGevent2_25-10-020686.tdf          | CUSTOM               | 5     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\DicegoblinPokeween EventCompleted_25-10-016648      | CUSTOM               | 5     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648.tdf           | CUSTOM               | 5     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686.tdf                   | CUSTOM               | 5     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 3     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\DicegoblinPokeween Event_25-10-016648\Dicegobl      | CUSTOM               | 4     | 2     | DicegoblinPokeween Event
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 3     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 4     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 4     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 4     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 4     | 2     | PokeweenDGevent2
+2025EventsPokemon\Hallloween\PokeweenDGevent2_25-10-020686\PokeweenDGevent2      | CUSTOM               | 4     | 2     | PokeweenDGevent2
+2025EventsPokemon\LeagueChallengeNov\CompletedDiceGoblinNovChallenge_25-11-      | LEAGUECHALLENGE      | 5     | 2     | DiceGoblinNovChallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r0-star      | LEAGUECHALLENGE      | 3     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r1-begi      | LEAGUECHALLENGE      | 4     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r1-end.      | LEAGUECHALLENGE      | 4     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r2-begi      | LEAGUECHALLENGE      | 4     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r2-end.      | LEAGUECHALLENGE      | 4     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r3-begi      | LEAGUECHALLENGE      | 4     | 2     | DGSeptemberLeageCHallenge
+2025EventsPokemon\Prereleases\DGME2PreReleasCompletede_25-11-015083.tdf          | PRERELEASE           | 5     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083.tdf                   | PRERELEASE           | 5     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029.t      | PRERELEASE           | 5     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 3     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 4     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 4     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 4     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 4     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\DGME2PreRelease_25-11-015083\DGME2PreRelease_      | PRERELEASE           | 5     | 2     | DGME2PreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\C      | PRERELEASE           | 5     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 3     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 4     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 4     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 4     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 4     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 4     | 2     | PokemonME2DicegoblinPreRelease
+2025EventsPokemon\Prereleases\PokemonME2DicegoblinPreRelease_25-11-006029\P      | PRERELEASE           | 5     | 2     | PokemonME2DicegoblinPreRelease
+2026\challenges\DGTCG26JanChallenge_26-01-003122.tdf                             | LEAGUECHALLENGE      | 5     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122copy.tdf                         | LEAGUECHALLENGE      | 5     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 3     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-      | LEAGUECHALLENGE      | 4     | 2     | DGTCG26JanChallenge
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560.tdf                               | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 3     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-0      | TCG1DAY              | 4     | 3     | DiceGoblinTCGCUPFEB2026
+2026\GLC\DGGLCCUP1stQuarter_26-01-019202.tdf                                     | CUSTOM               | 3     | 2     | DGGLCCUP1stQuarter
+24-01-DG-League-Challenge_24-02-000742\24-01-DG-League-Challenge_24-02-0007      | LEAGUECHALLENGE      | 4     | 2     | 24-01-DG-League-Challenge
+24-01-DG-League-Challenge_24-02-000742\24-01-DG-League-Challenge_24-02-0007      | LEAGUECHALLENGE      | 4     | 2     | 24-01-DG-League-Challenge
+24-01-DG-League-Challenge_24-02-000742\24-01-DG-League-Challenge_24-02-0007      | LEAGUECHALLENGE      | 4     | 2     | 24-01-DG-League-Challenge
+24-01-DG-League-Challenge_24-02-000742\24-01-DG-League-Challenge_24-02-0007      | LEAGUECHALLENGE      | 4     | 2     | 24-01-DG-League-Challenge
+24-01-DG-League-Challenge_24-02-000742\24-01-DG-League-Challenge_24-02-0007      | LEAGUECHALLENGE      | 4     | 2     | 24-01-DG-League-Challenge
+24-03-DG-TCG-Challenge_24-03-000814\24-03-DG-TCG-Challenge_24-03-000814_r1-      | LEAGUECHALLENGE      | 4     | 2     | 24-03-DG-TCG-Challenge
+24-03-DG-TCG-Challenge_24-03-000814\24-03-DG-TCG-Challenge_24-03-000814_r1-      | LEAGUECHALLENGE      | 4     | 2     | 24-03-DG-TCG-Challenge
+24-03-DG-TCG-Challenge_24-03-000814\24-03-DG-TCG-Challenge_24-03-000814_r2-      | LEAGUECHALLENGE      | 4     | 2     | 24-03-DG-TCG-Challenge
+24-03-DG-TCG-Challenge_24-03-000814\24-03-DG-TCG-Challenge_24-03-000814_r2-      | LEAGUECHALLENGE      | 4     | 2     | 24-03-DG-TCG-Challenge
+24-03-DG-TCG-Challenge_24-03-000814\24-03-DG-TCG-Challenge_24-03-000814_r3-      | LEAGUECHALLENGE      | 4     | 2     | 24-03-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r1-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r1-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r2-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r2-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r3-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r3-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-Challenge_24-04-001696\24-04-DG-TCG-Challenge_24-04-001696_r4-      | LEAGUECHALLENGE      | 4     | 2     | 24-04-DG-TCG-Challenge
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r1-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r1-end.tdf           | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r2-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r2-end.tdf           | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r3-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r3-end.tdf           | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r4-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r4-end.tdf           | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r5-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r5-end.tdf           | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+24-04-DG-TCG-CUP_24-04-001698\24-04-DG-TCG-CUP_24-04-001698_r6-begin.tdf         | TCG1DAY              | 4     | 3     | 24-04-DG-TCG-CUP
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 4     | 2     | Destined Rivals Prerelease
+Destined Rivals Prerelease_25-05-011466\Destined Rivals Prerelease_25-05-01      | PRERELEASE           | 5     | 2     | Destined Rivals Prerelease
+dhjd_14-15-251554\dhjd_14-15-251554_r1-begin.tdf                                 | PRERELEASE           | 4     | 2     | dhjd
+dhjd_14-15-251554\dhjd_14-15-251554_r1-end.tdf                                   | PRERELEASE           | 4     | 2     | dhjd
+dhjd_14-15-251554\dhjd_14-15-251554_r2-begin.tdf                                 | PRERELEASE           | 4     | 2     | dhjd
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin August League Challenge_23-08-002173\Dice Goblin August League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin August League Challenge
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Cup October_23-10-001591\Dice Goblin Cup October_23-10-001591_r      | TCG1DAY              | 4     | 3     | Dice Goblin Cup October
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec League Challenge - TCG_23-12-004528\Dice Goblin Dec League       | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin Dec League Challenge - TCG
+Dice Goblin Dec PC VGC_23-12-004530\Dice Goblin Dec PC VGC_23-12-004530_r1-      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec PC VGC
+Dice Goblin Dec PC VGC_23-12-004530\Dice Goblin Dec PC VGC_23-12-004530_r1-      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec PC VGC
+Dice Goblin Dec PC VGC_23-12-004530\Dice Goblin Dec PC VGC_23-12-004530_r2-      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec PC VGC
+Dice Goblin Dec PC VGC_23-12-004530\Dice Goblin Dec PC VGC_23-12-004530_r2-      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec PC VGC
+Dice Goblin Dec PC VGC_23-12-004530\Dice Goblin Dec PC VGC_23-12-004530_r3-      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec PC VGC
+Dice Goblin Dec Premier Challenge  - VGC_23-12-004529\Dice Goblin Dec Premi      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec Premier Challenge  - VGC
+Dice Goblin Dec Premier Challenge  - VGC_23-12-004529\Dice Goblin Dec Premi      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec Premier Challenge  - VGC
+Dice Goblin Dec Premier Challenge  - VGC_23-12-004529\Dice Goblin Dec Premi      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec Premier Challenge  - VGC
+Dice Goblin Dec Premier Challenge  - VGC_23-12-004529\Dice Goblin Dec Premi      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec Premier Challenge  - VGC
+Dice Goblin Dec Premier Challenge  - VGC_23-12-004529\Dice Goblin Dec Premi      | VGCPREMIER           | 4     | 3     | Dice Goblin Dec Premier Challenge  - VGC
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin January League Challenge_24-01-001657\Dice Goblin January Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin January League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin July League Challenge_23-07-003460\Dice Goblin July League Chal      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin July League Challenge
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin League Challenge June_23-06-005248\Dice Goblin League Challenge      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin League Challenge June
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin November Challenge_23-11-001362\Dice Goblin November Challenge_      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin November Challenge
+Dice Goblin October League Challenge_23-10-007153\Dice Goblin October Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin October League Challenge
+Dice Goblin October League Challenge_23-10-007153\Dice Goblin October Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin October League Challenge
+Dice Goblin October League Challenge_23-10-007153\Dice Goblin October Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin October League Challenge
+Dice Goblin October League Challenge_23-10-007153\Dice Goblin October Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin October League Challenge
+Dice Goblin October League Challenge_23-10-007153\Dice Goblin October Leagu      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin October League Challenge
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Paldea Evolved Saturday Prerelease_23-05-004392\Dice Goblin Pal      | PRERELEASE           | 4     | 2     | Dice Goblin Paldea Evolved Saturday Prerelease
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 4     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 4     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 4     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 4     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 4     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin Pre Release Twlight Masq_24-05-009673\Dice Goblin Pre Release T      | PRERELEASE           | 5     | 2     | Dice Goblin Pre Release Twlight Masq
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 4     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 5     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 5     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 5     | 3     | Dice Goblin September Cup
+Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-0004      | TCG1DAY              | 5     | 3     | Dice Goblin September Cup
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin September League Challenge_23-09-005451\Dice Goblin September L      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September League Challenge
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 4     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 4     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 4     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 4     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 4     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Obsidian Flames Midnight Prerelease_23-07-005099\Dice Goblin'      | PRERELEASE           | 5     | 2     | Dice Goblin's Obsidian Flames Midnight Prerelease
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 4     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 4     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 4     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 4     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 4     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+Dice Goblin's Sunday Prerelease Paldea Evolved_23-05-007422\Dice Goblin's S      | PRERELEASE           | 5     | 2     | Dice Goblin's Sunday Prerelease Paldea Evolved
+DicegoblinHobby_24-05-014522\DicegoblinHobby_24-05-014522_r1-begin.tdf           | CUSTOM               | 4     | 2     | DicegoblinHobby
+DicegoblinHobby_24-05-014522\DicegoblinHobby_24-05-014522_r1-end.tdf             | CUSTOM               | 4     | 2     | DicegoblinHobby
+DicegoblinHobby_24-05-014522\DicegoblinHobby_24-05-014522_r2-begin.tdf           | CUSTOM               | 4     | 2     | DicegoblinHobby
+DicegoblinHobby_24-05-014522\DicegoblinHobby_24-05-014522_r2-end.tdf             | CUSTOM               | 4     | 2     | DicegoblinHobby
+DicegoblinHobby_24-05-014522\DicegoblinHobby_24-05-014522_r3-begin.tdf           | CUSTOM               | 4     | 2     | DicegoblinHobby
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DIceGoblinLeagueChallengeAugust_24-08-001040\DIceGoblinLeagueChallengeAugus      | LEAGUECHALLENGE      | 4     | 2     | DIceGoblinLeagueChallengeAugust
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 4     | 2     | DicegoblinmidyearSpecial1
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 4     | 2     | DicegoblinmidyearSpecial1
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 4     | 2     | DicegoblinmidyearSpecial1
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 4     | 2     | DicegoblinmidyearSpecial1
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 4     | 2     | DicegoblinmidyearSpecial1
+DicegoblinmidyearSpecial1_25-06-016266\DicegoblinmidyearSpecial1_25-06-0162      | PRERELEASE           | 5     | 2     | DicegoblinmidyearSpecial1
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 4     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 4     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 4     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 4     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 4     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+DIceGoblinPreReleaseTwilightMasqMay_24-05-014224\DIceGoblinPreReleaseTwilig      | PRERELEASE           | 5     | 2     | DIceGoblinPreReleaseTwilightMasqMay
+MIDNIGHT PRERELEASE PARADOX RIFT_23-10-007154\MIDNIGHT PRERELEASE PARADOX R      | PRERELEASE           | 4     | 3     | MIDNIGHT PRERELEASE PARADOX RIFT
+MIDNIGHT PRERELEASE PARADOX RIFT_23-10-007154\MIDNIGHT PRERELEASE PARADOX R      | PRERELEASE           | 4     | 3     | MIDNIGHT PRERELEASE PARADOX RIFT
+MIDNIGHT PRERELEASE PARADOX RIFT_23-10-007154\MIDNIGHT PRERELEASE PARADOX R      | PRERELEASE           | 4     | 3     | MIDNIGHT PRERELEASE PARADOX RIFT
+MIDNIGHT PRERELEASE PARADOX RIFT_23-10-007154\MIDNIGHT PRERELEASE PARADOX R      | PRERELEASE           | 4     | 3     | MIDNIGHT PRERELEASE PARADOX RIFT
+MIDNIGHT PRERELEASE PARADOX RIFT_23-10-007154\MIDNIGHT PRERELEASE PARADOX R      | PRERELEASE           | 4     | 3     | MIDNIGHT PRERELEASE PARADOX RIFT
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 4     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 4     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 4     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 4     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 4     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 5     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 5     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 5     | 3     | MSS December Dice Goblin
+MSS December Dice Goblin_23-12-001873\MSS December Dice Goblin_23-12-001873      | VGCPREMIER           | 5     | 3     | MSS December Dice Goblin
+PokemonWeeklies\2025\cDiceGoblinWeeklyHobby5September2025.tdf                    | CUSTOM               | 5     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025.tdf                     | CUSTOM               | 5     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 3     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 4     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 4     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 4     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 4     | 2     | DiceGoblinWeeklyHobby5September2025
+PokemonWeeklies\2025\DiceGoblinWeeklyHobby5September2025\DiceGoblinWeeklyHo      | CUSTOM               | 4     | 2     | DiceGoblinWeeklyHobby5September2025
+PreReleaseMega\COmpletedPokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-      | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\CompletedPreRelease2.tdf                                          | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\Completed_PreRelease2.tdf                                         | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PreRelease2.tdf                                                   | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\CompletedPreRelease2\CompletedPreRelease2_r3-end.tdf              | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 3     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ_25-09-012588      | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseMidnightDIceGoblinByPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r0-start.tdf                              | PRERELEASE           | 3     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r1-begin.tdf                              | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r1-end.tdf                                | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r2-begin.tdf                              | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r2-end.tdf                                | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r3-begin.tdf                              | PRERELEASE           | 4     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseMega\PreRelease2\PreRelease2_r3-end.tdf                                | PRERELEASE           | 5     | 2     | PokemonMegaPreReleaseDicegoblin2byPlayNZ
+PreReleaseStella\CompletedStellaCrownPreReleaseAugust_24-08-013836.tdf           | PRERELEASE           | 5     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPrerelease22_24-09-010675.tdf                        | PRERELEASE           | 5     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675.tdf                         | PRERELEASE           | 5     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836.tdf                    | PRERELEASE           | 5     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 4     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 4     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 4     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 4     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 4     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPrerelease2_24-09-010675\StellaCrownPrerelease2      | PRERELEASE           | 5     | 2     | StellaCrownPrerelease2
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 4     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 4     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 4     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 4     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 4     | 2     | StellaCrownPreReleaseAugust
+PreReleaseStella\StellaCrownPreReleaseAugust_24-08-013836\StellaCrownPreRel      | PRERELEASE           | 5     | 2     | StellaCrownPreReleaseAugust
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r1-begin.      | PRERELEASE           | 4     | 2     | SATURDAY PRERELEASE
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r1-end.td      | PRERELEASE           | 4     | 2     | SATURDAY PRERELEASE
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r2-begin.      | PRERELEASE           | 4     | 2     | SATURDAY PRERELEASE
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r2-end.td      | PRERELEASE           | 4     | 2     | SATURDAY PRERELEASE
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r3-begin.      | PRERELEASE           | 4     | 2     | SATURDAY PRERELEASE
+SATURDAY PRERELEASE_23-10-007156\SATURDAY PRERELEASE_23-10-007156_r3-end.td      | PRERELEASE           | 5     | 2     | SATURDAY PRERELEASE
+September 25\Dice Goblin September Challenge_24-09-000810.tdf                    | LEAGUECHALLENGE      | 5     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_completed_24-09-000810.tdf          | LEAGUECHALLENGE      | 5     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+September 25\Dice Goblin September Challenge_24-09-000810\Dice Goblin Septe      | LEAGUECHALLENGE      | 4     | 2     | Dice Goblin September Challenge
+SeptemberCup\Dice Goblin September 2025 TCG Cup_25-09-001022.tdf                 | TCG1DAY              | 5     | 3     | Dice Goblin September 2025 TCG Cup
+SeptemberVGCGO\25-09-28-DICE-GOBLIN-GO-CHALLENGE_25-09-012587-FINAL.tdf          | GOPREMIER            | 5     | 3     | 25-09-28-DICE-GOBLIN-GO-CHALLENGE
+SeptemberVGCGO\25-09-28-DICE-GOBLIN-GO-CUP_25-09-012586-FINAL.tdf                | GOPREMIER            | 5     | 3     | 25-09-28-DICE-GOBLIN-GO-CUP
+SeptemberVGCGO\25-09-28-DICE-GOBLIN-VGC-CUP_25-09-012584-FINAL.tdf               | VGCPREMIER           | 5     | 3     | 25-09-28-DICE-GOBLIN-VGC-CUP
+SeptemberVGCGO\25-09-28-DICE-GOBLIN-VGC_25-09-012585-FINAL.tdf                   | VGCPREMIER           | 5     | 3     | 25-09-28-DICE-GOBLIN-VGC

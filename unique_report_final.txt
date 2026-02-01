@@ -1,0 +1,92 @@
+Total files processed: 37
+Total Unique Tournaments found: 18
+
+--- Unique Tournaments List ---
+ID: 25-11-024905    | Name: 2025 DG Nov Cup
+  - TOMfiles\2025 DG Nov Cup_25-11-024905.tdf
+  - TOMfiles\Completed2025 DG Nov Cup_25-11-024905.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 26-01-004635    | Name: 2026 Card Merchant West City pre-SPC TCG Cup
+  - TOMfiles\2026 CMWC Jan Cup 26-01-004635.tdf
+--------------------------------------------------
+ID: 25-05-002887    | Name: DiceGoblinMayTCGChallenge
+  - TOMfiles\2025\Challenges\DiceGoblinMayTCGChallengeCompleted_25-05-002887.tdf
+  - TOMfiles\2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887.tdf
+  - TOMfiles\2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChallenge_25-05-002887.tdf
+  *** 3 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-12-001403    | Name: DGDecLeagueCHallenge2025
+  - TOMfiles\2025EventsPokemon\CompletedDGDecLeagueCHallenge2025_25-12-001403.tdf
+  - TOMfiles\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-09-001021    | Name: DGSeptemberLeageCHallenge
+  - TOMfiles\2025EventsPokemon\CompletedLeaugechallengeSeptember.tdf
+  - TOMfiles\2025EventsPokemon\LeaugechallengeSeptember.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-04-005510    | Name: DiceGoblinAprilTCGCup2025
+  - TOMfiles\2025EventsPokemon\CupEvents.tdf
+--------------------------------------------------
+ID: 25-08-001283    | Name: DiceGoblinAUGUSTTCGChallenge
+  - TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUSTTCGChallenge_25-08-001283.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUSTTCGChallenge_Completed_25-08-001283.tdf
+  *** 3 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-02-000981    | Name: DiceGoblinFebruaryTCGChallenge
+  - TOMfiles\2025EventsPokemon\DiceGoblinFebruaryTCGChallengeCopleted_25-02-000981.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-01-001822    | Name: DiceGoblinJanuaryTCGChallenge2025
+  - TOMfiles\2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025Completed_25-01-001822.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-03-000800    | Name: DiceGoblinMarchTCGChallenge
+  - TOMfiles\2025EventsPokemon\DiceGoblinMarchTCGChallengeCompleted_25-03-000800.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-11-024904    | Name: DiceGoblinNovChallenge
+  - TOMfiles\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904.tdf
+  - TOMfiles\2025EventsPokemon\LeagueChallengeNov\CompletedDiceGoblinNovChallenge_25-11-024904.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-10-004973    | Name: DiceGoblinOCTOBERTCGChallenge
+  - TOMfiles\2025EventsPokemon\DiceGoblinOCTOBERTCGChallengeCompleted_25-10-004973.tdf
+  - TOMfiles\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-04-005508    | Name: DiceGoblinAprilTCGChallenge
+  - TOMfiles\2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025.tdf
+  - TOMfiles\2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025Completed.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-07-002376    | Name: DiceGoblinJULYTCGChallenge
+  - TOMfiles\2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChallengeCompleted_25-07-002376.tdf
+  - TOMfiles\2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChallenge_25-07-002376.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 26-01-003122    | Name: DGTCG26JanChallenge
+  - TOMfiles\2026\challenges\DGTCG26JanChallenge_26-01-003122.tdf
+  - TOMfiles\2026\challenges\DGTCG26JanChallenge_26-01-003122copy.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 23-09-000429    | Name: Dice Goblin September Cup
+  - TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r5-end.tdf
+  - TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r6-begin.tdf
+  - TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r6-end.tdf
+  - TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r7-begin.tdf
+  *** 4 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 24-09-000810    | Name: Dice Goblin September Challenge
+  - TOMfiles\September 25\Dice Goblin September Challenge_24-09-000810.tdf
+  - TOMfiles\September 25\Dice Goblin September Challenge_completed_24-09-000810.tdf
+  *** 2 DUPLICATES FOUND ***
+--------------------------------------------------
+ID: 25-09-001022    | Name: Dice Goblin September 2025 TCG Cup
+  - TOMfiles\SeptemberCup\Dice Goblin September 2025 TCG Cup_25-09-001022.tdf
+--------------------------------------------------
