@@ -113,3 +113,49 @@ export async function addDeckCheck(formData: FormData) {
 
     return { success: true };
 }
+
+export async function getPlayerJudgeDetails(tournamentId: string, playerId: string) {
+    const supabase = await createClient();
+
+    // Fetch penalties
+    const { data: penalties, error: penaltiesError } = await supabase
+        .from('player_penalties')
+        .select('*')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId)
+        .order('created_at', { ascending: false });
+
+    // Fetch deck checks
+    const { data: deckChecks, error: checksError } = await supabase
+        .from('deck_checks')
+        .select('*')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId)
+        .order('check_time', { ascending: false });
+
+    if (penaltiesError) console.error("Error fetching penalties:", penaltiesError);
+    if (checksError) console.error("Error fetching deck checks:", checksError);
+
+    return {
+        penalties: penalties || [],
+        deckChecks: deckChecks || []
+    };
+}
+
+export async function updateMatchTimeExtension(matchId: string, minutes: number) {
+    const supabase = await createClient();
+
+    // Authorization check could be added here similar to addPenalty
+
+    const { error } = await supabase
+        .from('matches')
+        .update({ time_extension_minutes: minutes })
+        .eq('id', matchId);
+
+    if (error) {
+        console.error("Error updating match extension:", error);
+        return { error: "Failed to update extension" };
+    }
+
+    return { success: true };
+}

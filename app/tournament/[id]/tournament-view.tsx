@@ -14,6 +14,8 @@ import { MatchCard } from "@/components/tournament/match-card";
 import { StandingsView } from "@/components/tournament/standings-view";
 import { PlayerRoster } from "@/components/tournament/player-roster";
 import { PenaltyModal } from "@/components/judge/penalty-modal";
+import { JudgePlayerDetailModal } from "@/components/judge/judge-player-detail-modal";
+import { TimeExtensionModal } from "@/components/judge/time-extension-modal";
 import { addDeckCheck } from "@/actions/judge";
 import { toast } from "sonner";
 
@@ -36,6 +38,7 @@ export interface Match {
     outcome?: number;
     p1_display_record?: string;
     p2_display_record?: string;
+    time_extension_minutes?: number;
 }
 
 export interface Tournament {
@@ -123,11 +126,20 @@ export default function TournamentView({
     // Judge Actions Logic
     const isJudge = hasPermission(userRole, 'match.edit_result');
     const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
-    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string; tomId: string } | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string; tomId: string; matchId?: string; extension?: number } | null>(null);
 
-    const onPenalty = (player: { id: string; name: string; tomId: string }) => {
+    // Time Extension Modal State
+    const [extensionModalOpen, setExtensionModalOpen] = useState(false);
+    const [selectedMatch, setSelectedMatch] = useState<{ id: string; tableNumber: number; extension: number } | null>(null);
+
+    const onPenalty = (player: { id: string; name: string; tomId: string; matchId?: string; extension?: number }) => {
         setSelectedPlayer(player);
         setPenaltyModalOpen(true);
+    };
+
+    const onExtension = (matchId: string, currentExtension: number, tableNumber: number) => {
+        setSelectedMatch({ id: matchId, tableNumber, extension: currentExtension });
+        setExtensionModalOpen(true);
     };
 
     const { addDeckCheck } = require("@/actions/judge");
@@ -310,25 +322,13 @@ export default function TournamentView({
                                                                 canEdit={canEditMatch}
                                                                 myPlayerId={myPlayerId}
                                                                 isJudge={isJudge} // Pass Judge Status
-                                                                onPenalty={(player) => {
+                                                                onPlayerClick={(player) => {
                                                                     setSelectedPlayer(player);
                                                                     setPenaltyModalOpen(true);
                                                                 }}
-                                                                onDeckCheck={async (player) => {
-                                                                    const formData = new FormData();
-                                                                    formData.append("tournament_id", tournament.id);
-                                                                    formData.append("player_id", player.tomId);
-                                                                    formData.append("round_number", String(currentRound));
-
-                                                                    // Optional note logic could go here, or just basic log
-                                                                    const result = await addDeckCheck(formData);
-                                                                    if (result.error) {
-                                                                        toast.error(result.error);
-                                                                    } else {
-                                                                        toast.success("Deck check logged");
-                                                                    }
+                                                                onExtensionClick={(matchId, currentExt) => {
+                                                                    onExtension(matchId, currentExt, match.table_number);
                                                                 }}
-
                                                                 p1Penalties={penaltyCounts[match.player1_tom_id || ""] || 0}
                                                                 p2Penalties={penaltyCounts[match.player2_tom_id || ""] || 0}
                                                             />
@@ -345,32 +345,31 @@ export default function TournamentView({
                 )}
             </div>
 
-            {/* Penalty Modal */}
+            {/* Penalty Modal -> Judge Player Detail Modal */}
             {selectedPlayer && (
-                <PenaltyModal
+                <JudgePlayerDetailModal
                     isOpen={penaltyModalOpen}
                     onClose={() => {
                         setPenaltyModalOpen(false);
                         setSelectedPlayer(null);
                     }}
                     tournamentId={tournament.id}
-                    playerId={selectedPlayer.tomId} // Using TOM ID as player identifier
-                    playerName={selectedPlayer.name}
+                    player={selectedPlayer}
                     roundNumber={currentRound}
                 />
             )}
-            {/* Penalty Modal */}
-            {selectedPlayer && (
-                <PenaltyModal
-                    isOpen={penaltyModalOpen}
+
+            {/* Time Extension Modal */}
+            {selectedMatch && (
+                <TimeExtensionModal
+                    isOpen={extensionModalOpen}
                     onClose={() => {
-                        setPenaltyModalOpen(false);
-                        setSelectedPlayer(null);
+                        setExtensionModalOpen(false);
+                        setSelectedMatch(null);
                     }}
-                    tournamentId={tournament.id}
-                    playerId={selectedPlayer.tomId}
-                    playerName={selectedPlayer.name}
-                    roundNumber={currentRound}
+                    matchId={selectedMatch.id}
+                    tableNumber={selectedMatch.tableNumber}
+                    currentExtension={selectedMatch.extension}
                 />
             )}
         </div>

@@ -1,0 +1,39 @@
+Checking files...
+Found 37 files:
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025 DG Nov Cup_25-11-024905.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2026 CMWC Jan Cup 26-01-004635.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\Completed2025 DG Nov Cup_25-11-024905.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025\Challenges\DiceGoblinMayTCGChallengeCompleted_25-05-002887.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025\Challenges\DiceGoblinMayTCGChallenge_25-05-002887\DiceGoblinMayTCGChallenge_25-05-002887.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\CompletedDGDecLeagueCHallenge2025_25-12-001403.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\CompletedLeaugechallengeSeptember.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\CupEvents.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinFebruaryTCGChallengeCopleted_25-02-000981.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinFebruaryTCGChallenge_25-02-000981.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025Completed_25-01-001822.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinJanuaryTCGChallenge2025_25-01-001822.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinMarchTCGChallengeCompleted_25-03-000800.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinMarchTCGChallenge_25-03-000800.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinOCTOBERTCGChallengeCompleted_25-10-004973.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\LeaugechallengeSeptember.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DGAprilTCGChallenge_25-04-005508\2025Completed.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChallengeCompleted_25-07-002376.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DGJulyTCGChallenge_25-07-002376\DiceGoblinJULYTCGChallenge_25-07-002376.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUSTTCGChallenge_25-08-001283.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\DiceGoblinAUGUSTTCGChallenge_25-08-001283\DiceGoblinAUGUSTTCGChallenge_Completed_25-08-001283.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2025EventsPokemon\LeagueChallengeNov\CompletedDiceGoblinNovChallenge_25-11-024904.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2026\challenges\DGTCG26JanChallenge_26-01-003122.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\2026\challenges\DGTCG26JanChallenge_26-01-003122copy.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r5-end.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r6-begin.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r6-end.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\Dice Goblin September Cup_23-09-000429\Dice Goblin September Cup_23-09-000429_r7-begin.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\September 25\Dice Goblin September Challenge_24-09-000810.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\September 25\Dice Goblin September Challenge_completed_24-09-000810.tdf
+C:\Users\litia\.gemini\antigravity\tcg-manager\TOMfiles\SeptemberCup\Dice Goblin September 2025 TCG Cup_25-09-001022.tdf

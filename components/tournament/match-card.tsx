@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Check, Handshake, Gavel, Search } from "lucide-react";
+import { Check, Handshake, Gavel, Search, Clock } from "lucide-react";
 import { type Match } from "@/app/tournament/[id]/tournament-view";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -16,13 +16,13 @@ interface MatchCardProps {
     canEdit?: boolean;
     myPlayerId?: string;
     isJudge?: boolean;
-    onPenalty?: (player: { id: string; name: string; tomId: string }) => void;
-    onDeckCheck?: (player: { id: string; name: string; tomId: string }) => void;
+    onPlayerClick?: (player: { id: string; name: string; tomId: string; matchId?: string; extension?: number }) => void;
+    onExtensionClick?: (matchId: string, currentExtension: number) => void;
     p1Penalties?: number;
     p2Penalties?: number;
 }
 
-export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPenalty, onDeckCheck, p1Penalties = 0, p2Penalties = 0 }: MatchCardProps) {
+export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayerClick, onExtensionClick, p1Penalties = 0, p2Penalties = 0 }: MatchCardProps) {
     const isFinished = match.is_finished;
     const winnerId = match.winner_tom_id;
     const p1Id = match.player1_tom_id;
@@ -126,12 +126,32 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPenalt
         if (!player) return <span className="text-muted-foreground italic">Bye</span>;
 
         const isTarget = isFinished && isMyOpponent(tomId);
+        // Interactive for Judges
+        const isJudgeInteractable = canEdit && isJudge && tomId && onPlayerClick;
 
         return (
             <div className="flex items-center gap-2 max-w-full">
                 <div
-                    className={cn("flex flex-col items-start justify-center min-w-0 select-none flex-1", styleClass, isTarget && "cursor-pointer active:scale-95 transition-transform")} // Added cursor/active for feedback logic
-                    onClick={isTarget ? (e) => { e.preventDefault(); triggerSecret(); } : undefined}
+                    className={cn(
+                        "flex flex-col items-start justify-center min-w-0 select-none flex-1 px-1 -mx-1 rounded",
+                        styleClass,
+                        isTarget && "cursor-pointer active:scale-95 transition-transform",
+                        isJudgeInteractable && "cursor-pointer hover:bg-muted/80 active:bg-muted"
+                    )}
+                    onClick={(e) => {
+                        if (isTarget) {
+                            e.preventDefault(); triggerSecret();
+                        } else if (isJudgeInteractable) {
+                            e.preventDefault();
+                            onPlayerClick({
+                                id: tomId!,
+                                name: `${player.first_name} ${player.last_name}`,
+                                tomId: tomId!,
+                                matchId: match.id,
+                                extension: match.time_extension_minutes || 0
+                            });
+                        }
+                    }}
                 >
                     <span className="truncate text-base leading-tight">
                         {player.first_name} {player.last_name}
@@ -140,30 +160,12 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPenalt
                         {record || "0-0-0"}
                     </span>
                     {penalties > 0 && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200">
+                        <span className="mt-0.5 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200">
                             {penalties} Penalty
                         </span>
                     )}
                 </div>
 
-                {canEdit && isJudge && tomId && onPenalty && onDeckCheck && (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            title="Add Penalty"
-                            onClick={(e) => { e.stopPropagation(); onPenalty({ id: tomId, name: `${player.first_name} ${player.last_name}`, tomId }); }}
-                            className="p-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded"
-                        >
-                            <Gavel className="w-3 h-3" />
-                        </button>
-                        <button
-                            title="Deck Check"
-                            onClick={(e) => { e.stopPropagation(); onDeckCheck({ id: tomId, name: `${player.first_name} ${player.last_name}`, tomId }); }}
-                            className="p-1 hover:bg-blue-500/10 text-muted-foreground hover:text-blue-500 rounded"
-                        >
-                            <Search className="w-3 h-3" />
-                        </button>
-                    </div>
-                )}
             </div>
         );
     };
@@ -177,8 +179,26 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPenalt
             )}
         >
             {/* Table Number */}
-            <div className="font-bold text-center text-muted-foreground text-lg">
-                {match.table_number}
+            <div className="font-bold text-center text-muted-foreground text-lg flex flex-col items-center justify-center gap-0.5">
+                <span>{match.table_number}</span>
+                {match.time_extension_minutes && match.time_extension_minutes > 0 && (
+                    <span className="text-[10px] uppercase font-black text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-500 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                        +{match.time_extension_minutes}m
+                    </span>
+                )}
+                {/* Judge Extension Button */}
+                {isJudge && onExtensionClick && !isFinished && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onExtensionClick(match.id, match.time_extension_minutes || 0);
+                        }}
+                        className="mt-1 p-1 rounded hover:bg-muted transition-colors group/ext"
+                        title="Manage Time Extension"
+                    >
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground group-hover/ext:text-foreground" />
+                    </button>
+                )}
             </div>
 
             {/* Player 1 - STRICT LEFT ALIGN */}

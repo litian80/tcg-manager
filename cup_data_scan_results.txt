@@ -1,0 +1,76 @@
+Scanned 484 files.
+Found 73 matching files:
+
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905.tdf
+C:\Users\litia\Desktop\Cup Data\Completed2025 DG Nov Cup_25-11-024905.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r3-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r4-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r4-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r5-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r5-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r6-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r6-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025 DG Nov Cup_25-11-024905\2025 DG Nov Cup_25-11-024905_r7-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\CompletedDGDecLeagueCHallenge2025_25-12-001403.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\CompletedLeaugechallengeSeptember.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallengeCompleted_25-10-004973.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\CupEvents\November1q'\DGNovemberCup_25-11-024905.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DGDecLeagueCHallenge2025_25-12-001403\DGDecLeagueCHallenge2025_25-12-001403_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r3-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinNovChallenge_25-11-024904\DiceGoblinNovChallenge_25-11-024904_r4-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r3-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\DiceGoblinOCTOBERTCGChallenge_25-10-004973\DiceGoblinOCTOBERTCGChallenge_25-10-004973_r4-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeagueChallengeNov\CompletedDiceGoblinNovChallenge_25-11-024904.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2025EventsPokemon\LeaugechallengeSeptember\LeaugechallengeSeptember_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122copy.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r3-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\challenges\DGTCG26JanChallenge_26-01-003122\DGTCG26JanChallenge_26-01-003122_r4-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r0-start.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r1-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r1-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r2-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r2-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r3-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r3-end.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r4-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r5-begin.tdf
+C:\Users\litia\Desktop\Cup Data\2026\Cups\DiceGoblinTCGCUPFEB2026_26-02-001560\DiceGoblinTCGCUPFEB2026_26-02-001560_r6-begin.tdf
+C:\Users\litia\Desktop\Cup Data\SeptemberCup\Dice Goblin September 2025 TCG Cup_25-09-001022.tdf
