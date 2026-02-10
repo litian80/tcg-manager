@@ -69,6 +69,7 @@ export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) 
                 `)
                 .eq('tournament_id', tournamentId)
                 .not('rank', 'is', null) // Only show players with a rank
+                .neq('rank', 0) // Exclude players with rank 0 (dropped/inactive)
                 .order('rank', { ascending: true });
 
             if (error) {
