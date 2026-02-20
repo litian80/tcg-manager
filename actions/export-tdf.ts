@@ -27,32 +27,6 @@ export async function exportTournamentTDF(tournamentId: string) {
     // - players (main visible data)
     // - profiles (sensitive data like birth_year, IF linked via user_id, but many players might be guest accounts or not linked)
 
-    // Wait, the Parser uploads `birth_year` into `tournament_players` table directly (from previous convos).
-    // Let's verify schema.
-
-    /*
-        From prev context, tournament_players has data. 
-        But wait, `tournament_players` table schema wasn't fully shown in database.types.ts earlier (it was truncated or not fully expanded?).
-        Let's assume the relationships: 
-        tournament_players -> player_id (uuid) -> players table.
-        But where is `birth_year`? 
-        In "Update TDF Parser" (Convo d34c9c52), it said:
-        "Upsert the player data, including `birth_year` and..." -> implying it might be on `players` table OR `tournament_players`.
-
-        Actually, looking at `database.types.ts` (Step 24):
-        `matches` selects `p1:players!player1_tom_id`.
-        `profiles` has `birth_year`.
-        
-        If players are imported via TDF, they might not have profiles.
-        Let's check `players` table schema. I will do a quick check in the code logic below.
-        If I can't find birth_year, I'll default to 2012 as requested by user ("will need to [use] user as default value").
-        Wait, user request 4: "will need to user as default value for now." -> "will need to use * as default value"?
-        Actually, point 2: "convert birthyear yyyy to 2/27/yyyy".
-        
-        So I need `birth_year`. If it's in `profiles`, great. If not, I check if `players` table has it. 
-        I'll try to select it.
-    */
-
     // Fetch players joined with tournament_players
     const { data: tpData, error: tpError } = await supabase
         .from('tournament_players')
@@ -67,56 +41,39 @@ export async function exportTournamentTDF(tournamentId: string) {
         `)
         .eq('tournament_id', tournamentId);
 
-    // Note: Assuming `players` table doesn't have birth_year, but `profiles` might. 
-    // However, for imported TDF players, they are just rows in `players` (maybe?).
-    // A safe bet for this iteration given I can't easily see `players` table schema right now without a tool call (and I'm in writing mode):
-    // I will try to fetch `birth_year` from likely spots.
-    // Actually, `profiles` has `birth_year`. `players` might not.
-    // BUT, many players in a tournament might not be registered users (profiles).
-    // If they were imported from a valid TOM file, they *should* have birthdates.
-    // If we only have `birth_year` (as per user constraint "Privacy"), we need that.
-
-    // Strategy: Fetch from `profiles` if available (linked by some ID?).
-    // If we can't find it, we default to 2012 (Master division age approx, or simply a safe default).
-    // User said: "will need to user as default value for now". This is slightly ambiguous.
-    // Re-reading User Point 4: "will need to user as default value for now." -> likely "will need to use [2012] as default...".
-    // Or maybe "use User's birth year"?
-    // Point 2 says: "convert birthyear yyyy to 2/27/yyyy".
-
-    // Let's check if `tournament_players` has `birth_year`. 
-    // I will fetch it. If it fails, supabase ignores it usually or I handle error.
-    // To be safe, I'll assume 2000 if missing for now, or 2015 for Junior?
-    // Let's use 2010.
-
-    // Actually, I'll add a helper to fetch birth_year from `profiles` if player_id matches a profile.
+    // Note: If `birth_year` is missing from the joined data, we will default to 2012 in the XML generation step.
 
     let players: any[] = [];
 
     if (tpData) {
-        players = await Promise.all(tpData.map(async (tp: any) => {
-            // Try to find profile for this player (assuming player_id might be a user id?)
-            // In this system, `players` table is distinct from `profiles`.
-            // `players` table is for TOM entities.
-            // If we don't have birth year stored, we can't invent it accurately.
-            // But valid TDF requires it.
-            // I will use a default year (e.g. 2012 which is Junior/Senior boundary ish) and the fixed date 02/27.
+        // Extract TOM IDs to fetch birth years from profiles
+        const tomIds = tpData
+            .map((tp: any) => tp.players?.tom_player_id)
+            .filter((id): id is string => !!id);
 
-            // If `players` has a `birth_year` column (added in previous tasks?), we use it.
-            // I will try to select it from `players` in a separate query if needed, or just assume it's not there for this strict "Plan" which said "Map birth_year".
-            // Implementation Plan said: "Fetch players from `tournament_players` joined with `profiles` to get `birth_year`."
+        // Fetch birth years from profiles
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('pokemon_player_id, birth_year')
+            .in('pokemon_player_id', tomIds);
 
-            // Let's attempt the join if `players` key is `id`?
-            // `tournament_players` joins to `players`.
-            // Does `players` join to `profiles`? Not necessarily.
+        // Create a map for O(1) lookup
+        const birthYearMap = new Map<string, number>();
+        profiles?.forEach(p => {
+            if (p.pokemon_player_id && p.birth_year) {
+                birthYearMap.set(p.pokemon_player_id, p.birth_year);
+            }
+        });
 
-            // For now, I will hardcode the logic to look for `birth_year` on the `players` object if it exists (e.g. if I edit the query above).
-            // If not found, default to 2012.
+        players = tpData.map((tp: any) => {
+            const tomId = tp.players?.tom_player_id;
+            const realBirthYear = tomId ? birthYearMap.get(tomId) : undefined;
 
             return {
                 ...tp.players,
-                birth_year: 2012 // DEFAULT for now as we might not have it column-wise
+                birth_year: realBirthYear || 2012 // Use real year if found, else default
             };
-        }));
+        });
     }
 
     if (tpError) {
@@ -157,16 +114,6 @@ export async function exportTournamentTDF(tournamentId: string) {
     // Players Tag
     // <player userid="6"><firstname>...</firstname><lastname>...</lastname><birthdate>02/27/2014</birthdate>...</player>
     const playersMap = players.map(p => {
-        // Use birth_year from the row if available (it is at top level of 'p' because we spread it above? No, wait.)
-        // Logic in step 71 was:
-        /*
-        return {
-             ...tp.players,
-             birth_year: 2012 // DEFAULT 
-         };
-         */
-        // I need to update that mapping loop too.
-
         const bYear = p.birth_year || 2012;
         const bDate = `02/27/${bYear}`;
 

@@ -73,6 +73,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         `)
         .eq('tournament_id', id);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentRoster = tpData?.map((tp: any) => ({
         ...tp.players,
         birth_year: tp.players.birth_year || null

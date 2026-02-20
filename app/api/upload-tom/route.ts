@@ -1,9 +1,63 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
+
+interface TomPlayer {
+    userid?: number | string;
+    firstname?: string;
+    lastname?: string;
+    id?: number | string;
+    place?: number | string;
+}
+
+interface TomMatch {
+    outcome?: number | string;
+    player1?: { userid?: string | number };
+    player2?: { userid?: string | number };
+    player?: { userid?: string | number };
+    tablenumber?: string | number;
+}
+
+interface TomRound {
+    number?: string | number;
+    matches?: {
+        match?: TomMatch | TomMatch[];
+    };
+}
+
+interface TomPod {
+    category?: string | number;
+    type?: string;
+    rounds?: {
+        round?: TomRound | TomRound[];
+    };
+    player?: TomPlayer | TomPlayer[];
+}
+
+interface TomTournament {
+    standings?: {
+        pod?: TomPod | TomPod[];
+    };
+    data?: {
+        name?: string;
+        startdate?: string;
+        city?: string;
+        country?: string;
+        id?: string | number;
+        organizer?: {
+            popid?: string;
+            '@_popid'?: string;
+        };
+    };
+    players?: {
+        player?: TomPlayer | TomPlayer[];
+    };
+    pods?: {
+        pod?: TomPod | TomPod[];
+    };
+}
 
 // Helper to handle single vs array in XML parser
 const asArray = <T>(item: T | T[] | undefined): T[] => {
@@ -27,7 +81,7 @@ export async function POST(req: NextRequest) {
             ignoreAttributes: false,
             attributeNamePrefix: '',
         });
-        const result = parser.parse(xmlData);
+        const result = parser.parse(xmlData) as { tournament?: TomTournament };
         console.log('Parsed XML Structure:', JSON.stringify(result, null, 2));
 
         // Root is "tournament"
@@ -53,11 +107,11 @@ export async function POST(req: NextRequest) {
             // Note: If standingsPods is empty (e.g. empty standings tag), semantics imply not completed.
             if (standingsPods.length > 0) {
                 // Filter out 'dnf' pods as they are not indicative of the running state (just dropped players)
-                const activePods = standingsPods.filter((p: any) => p.type !== 'dnf');
+                const activePods = standingsPods.filter((p) => p.type !== 'dnf');
 
                 // If we have active pods, check if they are all finished
                 if (activePods.length > 0) {
-                    const allFinished = activePods.every((p: any) => p.type === 'finished');
+                    const allFinished = activePods.every((p) => p.type === 'finished');
                     if (allFinished) {
                         tournamentStatus = 'completed';
                     }
@@ -76,10 +130,7 @@ export async function POST(req: NextRequest) {
         const startDateStr = tournamentData.startdate; // MM/DD/YYYY
         const city = tournamentData.city || 'Unknown';
         const country = tournamentData.country || 'Unknown';
-        const tomUid = tournamentData.id?.toString() || ''; // XML uses 'id' inside data tag usually? or tournament attributes? 
-        // Checking XML sample structure if available, usually <data><id>...</id></data> or <tournament id="...">
-        // Assuming <data><id>... from context or standard TOM files. 
-        // Re-reading user request: "xml文件里面的 id" -> likely top level or data level. 
+        const tomUid = tournamentData.id?.toString() || '';
         // "organizer的popid" -> <organizer popid="..."> or <organizer><popid>...
 
         let organizerPopId = 'Unknown';
@@ -197,7 +248,7 @@ export async function POST(req: NextRequest) {
         const playersRoot = tournamentRoot.players;
         const xmlPlayers = asArray(playersRoot?.player);
 
-        const tournamentPlayersToInsert: any[] = [];
+        const tournamentPlayersToInsert: { tournament_id: string; player_id: string }[] = [];
 
         for (const p of xmlPlayers) {
             const userid = p.userid ? p.userid.toString() : null;
@@ -244,7 +295,8 @@ export async function POST(req: NextRequest) {
         await supabase.from('matches').delete().eq('tournament_id', tournamentId);
 
         const pods = asArray(tournamentRoot.pods?.pod);
-        const matchesToInsert: any[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const matchesToInsert: any[] = []; // Explicit any for Supabase insert payload flexibility or defining a proper MatchInsert interface
         let maxRoundNumber = 0;
 
         // Global stats tracker for this tournament parse
@@ -285,7 +337,7 @@ export async function POST(req: NextRequest) {
 
                 const matches = asArray(r.matches?.match);
 
-                matches.forEach((m: any) => {
+                matches.forEach((m) => {
                     const outcome = parseInt(m.outcome?.toString() || '0');
                     let p1Id = m.player1?.userid?.toString();
                     let p2Id = m.player2?.userid?.toString();
@@ -437,9 +489,18 @@ export async function POST(req: NextRequest) {
         if (standingsRoot) {
             const standingsPods = asArray(standingsRoot.pod);
 
-            const tpUpdates: any[] = [];
+            const tpUpdates: {
+                tournament_id: string;
+                player_id: string;
+                rank: number;
+                division: string;
+                wins: number;
+                losses: number;
+                ties: number;
+                points: number;
+            }[] = [];
 
-            standingsPods.forEach((pod: any) => {
+            standingsPods.forEach((pod) => {
                 const category = pod.category?.toString();
                 let divisionName = "Unknown";
 
@@ -462,7 +523,7 @@ export async function POST(req: NextRequest) {
                 }
 
                 const podPlayers = asArray(pod.player);
-                podPlayers.forEach((p: any) => {
+                podPlayers.forEach((p) => {
                     const playerId = p.id?.toString();
                     if (!playerId) return;
 

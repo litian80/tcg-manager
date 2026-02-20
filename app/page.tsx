@@ -5,7 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  let tournaments: any[] = [];
+  let tournaments: {
+    id: string;
+    name: string;
+    total_rounds: number;
+    status: string;
+    date: string;
+  }[] = [];
   let error;
 
   try {

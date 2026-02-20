@@ -1,6 +1,42 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Helper to check if a user is authorized to act as a judge/organizer/admin for a specific tournament.
+ */
+async function checkTournamentAuth(supabase: SupabaseClient, userId: string, tournamentId: string): Promise<boolean> {
+    // 1. Check if Judge
+    const { data: judgeRecord } = await supabase
+        .from("tournament_judges")
+        .select("id")
+        .eq("tournament_id", tournamentId)
+        .eq("user_id", userId)
+        .single();
+
+    if (judgeRecord) return true;
+
+    // 2. Check if Organizer
+    const { data: tournament } = await supabase
+        .from("tournaments")
+        .select("organizer_id")
+        .eq("id", tournamentId)
+        .single();
+
+    if (tournament && tournament.organizer_id === userId) return true;
+
+    // 3. Check if Admin
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+    if (profile?.role === 'admin') return true;
+
+    return false;
+}
 
 export async function addPenalty(formData: FormData) {
     const supabase = await createClient();
@@ -18,52 +54,10 @@ export async function addPenalty(formData: FormData) {
         return { error: "Unauthorized" };
     }
 
-    // Validation: Check if user is Judge or Organizer for this tournament
-    // We can rely on RLS, but explicit check is good for returning nice errors
-    // Actually, simply trying to insert will fail if RLS denies, so we can just insert and catch error.
-    // However, the prompt asked specifically: "Validation: Ensure the current_user exists in tournament_judges (or is the Owner/Admin) before allowing the insert."
-
-    // Check if user is judge
-    const { data: judgeRecord } = await supabase
-        .from("tournament_judges")
-        .select("id")
-        .eq("tournament_id", tournamentId)
-        .eq("user_id", user.id)
-        .single();
-
-    // Check if user is organizer (owner)
-    // We would need to fetch tournament to check organizer_id, or rely on RLS.
-    // Let's rely on RLS + the explicit prompt requirement. 
-    // If we assume RLS policies are correct (which we wrote), strictly speaking we *could* just insert.
-    // but let's implement the check as requested to be safe.
-
-    let isAuthorized = !!judgeRecord;
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
 
     if (!isAuthorized) {
-        // Check if organizer
-        const { data: tournament } = await supabase
-            .from("tournaments")
-            .select("organizer_id")
-            .eq("id", tournamentId)
-            .single();
-
-        if (tournament && tournament.organizer_id === user.id) {
-            isAuthorized = true;
-        }
-
-        // Check if Admin (Role check - typically stored in metadata or profiles or checking a role function)
-        // Ignoring explicit admin role check here unless we have a helper, assuming Organizer/Judge covers most.
-        // If we strictly follow prompt "or is the Owner/Admin", we assume Admin has row level access or we check it.
-        // We'll rely on RLS for the final gate, but the judgeRecord check is a good UX pre-check.
-    }
-
-    if (!isAuthorized) {
-        // Re-check RLS via insert? No, prompt asked for validation.
-        // Let's assume if not judge and not organizer, fail.
-        // But wait, what if they ARE admin?
-        // Let's just try to insert. If RLS fails, we catch it.
-        // The prompt requirements said: "Ensure the current_user exists... before allowing the insert".
-        // Use RLS logic basically.
+        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
     }
 
     const { error } = await supabase.from("player_penalties").insert({
@@ -96,6 +90,13 @@ export async function addDeckCheck(formData: FormData) {
 
     if (!user) {
         return { error: "Unauthorized" };
+    }
+
+    // Apply strict auth check here too for consistency
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+
+    if (!isAuthorized) {
+        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
     }
 
     const { error } = await supabase.from("deck_checks").insert({
@@ -144,8 +145,25 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerId: stri
 
 export async function updateMatchTimeExtension(matchId: string, minutes: number) {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // Authorization check could be added here similar to addPenalty
+    if (!user) return { error: "Unauthorized" };
+
+    // 1. Fetch match to get tournament_id
+    const { data: match } = await supabase
+        .from('matches')
+        .select('tournament_id')
+        .eq('id', matchId)
+        .single();
+
+    if (!match) return { error: "Match not found" };
+
+    // 2. Check Auth
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, match.tournament_id);
+
+    if (!isAuthorized) {
+        return { error: "Unauthorized" };
+    }
 
     const { error } = await supabase
         .from('matches')

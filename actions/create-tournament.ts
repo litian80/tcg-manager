@@ -50,16 +50,10 @@ export async function createTournament(formData: FormData) {
         .eq('id', user.id)
         .single();
 
-    // "Mandatory field" check - should we block if undefined?
-    // Assuming yes based on "need to be inserted... as mandatory field"
+    // Mandatory field check
     const popId = profile?.pokemon_player_id;
     if (!popId) {
-        // Optional: Throw error? Or allow and just warn? User said "mandatory".
-        // I will attempt to insert. If it fails due to DB constraint, we catch it.
-        // If "mandatory" means business rule, I should enforce it.
-        // But maybe Admin creating it doesn't need POPID? "if created by organiser".
-        // I'll assume standard Organizer needs it.
-        // warning: "Organizer POP ID missing in profile."
+        // Organizer POP ID is mandatory in profile for attribution.
     }
 
     // Insert Tournament

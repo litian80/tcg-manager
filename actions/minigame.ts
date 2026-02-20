@@ -80,7 +80,7 @@ export async function updateGameState(matchId: string, board: any, turn: string,
 
     if (error) {
         console.error("Error updating game state:", error);
-        throw new Error("Failed to update game state");
+        return { error: "Failed to update game state" };
     }
 
     return { success: true };

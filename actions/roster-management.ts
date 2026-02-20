@@ -45,38 +45,40 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        throw new Error("Unauthorized");
+        return { error: "Unauthorized" };
     }
 
     // 1. Fetch Tournament to check Organizer
     const { data: tournament, error: tError } = await supabase
         .from('tournaments')
-        .select('organizer_popid')
+        .select('organizer_id, organizer_popid')
         .eq('id', tournamentId)
         .single();
 
     if (tError || !tournament) {
         console.error("AddPlayer Error: Tournament not found. ID:", tournamentId, "Supabase Error:", tError);
-        throw new Error("Tournament not found");
+        console.error("AddPlayer Error: Tournament not found. ID:", tournamentId, "Supabase Error:", tError);
+        return { error: "Tournament not found" };
     }
 
     // 2. Fetch Current User Role
     const { data: currentUserProfile } = await supabase
         .from('profiles')
-        .select('role, pokemon_player_id')
+        .select('role')
         .eq('id', user.id)
         .single();
 
-    // Check if the current user is the organizer using POP ID
-    const isOrganizer = tournament.organizer_popid && currentUserProfile?.pokemon_player_id
-        ? tournament.organizer_popid === currentUserProfile.pokemon_player_id
-        : false;
-
+    // Check if the current user is the organizer (UUID check)
+    const isOrganizer = tournament.organizer_id === user.id;
     const isAdmin = currentUserProfile?.role === 'admin';
+
+    if (!isOrganizer && !isAdmin) {
+        return { error: "Unauthorized" };
+    }
 
     // 3. Check Restriction: Organizer cannot add themselves
     if (isOrganizer && !isAdmin && user.id === profileId) {
-        throw new Error("Organizers cannot participate as players in their own tournament.");
+        return { error: "Organizers cannot participate as players in their own tournament." };
     }
 
     // 4. Fetch Candidate Profile to ensure it exists and has data (double check)
@@ -87,28 +89,12 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
         .single();
 
     if (!candidate) {
-        throw new Error("Candidate profile not found");
+        return { error: "Candidate profile not found" };
     }
 
     // 5. Add to Tournament Players
-    // We need to insert into `tournament_players`.
-    // We also need to ensure a "Player" record exists in `players` table corresponding to this `profile`.
-    // Wait, the schema usually has `players` table for TOM management.
-    // If we are adding a *Profile* (User), we need to link it.
-
-    // Check existing logic in `upload-tom`? 
-    // Usually `tournament_players` table has `player_id` which FKs to `players` table?
-    // Let's check `database.types.ts` relationships again.
-    // `matched` selected `p1:players!player1_tom_id`.
-    // `tournament_players` selected `player:players!player_id...` in `TournamentPage`.
-
-    // So distinct `players` table exists.
-    // When adding a User Profile -> Roster, we must ensure a row in `players` exists for them.
-    // Search if `players` table has a row with `tom_player_id` === profile.pokemon_player_id?
-    // OR does `players` table have a `profile_id` link?
-
-    // Assuming `players` table is the entity table.
-    // We should upsert into `players` first.
+    // Ensure "Player" entity exists in `players` table corresponding to this `profile`.
+    // If not, create it.
 
     const { data: playerRecord, error: pError } = await supabase
         .from('players')
@@ -139,7 +125,8 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
 
         if (createError) {
             console.error("Failed to create player entity:", createError);
-            throw new Error("Failed to register player entity.");
+            console.error("Failed to create player entity:", createError);
+            return { error: "Failed to register player entity." };
         }
 
         playerId = newPlayer.tom_player_id;
@@ -160,7 +147,11 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
         if (joinError.code === '23505') { // Unique violation
             throw new Error("Player is already in the roster.");
         }
-        throw new Error("Failed to add player to roster.");
+        console.error("AddPlayer Error: Failed to insert into tournament_players.", joinError);
+        if (joinError.code === '23505') { // Unique violation
+            return { error: "Player is already in the roster." };
+        }
+        return { error: "Failed to add player to roster." };
     }
 
     revalidatePath(`/organizer/tournaments/${tournamentId}`);
@@ -172,30 +163,28 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        throw new Error("Unauthorized");
+        return { error: "Unauthorized" };
     }
 
     // 1. Fetch Tournament to check Organizer
     const { data: tournament, error: tError } = await supabase
         .from('tournaments')
-        .select('organizer_popid')
+        .select('organizer_id')
         .eq('id', tournamentId)
         .single();
 
     if (tError || !tournament) {
-        throw new Error("Tournament not found");
+        return { error: "Tournament not found" };
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
 
-    // Check if the current user is the organizer using POP ID
-    const isOrganizer = tournament.organizer_popid && profile?.pokemon_player_id
-        ? tournament.organizer_popid === profile.pokemon_player_id
-        : false;
+    // Check if the current user is the organizer (UUID check)
+    const isOrganizer = tournament.organizer_id === user.id;
     const isAdmin = profile?.role === 'admin';
 
     if (!isOrganizer && !isAdmin) {
-        throw new Error("Unauthorized");
+        return { error: "Unauthorized" };
     }
 
     // 2. Delete from tournament_players
@@ -209,7 +198,7 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
         .eq('player_id', playerId); // playerId here MUST be the tom_player_id (POP ID) based on the schema discovery.
 
     if (error) {
-        throw new Error("Failed to remove player.");
+        return { error: "Failed to remove player." };
     }
 
     revalidatePath(`/organizer/tournaments/${tournamentId}`);

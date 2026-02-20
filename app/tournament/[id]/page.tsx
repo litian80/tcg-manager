@@ -5,6 +5,11 @@ import { Role } from "@/lib/rbac";
 import { UserResult } from "@/app/tournament/actions";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
 
+interface Profile {
+    role?: string;
+    pokemon_player_id?: string;
+}
+
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const supabase = await createClient();
@@ -26,7 +31,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // 1.5 Fetch User Role
     const { data: { user } } = await supabase.auth.getUser();
     let userRole: Role | undefined = undefined; // Default to undefined (no role/guest)
-    let profile: any = null;
+    let profile: Profile | null = null;
 
     if (user) {
         const { data } = await supabase
@@ -45,7 +50,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
 
     // Permission check for showing the "Manage" button
-    const tournamentRecord = tournamentData as any; // Access raw fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tournamentRecord = tournamentData as any; // Access raw fields (organizer_id/popid might be missing from type def but in DB)
     const isOrganizer = user && userRole !== 'admin' && (
         tournamentRecord.organizer_id === user.id ||
         (tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid)

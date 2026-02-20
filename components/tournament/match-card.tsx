@@ -44,7 +44,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
     // Easter Egg Logic
     const [myTomId, setMyTomId] = useState<string | null>(null);
     const [isGameOpen, setIsGameOpen] = useState(false);
-    const [gameData, setGameData] = useState<any>(null);
+    const [gameData, setGameData] = useState<unknown>(null);
     const { trigger: triggerSecret, reset: resetSecret } = useSecretTrigger(async () => {
         if (!myTomId) return;
 

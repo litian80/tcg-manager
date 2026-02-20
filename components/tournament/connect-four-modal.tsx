@@ -124,7 +124,11 @@ export function ConnectFourModal({ isOpen, onClose, matchId, currentUserTomId, p
         if (isWin) setWinner(nextWinner);
 
         try {
-            await updateGameState(matchId, newBoard, nextTurn, nextWinner);
+            const result = await updateGameState(matchId, newBoard, nextTurn, nextWinner);
+            if (result && 'error' in result && result.error) {
+                console.error("Failed to update game:", result.error);
+                toast.error("Failed to make move.");
+            }
         } catch (error) {
             console.error("Failed to update game:", error);
             toast.error("Failed to make move.");

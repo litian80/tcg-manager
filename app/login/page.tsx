@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Video } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 
 export default function LoginPage() {
     const supabase = createClient()
@@ -31,7 +31,7 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                        <Video className="h-6 w-6 text-primary" />
+                        <Trophy className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-2xl font-bold">Welcome to TCG Manager</CardTitle>
                     <CardDescription>

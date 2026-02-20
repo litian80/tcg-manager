@@ -63,12 +63,16 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
     const handleAdd = async (candidate: RosterCandidate) => {
         setAddingId(candidate.id);
         try {
-            await addPlayerToRoster(tournamentId, candidate.id);
-            toast.success(`Added ${candidate.first_name} to roster.`);
-            setResults(prev => prev.filter(p => p.id !== candidate.id));
-            router.refresh();
+            const result = await addPlayerToRoster(tournamentId, candidate.id);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success(`Added ${candidate.first_name} to roster.`);
+                setResults(prev => prev.filter(p => p.id !== candidate.id));
+                router.refresh(); // Refresh to show new roster
+            }
         } catch (error: any) {
-            toast.error(error.message || "Failed to add player.");
+            toast.error("Unexpected error adding player.");
         } finally {
             setAddingId(null);
         }
@@ -79,11 +83,15 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
 
         setRemovingId(player.id);
         try {
-            await removePlayerFromRoster(tournamentId, player.id);
-            toast.success(`Removed ${player.first_name}.`);
-            router.refresh();
+            const result = await removePlayerFromRoster(tournamentId, player.id);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success(`Removed ${player.first_name}.`);
+                router.refresh();
+            }
         } catch (error: any) {
-            toast.error(error.message || "Failed to remove player.");
+            toast.error("Unexpected error removing player.");
         } finally {
             setRemovingId(null);
         }

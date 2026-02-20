@@ -13,7 +13,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 interface Standing {
     player_id: string;
@@ -26,6 +26,7 @@ interface Standing {
     player: {
         first_name: string;
         last_name: string;
+        tom_player_id: string | null;
     } | null;
 }
 
@@ -75,7 +76,7 @@ export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) 
             if (error) {
                 console.error('Error fetching standings:', error);
             } else {
-                setStandings(data as any);
+                setStandings(data as unknown as Standing[]);
             }
             setLoading(false);
         };
@@ -128,7 +129,7 @@ export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) 
                                             </TableRow>
                                         ) : (
                                             players.map((s) => {
-                                                const isMe = myPlayerId && s.player && (s.player as any).tom_player_id === myPlayerId;
+                                                const isMe = myPlayerId && s.player?.tom_player_id === myPlayerId;
                                                 return (
                                                     <TableRow
                                                         key={s.player_id}
