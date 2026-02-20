@@ -260,8 +260,7 @@ export async function POST(req: NextRequest) {
                 .upsert({
                     tom_player_id: userid,
                     first_name: p.firstname || 'Unknown',
-                    last_name: p.lastname || 'Unknown',
-                    tournament_id: tournamentId
+                    last_name: p.lastname || 'Unknown'
                 }, { onConflict: 'tom_player_id' });
 
             if (playerError) {

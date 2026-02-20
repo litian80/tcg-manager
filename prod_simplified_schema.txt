@@ -1,0 +1,112 @@
+Table: tournaments
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - name: string (text) 
+  - date: string (date) 
+  - total_rounds: integer (integer) 
+  - status: string (text) 
+  - created_at: string (timestamp with time zone) 
+  - parsed_data: undefined (jsonb) Stores structured data derived from raw_xml for indexing and querying.
+  - tom_uid: string (text) 
+  - city: string (text) 
+  - country: string (text) 
+  - organizer_popid: string (text) 
+  - is_published: boolean (boolean) 
+
+Table: deck_checks
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - tournament_id: string (uuid) Note:
+This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
+  - player_id: string (text) 
+  - judge_user_id: string (uuid) 
+  - round_number: integer (integer) 
+  - check_time: string (timestamp with time zone) 
+  - note: string (text) 
+
+Table: profiles
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - email: string (text) 
+  - role: string (public.app_role) 
+  - created_at: string (timestamp with time zone) 
+  - first_name: string (text) 
+  - last_name: string (text) 
+  - middle_name: string (text) 
+  - nick_name: string (text) 
+  - pokemon_player_id: string (text) 
+  - birth_year: integer (integer) 
+  - updated_at: string (timestamp with time zone) 
+
+Table: player_penalties
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - tournament_id: string (uuid) Note:
+This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
+  - player_id: string (text) 
+  - judge_user_id: string (uuid) 
+  - round_number: integer (integer) 
+  - category: string (text) 
+  - severity: string (text) 
+  - penalty: string (text) 
+  - notes: string (text) 
+  - created_at: string (timestamp with time zone) 
+
+Table: matches
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - tournament_id: string (uuid) Note:
+This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
+  - round_number: integer (integer) 
+  - table_number: integer (integer) 
+  - player1_tom_id: string (text) Note:
+This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom_player_id'/>
+  - player2_tom_id: string (text) Note:
+This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom_player_id'/>
+  - winner_tom_id: string (text) Note:
+This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom_player_id'/>
+  - is_finished: boolean (boolean) 
+  - division: string (text) 
+  - outcome: integer (integer) 
+  - p1_display_record: string (text) 
+  - p2_display_record: string (text) 
+  - time_extension_minutes: integer (integer) 
+
+Table: players
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - tom_player_id: string (text) 
+  - first_name: string (text) 
+  - last_name: string (text) 
+
+Table: tournament_players
+  - tournament_id: string (uuid) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
+  - player_id: string (text) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom_player_id'/>
+  - rank: integer (integer) 
+  - division: string (text) 
+  - wins: integer (integer) 
+  - losses: integer (integer) 
+  - ties: integer (integer) 
+  - points: integer (integer) 
+
+Table: tournament_judges
+  - tournament_id: string (uuid) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
+  - user_id: string (uuid) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>
+  - assigned_at: string (timestamp with time zone) 
+
+Table: mini_games
+  - match_id: string (uuid) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `matches.id`.<fk table='matches' column='id'/>
+  - board: undefined (jsonb) 
+  - turn: string (text) 
+  - winner: string (text) 
+

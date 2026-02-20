@@ -117,8 +117,7 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
             .insert({
                 first_name: candidate.first_name,
                 last_name: candidate.last_name,
-                tom_player_id: candidate.pokemon_player_id,
-                tournament_id: tournamentId // Required by DB schema
+                tom_player_id: candidate.pokemon_player_id
             })
             .select('tom_player_id')
             .single();
