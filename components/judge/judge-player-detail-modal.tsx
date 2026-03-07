@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, FileText, History, Gavel, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
-import { getPlayerJudgeDetails, addPenalty, addDeckCheck } from "@/actions/judge";
+import { AlertCircle, FileText, History, Gavel, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import { getPlayerJudgeDetails, addPenalty, addDeckCheck, updatePenalty, deletePenalty } from "@/actions/judge";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,7 @@ interface JudgePlayerDetailModalProps {
         record?: string;
     };
     roundNumber: number;
+    canEditPenalties?: boolean;
 }
 
 const CATEGORIES = [
@@ -61,7 +62,8 @@ export function JudgePlayerDetailModal({
     onClose,
     tournamentId,
     player,
-    roundNumber
+    roundNumber,
+    canEditPenalties = false
 }: JudgePlayerDetailModalProps) {
     const [activeTab, setActiveTab] = useState("actions");
     const [isLoading, setIsLoading] = useState(true);
@@ -72,7 +74,9 @@ export function JudgePlayerDetailModal({
     const [isPending, startTransition] = useTransition();
 
     // Action Modes
-    const [actionMode, setActionMode] = useState<"none" | "penalty" | "check">("none");
+    const [actionMode, setActionMode] = useState<"none" | "penalty" | "check" | "edit_penalty">("none");
+    const [editingPenaltyId, setEditingPenaltyId] = useState<string | null>(null);
+    const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
     // Penalty Form State
     const [pCategory, setCategory] = useState("");
@@ -96,6 +100,7 @@ export function JudgePlayerDetailModal({
         if (isOpen) {
             refreshData();
             setActionMode("none"); // Reset action mode on open
+            setEditingPenaltyId(null);
             setPRound(roundNumber); // Reset round on open
         }
     }, [isOpen, tournamentId, player.id, roundNumber]);
@@ -148,14 +153,53 @@ export function JudgePlayerDetailModal({
         formData.append("notes", pNotes);
 
         startTransition(async () => {
-            const res = await addPenalty(formData);
+            if (actionMode === "edit_penalty" && editingPenaltyId) {
+                formData.append("penalty_id", editingPenaltyId);
+                const res = await updatePenalty(formData);
+                if (res.error) toast.error(res.error);
+                else {
+                    toast.success("Penalty Updated");
+                    setActionMode("none");
+                    setEditingPenaltyId(null);
+                    setCategory(""); setSeverity(""); setPenalty(""); setNotes(""); setPRound(roundNumber);
+                    setActiveTab("history");
+                    refreshData();
+                }
+            } else {
+                const res = await addPenalty(formData);
+                if (res.error) toast.error(res.error);
+                else {
+                    toast.success("Penalty Issued");
+                    setActionMode("none");
+                    setCategory(""); setSeverity(""); setPenalty(""); setNotes(""); setPRound(roundNumber);
+                    refreshData();
+                }
+            }
+        });
+    };
+
+    const handleEditClick = (p: any) => {
+        setCategory(p.category);
+        setSeverity(p.severity);
+        setPenalty(p.penalty);
+        setNotes(p.notes || "");
+        setPRound(p.round_number);
+        setEditingPenaltyId(p.id);
+        setActionMode("edit_penalty");
+        setActiveTab("actions");
+    };
+
+    const handleDeleteClick = async (penaltyId: string) => {
+        if (!confirm("Are you sure you want to delete this penalty?")) return;
+        setIsDeletingId(penaltyId);
+        startTransition(async () => {
+            const res = await deletePenalty(penaltyId, tournamentId);
             if (res.error) toast.error(res.error);
             else {
-                toast.success("Penalty Issued");
-                setActionMode("none");
-                setCategory(""); setSeverity(""); setPenalty(""); setNotes(""); setPRound(roundNumber);
+                toast.success("Penalty Deleted");
                 refreshData();
             }
+            setIsDeletingId(null);
         });
     };
 
@@ -273,14 +317,17 @@ export function JudgePlayerDetailModal({
                             )}
 
                             {/* Penalty Form */}
-                            {actionMode === "penalty" && (
+                            {(actionMode === "penalty" || actionMode === "edit_penalty") && (
                                 <div className="space-y-4 border rounded-lg p-4 bg-red-50/50 dark:bg-red-900/10">
                                     <div className="flex items-center justify-between">
                                         <h3 className="font-semibold flex items-center gap-2">
                                             <AlertCircle className="w-5 h-5 text-destructive" />
-                                            Issue Penalty
+                                            {actionMode === "edit_penalty" ? "Edit Penalty" : "Issue Penalty"}
                                         </h3>
-                                        <Button variant="ghost" size="sm" onClick={() => setActionMode("none")}>Cancel</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => {
+                                            setActionMode("none");
+                                            setEditingPenaltyId(null);
+                                        }}>Cancel</Button>
                                     </div>
                                     <Separator />
 
@@ -355,7 +402,7 @@ export function JudgePlayerDetailModal({
                                             onClick={handleSubmitPenalty}
                                             disabled={isPending}
                                         >
-                                            {isPending ? "Issuing..." : "Issue Penalty"}
+                                            {isPending ? "Saving..." : (actionMode === "edit_penalty" ? "Update Penalty" : "Issue Penalty")}
                                         </Button>
                                     </div>
                                 </div>
@@ -385,6 +432,22 @@ export function JudgePlayerDetailModal({
                                                     </div>
                                                     <div className="font-medium">{p.category} - {p.severity}</div>
                                                     {p.notes && <div className="text-muted-foreground mt-1 text-xs italic">"{p.notes}"</div>}
+                                                    {canEditPenalties && (
+                                                        <div className="mt-3 flex justify-end gap-2 border-t border-destructive/20 pt-2">
+                                                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleEditClick(p)}>
+                                                                <Edit className="w-3 h-3 mr-1" /> Edit
+                                                            </Button>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm" 
+                                                                className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" 
+                                                                onClick={() => handleDeleteClick(p.id)} 
+                                                                disabled={isDeletingId === p.id}
+                                                            >
+                                                                <Trash2 className="w-3 h-3 mr-1" /> {isDeletingId === p.id ? "Deleting..." : "Delete"}
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

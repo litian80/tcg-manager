@@ -143,6 +143,76 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerId: stri
     };
 }
 
+export async function updatePenalty(formData: FormData) {
+    const supabase = await createClient();
+    const penaltyId = formData.get("penalty_id") as string;
+    const tournamentId = formData.get("tournament_id") as string;
+    const roundNumber = Number(formData.get("round_number"));
+    const category = formData.get("category") as string;
+    const severity = formData.get("severity") as string;
+    const penalty = formData.get("penalty") as string;
+    const notes = formData.get("notes") as string;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+
+    if (!isAuthorized) {
+        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+    }
+
+    const { error } = await supabase
+        .from("player_penalties")
+        .update({
+            round_number: roundNumber,
+            category,
+            severity,
+            penalty,
+            notes,
+        })
+        .eq("id", penaltyId)
+        .eq("tournament_id", tournamentId); // Safety check
+
+    if (error) {
+        console.error("Error updating penalty:", error);
+        return { error: error.message };
+    }
+
+    return { success: true };
+}
+
+export async function deletePenalty(penaltyId: string, tournamentId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+
+    if (!isAuthorized) {
+        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+    }
+
+    const { error } = await supabase
+        .from("player_penalties")
+        .delete()
+        .eq("id", penaltyId)
+        .eq("tournament_id", tournamentId);
+
+    if (error) {
+        console.error("Error deleting penalty:", error);
+        return { error: error.message };
+    }
+
+    return { success: true };
+}
+
 export async function updateMatchTimeExtension(matchId: string, minutes: number) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

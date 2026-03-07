@@ -356,6 +356,7 @@ export default function TournamentView({
                     tournamentId={tournament.id}
                     player={selectedPlayer}
                     roundNumber={currentRound}
+                    canEditPenalties={canManageStaff}
                 />
             )}
 
