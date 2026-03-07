@@ -107,7 +107,9 @@ export function JudgePlayerDetailModal({
 
     // Smart Defaults Logic (Copy-pasted/Adapted)
     useEffect(() => {
-        if (!pCategory) return;
+        // Disable smart defaults while editing to prevent overwriting the existing penalty
+        if (actionMode === "edit_penalty" || !pCategory) return;
+
         let suggested = "";
         if (pCategory === "Cheating") suggested = "Disqualification";
         else if (pCategory === "Procedural Error") {
