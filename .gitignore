@@ -42,3 +42,12 @@ next-env.d.ts
 
 # generated reports
 /tools/output/
+
+credentials.json
+token.json
+school_emails.json
+*.py
+*.pyc
+__pycache__/
+check_rls.js
+test_update_penalty.js
