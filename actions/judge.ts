@@ -7,33 +7,46 @@ import { SupabaseClient } from "@supabase/supabase-js";
  * Helper to check if a user is authorized to act as a judge/organizer/admin for a specific tournament.
  */
 async function checkTournamentAuth(supabase: SupabaseClient, userId: string, tournamentId: string): Promise<boolean> {
+    console.log(`[checkTournamentAuth] Checking auth for user ${userId} on tournament ${tournamentId}`);
     // 1. Check if Judge
-    const { data: judgeRecord } = await supabase
+    const { data: judgeRecord, error: judgeError } = await supabase
         .from("tournament_judges")
-        .select("id")
+        .select("tournament_id")
         .eq("tournament_id", tournamentId)
         .eq("user_id", userId)
         .single();
+    
+    console.log(`[checkTournamentAuth] Judge record:`, judgeRecord, `Error:`, judgeError);
 
     if (judgeRecord) return true;
 
-    // 2. Check if Organizer
-    const { data: tournament } = await supabase
-        .from("tournaments")
-        .select("organizer_id")
-        .eq("id", tournamentId)
-        .single();
+    // 2. Check if Organizer / Admin
+    const isOrgAdmin = await checkOrganizerAdminAuth(supabase, userId, tournamentId);
+    console.log(`[checkTournamentAuth] Org/Admin check:`, isOrgAdmin);
+    return isOrgAdmin;
+}
 
-    if (tournament && tournament.organizer_id === userId) return true;
-
-    // 3. Check if Admin
+/**
+ * Strict helper to check if a user is authorized acting ONLY as an Organizer or Admin.
+ */
+async function checkOrganizerAdminAuth(supabase: SupabaseClient, userId: string, tournamentId: string): Promise<boolean> {
     const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, pokemon_player_id")
         .eq("id", userId)
         .single();
 
     if (profile?.role === 'admin') return true;
+
+    const { data: tournament } = await supabase
+        .from("tournaments")
+        .select("organizer_popid")
+        .eq("id", tournamentId)
+        .single();
+
+    if (tournament) {
+        if (tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid) return true;
+    }
 
     return false;
 }
@@ -159,10 +172,10 @@ export async function updatePenalty(formData: FormData) {
         return { error: "Unauthorized" };
     }
 
-    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+    const isAuthorized = await checkOrganizerAdminAuth(supabase, user.id, tournamentId);
 
     if (!isAuthorized) {
-        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+        return { error: "Unauthorized: You must be an Organizer or Admin to edit a penalty." };
     }
 
     const { error } = await supabase
@@ -193,10 +206,10 @@ export async function deletePenalty(penaltyId: string, tournamentId: string) {
         return { error: "Unauthorized" };
     }
 
-    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+    const isAuthorized = await checkOrganizerAdminAuth(supabase, user.id, tournamentId);
 
     if (!isAuthorized) {
-        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+        return { error: "Unauthorized: You must be an Organizer or Admin to delete a penalty." };
     }
 
     const { error } = await supabase
