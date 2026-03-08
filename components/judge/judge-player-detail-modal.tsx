@@ -254,7 +254,7 @@ export function JudgePlayerDetailModal({
                         </TabsList>
                     </div>
 
-                    <ScrollArea className="flex-1 p-6">
+                    <div className="flex-1 overflow-y-auto p-6">
                         <TabsContent value="actions" className="mt-0 space-y-6">
 
                             {/* Action Selection Buttons */}
@@ -473,7 +473,7 @@ export function JudgePlayerDetailModal({
                                 </div>
                             )}
                         </TabsContent>
-                    </ScrollArea>
+                    </div>
                 </Tabs>
             </DialogContent>
         </Dialog>
