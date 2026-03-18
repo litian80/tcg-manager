@@ -1,0 +1,189 @@
+1: Erika's Oddish
+2: Erika's Gloom
+3: Erika's Vileplume ex
+4: Erika's Bellsprout
+5: Erika's Weepinbell
+6: Erika's Victreebel
+7: Erika's Tangela
+8: Chikorita
+9: Bayleef
+10: Mega Meganium ex
+11: Wurmple
+12: Silcoon
+13: Beautifly
+14: Cascoon
+15: Dustox
+16: Budew
+17: Grubbin
+18: Team Rocket's Tarountula
+19: Team Rocket's Spidops
+20: Charmander
+21: Charmeleon
+22: Mega Charizard Y ex
+23: Ethan's Slugma
+24: Ethan's Magcargo
+25: Entei
+26: Ethan's Ho-Oh ex
+27: Numel
+28: Camerupt
+29: Tepig
+30: Pignite
+31: Mega Emboar ex
+32: N's Darumaka
+33: N's Darmanitan
+34: Salandit
+35: Salazzle
+36: Scorbunny
+37: Raboot
+38: Cinderace ex
+39: Psyduck
+40: Golduck
+41: Totodile
+42: Croconaw
+43: Mega Feraligatr ex
+44: Sneasel
+45: Weavile
+46: Snorunt
+47: Mega Froslass ex
+48: Regice ex
+49: N's Vanillite
+50: N's Vanillish
+51: N's Vanilluxe
+52: Snom
+53: Frosmoth
+54: Glastrier
+55: Pikachu
+56: Raichu
+57: Pikachu ex
+58: Voltorb ex
+59: Tynamo
+60: Eelektrik
+61: Mega Eelektross ex
+62: Stunfisk
+63: Helioptile
+64: Heliolisk
+65: Charjabug
+66: Vikavolt
+67: Tapu Koko
+68: Hop's Pincurchin ex
+69: Iono's Tadbulb
+70: Iono's Bellibolt ex
+71: Iono's Wattrel
+72: Iono's Kilowattrel
+73: Miraidon ex
+74: Clefairy
+75: Clefable
+76: Lillie's Clefairy ex
+77: Team Rocket's Exeggcute
+78: Team Rocket's Exeggutor
+79: Team Rocket's Mewtwo ex
+80: Togepi
+81: Togetic
+82: Togekiss
+83: Marill
+84: Azumarill ex
+85: Misdreavus
+86: Mismagius
+87: Ralts
+88: Kirlia
+89: Mega Gardevoir ex
+90: Shuppet
+91: Banette
+92: Rotom
+93: Swirlix
+94: Slurpuff
+95: Hop's Phantump
+96: Hop's Trevenant
+97: Team Rocket's Mimikyu
+98: Spectrier
+99: Munkidori
+100: Team Rocket's Diglett
+101: Team Rocket's Dugtrio
+102: Hitmontop
+103: Meditite
+104: Medicham
+105: Lunatone
+106: Solrock
+107: Regirock ex
+108: Groudon
+109: Cynthia's Gible
+110: Cynthia's Gabite
+111: Cynthia's Garchomp ex
+112: Riolu
+113: Mega Lucario ex
+114: Stunfisk ex
+115: Pancham
+116: Mega Hawlucha ex
+117: Carbink
+118: Rolycoly
+119: Carkol
+120: Coalossal
+121: Koraidon ex
+122: Okidogi
+123: Gastly
+124: Haunter
+125: Mega Gengar ex
+126: Team Rocket's Murkrow
+127: Team Rocket's Honchkrow
+128: Poochyena
+129: Mightyena
+130: Galarian Zigzagoon
+131: Galarian Linoone
+132: Galarian Obstagoon
+133: Cynthia's Spiritomb
+134: Scraggy
+135: Mega Scrafty ex
+136: N's Zorua
+137: N's Zoroark ex
+138: Vullaby
+139: Mandibuzz ex
+140: Pangoro
+141: Hoopa
+142: Fezandipiti ex
+143: Pecharunt
+144: Mawile
+145: Registeel ex
+146: Pawniard
+147: Bisharp
+148: Kingambit
+149: Togedemaru ex
+150: Dratini
+151: Dragonair
+152: Mega Dragonite ex
+153: Rayquaza
+154: N's Reshiram
+155: N's Zekrom
+156: Noibat
+157: Noivern
+158: Dreepy
+159: Drakloak
+160: Dragapult ex
+161: Team Rocket's Meowth
+162: Team Rocket's Kangaskhan ex
+163: Larry's Dunsparce
+164: Larry's Dudunsparce ex
+165: Skitty
+166: Delcatty
+167: Zangoose ex
+168: Larry's Starly
+169: Larry's Staravia
+170: Larry's Staraptor
+171: Fan Rotom
+172: Mega Audino ex
+173: Larry's Rufflet
+174: Larry's Braviary
+175: Larry's Komala
+176: Drampa
+177: Hop's Cramorant
+178: Terapagos
+179: Terapagos ex
+180: Acerola's Mischief
+181: Air Balloon
+182: Anthea & Concordia
+191: Light Ball
+197: Nighttime Mine
+198: Poké Pad
+206: Team Rocket's Hypnotizer
+211: Thick Scale
+214: Urbain
+215: Waitress

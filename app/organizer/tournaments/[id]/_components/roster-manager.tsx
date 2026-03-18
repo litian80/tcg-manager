@@ -81,9 +81,14 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
     const handleRemove = async (player: Player) => {
         if (!confirm(`Remove ${player.first_name} ${player.last_name} from roster?`)) return;
 
+        if (!player.tom_player_id) {
+            toast.error("Cannot remove player: Missing POP ID.");
+            return;
+        }
+
         setRemovingId(player.id);
         try {
-            const result = await removePlayerFromRoster(tournamentId, player.id);
+            const result = await removePlayerFromRoster(tournamentId, player.tom_player_id);
             if (result.error) {
                 toast.error(result.error);
             } else {

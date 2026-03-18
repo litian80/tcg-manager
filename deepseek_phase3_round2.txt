@@ -1,0 +1,1604 @@
+--- Reasoning ---
+We are given three files: page.tsx, tournament-view.tsx, and DeckSubmissionModal.tsx. We are also given the deck-validator.ts utility.
+ The goal is to perform a round 2 refinement focusing on:
+ 1. Type Standardization
+ 2. UX Polish
+ 3. Code Quality
+
+ Let's break down the tasks:
+
+ 1. Type Standardization:
+    - The `ParsedCard` interface is defined in both `DeckSubmissionModal.tsx` and `deck-validator.ts`. We should export it from `deck-validator.ts` and import it in the other files to avoid redundancy.
+    - Also, note that the `ParsedDeckCategories` in the modal is not explicitly defined as a type but is used as `ParsedDeckCategories` (which is essentially an object with keys being categories and values being `ParsedCard[]`). We can define this type in `deck-validator.ts` as well.
+
+    Let's update `deck-validator.ts` to export:
+        - `ParsedCard`
+        - `DeckParseResult` (which already has `Pokemon`, `Trainer`, `Energy` arrays, but note that the modal uses `ParsedDeckCategories` which is similar but without `TotalCards` and `Errors`)
+
+    We can create a type `ParsedDeckCategories` that picks the category arrays from `DeckParseResult`.
+
+    Then, in `DeckSubmissionModal.tsx` and `tournament-view.tsx`, we import `ParsedCard` from `deck-validator.ts`.
+
+ 2. UX Polish:
+    - Success Feedback: Currently, on success, the modal calls `window.location.reload()`. We should use `router.refresh()` (from `next/navigation`) or update the `deckList` state locally if possible.
+      Since the modal is in the `TournamentView` which is a client component, we can try to update the parent state to reflect the new deck list without a full reload.
+
+      However, note that the `deckList` is passed as a prop to `TournamentView` from the server component `TournamentPage`. We can use a state in `TournamentView` to manage the deck list and update it on successful submission.
+
+      Alternatively, we can use `router.refresh()` to refresh the server component data. Since `TournamentView` is a client component, we can use the `useRouter` hook.
+
+      Let's change the `onSuccess` callback to use `router.refresh()` and then close the modal. This will cause the server component to refetch and pass the updated `deckList` to `TournamentView`.
+
+    - Deadline Handling: Improve the deadline display. Instead of just a title attribute, maybe use a more visible warning if the deadline is close (e.g., within 1 hour).
+
+      We can compute the time left until the deadline and show a warning message or style the button accordingly.
+
+    - Button UX: The "Edit Deck List" button should maybe highlight its status better (e.g., transition to outline variant if already submitted).
+
+      Already done: the button uses `variant={deckList ? "outline" : "default"}`.
+
+ 3. Code Quality:
+    - Review the `page.tsx` data fetching logic. Is it efficient? Could it benefit from parallel fetching with `Promise.all`?
+
+      Currently, the data fetching is sequential. We can fetch the tournament data, user role, registration, deck list, matches, roster, and penalties in parallel where possible.
+
+      However, note that some fetches depend on the result of previous ones (e.g., user role and registration depend on user). We can restructure to run independent fetches in parallel.
+
+    - Check for any missing error boundaries or race conditions during the integration.
+
+      We are already using an ErrorBoundary in the `DeckSubmissionModal`. We should also consider error handling in the `TournamentPage` and `TournamentView`.
+
+ Let's proceed step by step.
+
+ Step 1: Update `deck-validator.ts` to export the necessary types.
+
+ Step 2: Update `DeckSubmissionModal.tsx` to use the types from `deck-validator.ts` and use `router.refresh()`.
+
+ Step 3: Update `tournament-view.tsx` to use the types from `deck-validator.ts` and adjust the success callback.
+
+ Step 4: Improve deadline handling in `tournament-view.tsx`.
+
+ Step 5: Optimize data fetching in `page.tsx` with `Promise.all`.
+
+ Step 6: Check for race conditions and error boundaries.
+
+ Let's write the code accordingly.
+
+ Note: We are only allowed to output the code for the files that are changed. We will output the refined code for `page.tsx`, `tournament-view.tsx`, `DeckSubmissionModal.tsx`, and `deck-validator.ts`.
+
+ However, note that the instructions say to provide the code for the files that are changed, and we are changing all four.
+
+ Let's start with `deck-validator.ts` to export the types.
+
+--- Answer ---
+I'll perform the Round 2 refinement focusing on type standardization, UX polish, and code quality.
+
+## Refined Code
+
+### 1. **deck-validator.ts** (Type Standardization)
+```typescript
+export interface ParsedCard {
+    qty: number;
+    name: string;
+    set: string;
+    number: string;
+    raw: string;
+    isBasicEnergy?: boolean;
+    category?: 'pokemon' | 'trainer' | 'energy';
+}
+
+export interface ParsedDeckCategories {
+    Pokemon?: ParsedCard[];
+    Trainer?: ParsedCard[];
+    Energy?: ParsedCard[];
+}
+
+export interface DeckParseResult {
+    Pokemon: ParsedCard[];
+    Trainer: ParsedCard[];
+    Energy: ParsedCard[];
+    TotalCards: number;
+    Errors: { line: string; message: string }[];
+}
+
+export function parseDeckList(deckText: string): DeckParseResult {
+    // Normalize UTF-8 characters and common mis-encodings
+    const normalizedText = deckText
+        .replace(/PokÃ©mon/g, 'Pokémon')
+        .replace(/Pokemon/g, 'Pokémon')
+        .replace(/Pok\u00e9mon/g, 'Pokémon');
+
+    const lines = normalizedText.trim().split('\n');
+    
+    const result: DeckParseResult = {
+        Pokemon: [],
+        Trainer: [],
+        Energy: [],
+        TotalCards: 0,
+        Errors: []
+    };
+    
+    // More flexible category detection
+    const categoryPatterns = {
+        pokemon: /^(?:Pokémon|PokÃ©mon|Pokemon):?\s*(\d+)?$/i,
+        trainer: /^(?:Trainer|Trainer Cards|Trainers):?\s*(\d+)?$/i,
+        energy: /^(?:Energy|Energies):?\s*(\d+)?$/i
+    };
+
+    let currentCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'> = "Pokemon";
+    
+    // Standard line pattern: "2 Entei V BRS 22" or "2 Entei V (BRS) 22"
+    const standardPattern = /^(\d+)[x\s]+(.+?)\s+\(?([A-Z0-9-]{2,7})\)?\s+(\d+)\s*$/i;
+    
+    // Basic Energy pattern: 11 Basic {R} Energy SVE 2
+    const basicEnergyPattern = /^(\d+)[x\s]+(Basic\s+{[^}]+}\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
+
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+            
+        // Check for category headers
+        if (categoryPatterns.pokemon.test(line)) {
+            currentCategory = "Pokemon";
+            continue;
+        } else if (categoryPatterns.trainer.test(line)) {
+            currentCategory = "Trainer";
+            continue;
+        } else if (categoryPatterns.energy.test(line)) {
+            currentCategory = "Energy";
+            continue;
+        }
+        
+        // Try standard pattern
+        const standardMatch = line.match(standardPattern);
+        if (standardMatch) {
+            const qty = parseInt(standardMatch[1], 10);
+            const name = standardMatch[2].trim();
+            const setCode = standardMatch[3].trim().toUpperCase();
+            const cardNumber = standardMatch[4].trim();
+            
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: setCode,
+                number: cardNumber,
+                raw: line,
+                category: currentCategory.toLowerCase() as ParsedCard['category']
+            };
+            
+            result[currentCategory].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+            
+        // Try basic energy pattern
+        const energyMatch = line.match(basicEnergyPattern);
+        if (energyMatch) {
+            const qty = parseInt(energyMatch[1], 10);
+            const name = energyMatch[2].trim();
+            const setCode = energyMatch[3]?.trim().toUpperCase() || "ENERGY";
+            const cardNumber = energyMatch[4]?.trim() || "0";
+            
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: setCode,
+                number: cardNumber,
+                raw: line,
+                isBasicEnergy: true,
+                category: 'energy'
+            };
+            result["Energy"].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+
+        // Try simple energy pattern (fallback for basic energy without "Basic")
+        const simpleEnergyPattern = /^(\d+)[x\s]+(.+\s+Energy)$/i;
+        const simpleMatch = line.match(simpleEnergyPattern);
+        if (simpleMatch) {
+            const qty = parseInt(simpleMatch[1], 10);
+            const name = simpleMatch[2].trim();
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: "ENERGY",
+                number: "0",
+                raw: line,
+                isBasicEnergy: true,
+                category: 'energy'
+            };
+            result["Energy"].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+            
+        // If no match, log error
+        result.Errors.push({
+            line: line,
+            message: "Failed to parse line format."
+        });
+    }
+
+    return result;
+}
+```
+
+### 2. **DeckSubmissionModal.tsx** (Updated with Type Standardization & Better UX)
+```typescript
+"use client";
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, AlertCircle, CheckCircle2, Info, Copy } from "lucide-react";
+import { validateDeckListAction, ValidationResult } from "@/app/actions/deck-validation";
+import { submitDeckAction } from "@/app/actions/deck-submission";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import type { ParsedCard, ParsedDeckCategories } from "@/utils/deck-validator";
+import { useRouter } from "next/navigation";
+
+interface DeckSubmissionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  tournamentId: string;
+  initialDeckText?: string;
+  onSuccess?: (newDeckText: string) => void;
+}
+
+// --- Constants ---
+
+const MAX_CHAR_LIMIT = 5000;
+const AUTO_SAVE_KEY_PREFIX = "ptcg-deck-draft-";
+const AUTO_SAVE_DEBOUNCE_MS = 1000;
+
+// --- Error Boundary ---
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("DeckSubmissionModal Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 text-center space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Component Error</AlertTitle>
+            <AlertDescription>
+              Something went wrong while rendering this section. Please try reopening the modal.
+            </AlertDescription>
+          </Alert>
+          <Button onClick={() => window.location.reload()}>Reload Page</Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// --- Sub-components ---
+
+export function DeckEditor({ 
+  value, 
+  onChange, 
+  maxLength 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  maxLength: number;
+}) {
+  const isEmpty = !value.trim();
+  
+  return (
+    <div className="flex-1 mt-0 overflow-hidden flex flex-col">
+      <div className="flex-1 relative">
+        <Textarea
+          id="deck-list-textarea"
+          aria-label="Deck list input"
+          placeholder="Paste deck list here...&#10;Example:&#10;Pokémon: 8&#10;2 Entei V BRS 22&#10;..."
+          className="h-full font-mono resize-none focus-visible:ring-1"
+          value={value}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 opacity-50 hover:opacity-100"
+          disabled={isEmpty}
+          onClick={() => {
+            if (isEmpty) return;
+            navigator.clipboard.writeText(value);
+            toast.success("Copied to clipboard");
+          }}
+          title={isEmpty ? "Nothing to copy" : "Copy to clipboard"}
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground text-right">
+        {value.length} / {maxLength} characters
+      </div>
+    </div>
+  );
+}
+
+const CategorySection = React.memo(function CategorySection({ 
+  title, 
+  cards 
+}: { 
+  title: string; 
+  cards: ParsedCard[] 
+}) {
+  if (!cards || cards.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">{title}</h4>
+      <div className="space-y-1">
+        {cards.map((card, i) => (
+          <div 
+            key={`${card.name}-${card.set || 'unknown'}-${card.number || 'unknown'}-${card.qty}-${i}`} 
+            className="text-sm flex justify-between items-center group hover:bg-accent/50 p-1 rounded transition-colors"
+          >
+            <div className="flex gap-2 items-center min-w-0">
+              <span className="font-bold text-primary w-4 flex-shrink-0">{card.qty}</span>
+              <span className="truncate">{card.name}</span>
+            </div>
+            {!card.isBasicEnergy && (card.set || card.number) && (
+              <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {card.set} {card.number}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export { CategorySection };
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {[1, 2].map((section) => (
+        <div key={section} className="space-y-2">
+          <div className="h-3 bg-muted rounded w-1/4 mb-3" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-2 items-center h-8 bg-muted/50 rounded w-full" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ValidationFeedback({ result, isValidating, onValidate }: { 
+  result: ValidationResult | null; 
+  isValidating: boolean;
+  onValidate: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold mb-3 flex items-center gap-2">
+        Validation Status
+        {result && (
+          result.isValid ? (
+            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">Valid</Badge>
+          ) : (
+            <Badge variant="destructive">Invalid</Badge>
+          )
+        )}
+      </h3>
+
+      {!result && !isValidating && (
+        <div className="py-4 text-center">
+          <p className="text-sm text-muted-foreground mb-4">Click "Run Validation" to check for errors.</p>
+          <Button variant="secondary" size="sm" onClick={onValidate}>
+            Run Validation
+          </Button>
+        </div>
+      )}
+
+      {isValidating && (
+        <div 
+          role="status"
+          aria-label="Validating deck legality"
+          className="flex items-center gap-2 text-sm text-muted-foreground animate-bounce pb-2"
+        >
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          Verifying tournament legality...
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-3">
+          {result.errors.length > 0 && (
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Errors</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside text-xs mt-1 space-y-1">
+                  {result.errors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {result.warnings.length > 0 && (
+            <Alert className="border-amber-200 bg-amber-50 text-amber-800 [&>svg]:text-amber-600">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Warnings</AlertTitle>
+              <AlertDescription className="text-xs">
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  {result.warnings.map((warn, i) => (
+                    <li key={i}>{warn}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {result.isValid && (
+            <Alert className="border-green-200 bg-green-50 text-green-800 [&>svg]:text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Ready to Submit</AlertTitle>
+              <AlertDescription className="text-xs">
+                Your deck list meets all tournament construction requirements.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Minimal Card component
+export function PreviewCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-xl border bg-card text-card-foreground shadow flex flex-col overflow-hidden", className)}>
+      {children}
+    </div>
+  );
+}
+
+// --- Main Component ---
+
+export function DeckSubmissionModal({
+  isOpen,
+  onClose,
+  tournamentId,
+  initialDeckText = "",
+  onSuccess,
+}: DeckSubmissionModalProps) {
+  const router = useRouter();
+  const autoSaveKey = `${AUTO_SAVE_KEY_PREFIX}${tournamentId}`;
+
+  // Fix P0 Hydration: Use lazy initializer for localStorage
+  const [deckText, setDeckText] = useState(() => {
+    if (typeof window === "undefined") return initialDeckText;
+    try {
+      const saved = localStorage.getItem(autoSaveKey);
+      return saved || initialDeckText;
+    } catch {
+      return initialDeckText;
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState("editor");
+  const [isValidating, setIsValidating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+
+  // Refs for stable keyboard shortcuts and race condition guards
+  const stateRef = useRef({
+    deckText,
+    validationResult,
+    isValidating,
+    isSubmitting,
+    tournamentId,
+    autoSaveKey,
+  });
+
+  // Sync ref with current state
+  useEffect(() => {
+    stateRef.current = {
+      deckText,
+      validationResult,
+      isValidating,
+      isSubmitting,
+      tournamentId,
+      autoSaveKey,
+    };
+  }, [deckText, validationResult, isValidating, isSubmitting, tournamentId, autoSaveKey]);
+
+  const isLoaded = useRef(false);
+
+  // Reset/Sync state on open
+  useEffect(() => {
+    if (isOpen) {
+      // Sync with potentially updated initialDeckText or draft
+      try {
+        const savedDraft = localStorage.getItem(autoSaveKey);
+        if (savedDraft) setDeckText(savedDraft);
+      } catch (e) {
+        console.warn("Failed to read from localStorage", e);
+      }
+      setValidationResult(null);
+      setActiveTab("editor");
+      isLoaded.current = true;
+    } else {
+      isLoaded.current = false;
+    }
+  }, [isOpen, initialDeckText, autoSaveKey]);
+
+  // Save draft to localStorage with debounce
+  useEffect(() => {
+    if (!isOpen || !isLoaded.current || deckText === initialDeckText) return;
+
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(autoSaveKey, deckText);
+      } catch (e) {
+        console.warn("Failed to save draft to localStorage:", e);
+      }
+    }, AUTO_SAVE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [deckText, isOpen, initialDeckText, autoSaveKey]);
+
+  // Clear validation when deck text changes
+  useEffect(() => {
+    if (validationResult) {
+      setValidationResult(null);
+    }
+  }, [deckText]);
+
+  const handleValidate = useCallback(async () => {
+    // P0 Race Condition Guard
+    if (stateRef.current.isValidating || stateRef.current.isSubmitting) return;
+
+    const trimmed = stateRef.current.deckText.trim();
+    if (!trimmed) {
+      toast.error("Please enter a deck list first.");
+      return;
+    }
+
+    if (trimmed.split('\n').length < 3) {
+      toast.error("Deck list is too short. Please paste a full export.");
+      return;
+    }
+    
+    setIsValidating(true);
+    try {
+      const result = await validateDeckListAction(trimmed, stateRef.current.tournamentId);
+      setValidationResult(result);
+      if (result.isValid) {
+        toast.success("Deck list format is valid!");
+      } else {
+        toast.error(result.errors[0] || "Validation issues found.");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to validate deck list.";
+      toast.error(message);
+    } finally {
+      setIsValidating(false);
+    }
+  }, []); // Now stable due to stateRef
+
+  const handleSubmit = useCallback(async () => {
+    // P0 Race Condition Guard
+    if (stateRef.current.isSubmitting || stateRef.current.isValidating) return;
+
+    const trimmed = stateRef.current.deckText.trim();
+    if (!trimmed) return;
+    
+    setIsSubmitting(true);
+    try {
+      const result = await submitDeckAction(stateRef.current.tournamentId, trimmed);
+      if (result.isValid) {
+        toast.success("Deck list submitted successfully!");
+        try {
+          localStorage.removeItem(stateRef.current.autoSaveKey); // Clear draft on success
+        } catch (e) { /* ignore */ }
+        
+        // Option 1: Call the success callback with the new deck text
+        onSuccess?.(trimmed);
+        
+        // Option 2: Use router.refresh() for a smoother update
+        router.refresh();
+        
+        onClose();
+      } else {
+        setValidationResult(result);
+        toast.error(result.errors[0] || "Submission failed.");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [onSuccess, onClose, router]); // Minimal stable dependencies
+
+  // Keyboard Shortcuts (Ctrl+Enter) - Stable Listener Pattern
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        
+        // Use ref for the absolute latest state in the event handler
+        const { validationResult: latestResult } = stateRef.current;
+        
+        if (latestResult?.isValid) {
+          handleSubmit();
+        } else {
+          handleValidate();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleValidate, handleSubmit]); // Stable listeners
+
+  const isPreviewDisabled = !deckText.trim() || isValidating;
+  const parsedDeck = validationResult?.parsedDeck as ParsedDeckCategories | undefined;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl h-[90vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden">
+        <ErrorBoundary>
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="text-2xl font-bold">Submit Deck List</DialogTitle>
+            <DialogDescription>
+              Valid format: Pokémon TCG Live export. (Ctrl+Enter to validate/submit)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-hidden px-6 py-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="editor">Editor</TabsTrigger>
+                <TabsTrigger 
+                  value="preview" 
+                  disabled={isPreviewDisabled}
+                  aria-disabled={isPreviewDisabled}
+                  aria-describedby="preview-tooltip"
+                >
+                  Preview & Validation
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="editor" className="flex-1 mt-0 overflow-hidden">
+                <DeckEditor 
+                  value={deckText} 
+                  onChange={setDeckText} 
+                  maxLength={MAX_CHAR_LIMIT} 
+                />
+              </TabsContent>
+
+              <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                  {/* Parsed List */}
+                  <PreviewCard className="border-none shadow-none bg-muted/30">
+                    <ScrollArea className="flex-1 p-4">
+                      {isValidating ? (
+                        <LoadingSkeleton />
+                      ) : (parsedDeck ? (
+                        <div className="space-y-4">
+                          <CategorySection title="Pokémon" cards={parsedDeck.Pokemon || []} />
+                          <CategorySection title="Trainer" cards={parsedDeck.Trainer || []} />
+                          <CategorySection title="Energy" cards={parsedDeck.Energy || []} />
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">
+                          <Info className="h-8 w-8" />
+                          <p>No parsed results yet.</p>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </PreviewCard>
+
+                  {/* Validation Feedback */}
+                  <PreviewCard className="border-none shadow-none">
+                    <ScrollArea className="flex-1 p-4">
+                      <ValidationFeedback 
+                        result={validationResult} 
+                        isValidating={isValidating}
+                        onValidate={handleValidate} 
+                      />
+                    </ScrollArea>
+                  </PreviewCard>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          <DialogFooter className="p-6 pt-2 border-t bg-muted/20">
+            <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={!deckText.trim() || isValidating || isSubmitting}
+                onClick={handleValidate}
+              >
+                {isValidating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Validate
+              </Button>
+              <Button
+                disabled={!validationResult?.isValid || isSubmitting}
+                onClick={handleSubmit}
+                title={!validationResult?.isValid ? "Please validate your deck successfully before submitting" : "Submit your deck list"}
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Deck
+              </Button>
+            </div>
+          </DialogFooter>
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+### 3. **tournament-view.tsx** (Updated with Type Import & Better Deadline Handling)
+```typescript
+"use client";
+
+import { UserResult } from "@/app/tournament/actions";
+import { useState, useEffect } from "react";
+import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock } from "lucide-react";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { hasPermission, Role } from "@/lib/rbac";
+import { Badge } from "@/components/ui/badge";
+import { MatchCard } from "@/components/tournament/match-card";
+import { StandingsView } from "@/components/tournament/standings-view";
+import { PlayerRoster } from "@/components/tournament/player-roster";
+import { PenaltyModal } from "@/components/judge/penalty-modal";
+import { JudgePlayerDetailModal } from "@/components/judge/judge-player-detail-modal";
+import { TimeExtensionModal } from "@/components/judge/time-extension-modal";
+import { RegisterButton } from "@/components/registration/RegisterButton";
+import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
+import { addDeckCheck } from "@/actions/judge";
+import { toast } from "sonner";
+import type { ParsedCard } from "@/utils/deck-validator";
+
+export interface Player {
+    first_name: string;
+    last_name: string;
+}
+
+export interface Match {
+    id: string;
+    round_number: number;
+    table_number: number;
+    player1_tom_id: string;
+    player2_tom_id: string;
+    p1?: Player;
+    p2?: Player;
+    winner_tom_id?: string | null;
+    division?: string | null;
+    is_finished: boolean;
+    outcome?: number;
+    p1_display_record?: string;
+    p2_display_record?: string;
+    time_extension_minutes?: number;
+}
+
+export interface Tournament {
+    id: string;
+    name: string;
+    status: string;
+    total_rounds: number;
+    date: string;
+    registration_open?: boolean;
+    registration_opens_at?: string | null;
+    registration_closes_at?: string | null;
+    publish_roster?: boolean;
+    requires_deck_list?: boolean;
+    deck_list_submission_deadline?: string | null;
+}
+
+export interface RosterPlayer {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    tom_player_id: string | null;
+    registration_status?: string;
+}
+
+interface TournamentViewProps {
+    tournament: Tournament;
+    matches: Match[];
+    currentRound: number;
+    stats: Record<string, { wins: number; losses: number; ties: number }>;
+    userRole?: Role;
+    canManageStaff: boolean;
+    rosterPlayers?: RosterPlayer[];
+    myPlayerId?: string;
+    myRegistrationStatus?: string | null;
+    penaltyCounts?: Record<string, number>;
+    deckList?: any;
+}
+
+export default function TournamentView({
+    tournament,
+    matches,
+    currentRound,
+    stats,
+    userRole,
+    canManageStaff,
+    rosterPlayers = [],
+    myPlayerId,
+    myRegistrationStatus,
+    penaltyCounts = {},
+    deckList,
+}: TournamentViewProps) {
+    const canEditMatch = hasPermission(userRole, 'match.edit_result');
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
+    const [deckListState, setDeckListState] = useState(deckList);
+    const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isClose: boolean; isPast: boolean } | null>(null);
+
+    // Determine if we have matches to decide view mode
+    const hasMatches = matches.length > 0;
+
+    // extract unique divisions, default to first one found or "Masters" if none specific
+    const divisions = Array.from(new Set(matches.map(m => m.division).filter(Boolean))) as string[];
+
+    // Sort divisions to ensure Masters is first if present, otherwise alphabetical
+    const sortedDivisions = divisions.sort((a, b) => {
+        const order = ["Masters", "Seniors", "Juniors"];
+        const idxA = order.indexOf(a);
+        const idxB = order.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
+    const [selectedDivision, setSelectedDivision] = useState<string>(sortedDivisions[0] || "");
+
+    // Filter matches by selected division
+    const divisionMatches = selectedDivision
+        ? matches.filter(m => m.division === selectedDivision)
+        : matches;
+
+    // Calculate available rounds for this division
+    const maxRound = divisionMatches.length > 0
+        ? Math.max(...divisionMatches.map(m => m.round_number))
+        : (tournament.total_rounds || 1);
+
+    const rounds = Array.from({ length: maxRound }, (_, i) => i + 1);
+
+    const getRoundMatches = (round: number) => {
+        return divisionMatches.filter(m => m.round_number === round && (
+            !searchQuery ||
+            (m.p1 ? `${m.p1.first_name} ${m.p1.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase()) ||
+            (m.p2 ? `${m.p2.first_name} ${m.p2.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase())
+        ));
+    };
+
+    const [viewMode, setViewMode] = useState<'pairings' | 'standings'>('pairings');
+
+    // Judge Actions Logic
+    const isJudge = hasPermission(userRole, 'match.edit_result');
+    const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string; tomId: string; matchId?: string; extension?: number } | null>(null);
+
+    // Time Extension Modal State
+    const [extensionModalOpen, setExtensionModalOpen] = useState(false);
+    const [selectedMatch, setSelectedMatch] = useState<{ id: string; tableNumber: number; extension: number } | null>(null);
+
+    const onPenalty = (player: { id: string; name: string; tomId: string; matchId?: string; extension?: number }) => {
+        setSelectedPlayer(player);
+        setPenaltyModalOpen(true);
+    };
+
+    const onExtension = (matchId: string, currentExtension: number, tableNumber: number) => {
+        setSelectedMatch({ id: matchId, tableNumber, extension: currentExtension });
+        setExtensionModalOpen(true);
+    };
+
+    // Deck submission logic
+    const deadline = tournament.deck_list_submission_deadline ? new Date(tournament.deck_list_submission_deadline) : null;
+    const isDeadlinePassed = !!(deadline && deadline < new Date());
+    
+    // Calculate time left to deadline
+    useEffect(() => {
+        if (!deadline) {
+            setTimeLeft(null);
+            return;
+        }
+
+        const calculateTimeLeft = () => {
+            const now = new Date();
+            const diff = deadline.getTime() - now.getTime();
+            
+            if (diff <= 0) {
+                setTimeLeft({
+                    hours: 0,
+                    minutes: 0,
+                    seconds: 0,
+                    isClose: false,
+                    isPast: true
+                });
+                return;
+            }
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            const isClose = hours < 1; // Less than 1 hour remaining
+            
+            setTimeLeft({ hours, minutes, seconds, isClose, isPast: false });
+        };
+
+        calculateTimeLeft();
+        const interval = setInterval(calculateTimeLeft, 1000);
+        
+        return () => clearInterval(interval);
+    }, [deadline]);
+
+    // Show deck submission button only if:
+    // 1. Tournament requires deck list
+    // 2. User is registered or checked in
+    // 3. Deadline hasn't passed (or show disabled if passed)
+    const shouldShowDeckSubmission = tournament.requires_deck_list && 
+        (myRegistrationStatus === 'registered' || myRegistrationStatus === 'checked_in');
+    
+    const deckSubmissionButtonText = deckListState ? "Edit Deck List" : "Submit Deck List";
+
+    // Handle deck submission success
+    const handleDeckSubmissionSuccess = (newDeckText: string) => {
+        // Update local state to avoid full page reload
+        setDeckListState({ 
+            ...deckListState, 
+            raw_text: newDeckText,
+            submitted_at: new Date().toISOString()
+        });
+        toast.success("Deck list updated successfully!");
+    };
+
+    return (
+        <div className="flex flex-col min-h-screen bg-background text-foreground">
+            {/* Sticky Header & Search */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
+                <div className="p-4 pb-2 max-w-md mx-auto w-full space-y-3">
+                    {/* Top Navigation & Title */}
+                    <div className="flex items-center justify-between gap-4 w-full">
+                        {/* Left Side: Back Button + Title */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Link>
+                            <div className="flex flex-col min-w-0">
+                                <h1 className="text-xl font-bold truncate leading-tight">{tournament.name}</h1>
+                                {!hasMatches ? (
+                                    <p className="text-xs text-muted-foreground font-medium truncate">
+                                        Pre-Tournament Roster
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground font-medium truncate">
+                                        Round {currentRound} of {tournament.total_rounds}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Side: Badge + Action Button */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Deck Submission Status Badge */}
+                            {shouldShowDeckSubmission && (
+                                <Badge 
+                                    variant={deckListState ? "default" : "destructive"} 
+                                    className={deckListState ? "bg-green-100 text-green-700 border-green-200" : ""}
+                                >
+                                    {deckListState ? "Deck Submitted" : "Deck Missing"}
+                                </Badge>
+                            )}
+                            
+                            {!hasMatches ? (
+                                <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30">
+                                    Pre-Tournament
+                                </Badge>
+                            ) : (
+                                <>
+                                    {tournament.status === 'running' && (
+                                        <Badge className="bg-green-600 hover:bg-green-700 animate-pulse border-transparent text-white">
+                                            Live
+                                        </Badge>
+                                    )}
+                                    {tournament.status === 'completed' && (
+                                        <Badge variant="secondary">
+                                            Completed
+                                        </Badge>
+                                    )}
+                                </>
+                            )}
+                            {canManageStaff && (
+                                <Link href={`/organizer/tournaments/${tournament.id}`}>
+                                    <Button variant="ghost" size="icon">
+                                        <Settings className="h-5 w-5" />
+                                        <span className="sr-only">Manage Tournament</span>
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Registration Button (Visible if Registration is Enabled or User is Registered) */}
+                    {(!hasMatches && (tournament.registration_open || myRegistrationStatus)) && (
+                        <div className="pt-2">
+                            <RegisterButton 
+                                tournamentId={tournament.id}
+                                status={myRegistrationStatus}
+                                registrationOpen={!!tournament.registration_open}
+                                opensAt={tournament.registration_opens_at}
+                                closesAt={tournament.registration_closes_at}
+                            />
+                        </div>
+                    )}
+
+                    {/* Deck Submission Button with Deadline Warning */}
+                    {shouldShowDeckSubmission && (
+                        <div className="pt-2 space-y-2">
+                            <Button
+                                onClick={() => setIsDeckModalOpen(true)}
+                                disabled={isDeadlinePassed}
+                                variant={deckListState ? "outline" : "default"}
+                                className={cn(
+                                    "w-full justify-start gap-2",
+                                    timeLeft?.isClose && !isDeadlinePassed && "border-amber-500 text-amber-700 hover:bg-amber-50"
+                                )}
+                            >
+                                <ScrollText className="h-4 w-4" />
+                                {deckSubmissionButtonText}
+                                {isDeadlinePassed && (
+                                    <span className="ml-auto text-xs text-muted-foreground">
+                                        Deadline Passed
+                                    </span>
+                                )}
+                                {timeLeft?.isClose && !isDeadlinePassed && (
+                                    <span className="ml-auto flex items-center gap-1 text-xs text-amber-600">
+                                        <Clock className="h-3 w-3" />
+                                        {timeLeft.hours}h {timeLeft.minutes}m
+                                    </span>
+                                )}
+                            </Button>
+                            
+                            {/* Deadline Information */}
+                            {deadline && (
+                                <div className="flex items-start gap-2 text-xs">
+                                    <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                                    <div className="space-y-1">
+                                        <p className="text-muted-foreground">
+                                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} on {deadline.toLocaleDateString()} at {deadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                        
+                                        {timeLeft && !timeLeft.isPast && (
+                                            <p className={cn(
+                                                "font-medium",
+                                                timeLeft.isClose ? "text-amber-600" : "text-green-600"
+                                            )}>
+                                                {timeLeft.isClose ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <AlertTriangle className="h-3 w-3" />
+                                                        {timeLeft.hours === 0 
+                                                            ? `${timeLeft.minutes}m ${timeLeft.seconds}s remaining`
+                                                            : `${timeLeft.hours}h ${timeLeft.minutes}m remaining`
+                                                        }
+                                                    </span>
+                                                ) : (
+                                                    <span>
+                                                        {timeLeft.hours} hours {timeLeft.minutes} minutes remaining
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* View Toggle - Only show if completed AND has matches */}
+                    {hasMatches && tournament.status === 'completed' && (
+                        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+                            <button
+                                onClick={() => setViewMode('pairings')}
+                                className={cn(
+                                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                    viewMode === 'pairings'
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Pairings
+                            </button>
+                            <button
+                                onClick={() => setViewMode('standings')}
+                                className={cn(
+                                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                    viewMode === 'standings'
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Standings
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Sticky Search (Only for Pairings AND has matches) */}
+                    {hasMatches && viewMode === 'pairings' && (
+                        <div className="relative">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Find your name..."
+                                className="pl-9 h-9 text-base shadow-none bg-muted/50 focus-visible:bg-background rounded-full"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 max-w-md mx-auto w-full pb-8">
+                {!hasMatches ? (
+                    <div className="p-4">
+                        {(canManageStaff || tournament.publish_roster) ? (
+                            <PlayerRoster 
+                                players={rosterPlayers} 
+                                canManage={canManageStaff} 
+                                tournamentId={tournament.id} 
+                            />
+                        ) : (
+                            <div className="text-center p-8 bg-muted/50 rounded-lg text-muted-foreground">
+                                Player roster is currently hidden for this event.
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        {viewMode === 'standings' ? (
+                            <div className="p-4">
+                                <StandingsView tournamentId={tournament.id} myPlayerId={myPlayerId} />
+                            </div>
+                        ) : (
+                            <>
+                                {/* Division Selector */}
+                                {sortedDivisions.length > 0 && (
+                                    <div className={cn(
+                                        "px-4 py-2 sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+                                        tournament.status === 'completed' ? "top-[125px]" : "top-[80px]"
+                                    )}>
+                                        <div className="flex p-1 bg-muted rounded-lg">
+                                            {sortedDivisions.map((division) => (
+                                                <button
+                                                    key={division}
+                                                    onClick={() => setSelectedDivision(division)}
+                                                    className={cn(
+                                                        "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                                        selectedDivision === division
+                                                            ? "bg-background text-foreground shadow-sm"
+                                                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                                                    )}
+                                                >
+                                                    {division}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <Tabs defaultValue={String(currentRound)} className="w-full">
+                                    <div className={cn(
+                                        "sticky z-10 bg-background border-b px-4",
+                                        sortedDivisions.length > 0
+                                            ? (tournament.status === 'completed' ? "top-[180px]" : "top-[135px]")
+                                            : (tournament.status === 'completed' ? "top-[125px]" : "top-[80px]")
+                                    )}>
+                                        <TabsList className="w-full flex overflow-x-auto justify-start h-auto p-1 bg-transparent hide-scrollbar">
+                                            {rounds.map((round) => (
+                                                <TabsTrigger
+                                                    key={round}
+                                                    value={String(round)}
+                                                    className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-shrink-0 mr-2"
+                                                >
+                                                    Round {round}
+                                                </TabsTrigger>
+                                            ))}
+                                        </TabsList>
+                                    </div>
+
+                                    {rounds.map((round) => {
+                                        const roundMatches = getRoundMatches(round);
+
+                                        return (
+                                            <TabsContent key={round} value={String(round)} className="mt-0">
+                                                {roundMatches.length === 0 ? (
+                                                    <div className="text-center py-12 text-muted-foreground">
+                                                        <p>No matches found for &quot;{searchQuery}&quot; in Round {round}</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="divide-y divide-border border-b">
+                                                        {roundMatches.map((match) => (
+                                                            <MatchCard
+                                                                key={match.id}
+                                                                match={match}
+                                                                stats={stats}
+                                                                canEdit={canEditMatch}
+                                                                myPlayerId={myPlayerId}
+                                                                isJudge={isJudge} // Pass Judge Status
+                                                                onPlayerClick={(player) => {
+                                                                    setSelectedPlayer(player);
+                                                                    setPenaltyModalOpen(true);
+                                                                }}
+                                                                onExtensionClick={(matchId, currentExt) => {
+                                                                    onExtension(matchId, currentExt, match.table_number);
+                                                                }}
+                                                                p1Penalties={penaltyCounts[match.player1_tom_id || ""] || 0}
+                                                                p2Penalties={penaltyCounts[match.player2_tom_id || ""] || 0}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+                                        );
+                                    })}
+                                </Tabs>
+                            </>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Deck Submission Modal */}
+            <DeckSubmissionModal
+                isOpen={isDeckModalOpen}
+                onClose={() => setIsDeckModalOpen(false)}
+                tournamentId={tournament.id}
+                initialDeckText={deckListState?.raw_text || ""}
+                onSuccess={handleDeckSubmissionSuccess}
+            />
+
+            {/* Judge Actions Modals */}
+            {/* Penalty Modal -> Judge Player Detail Modal */}
+            {selectedPlayer && (
+                <JudgePlayerDetailModal
+                    isOpen={penaltyModalOpen}
+                    onClose={() => {
+                        setPenaltyModalOpen(false);
+                        setSelectedPlayer(null);
+                    }}
+                    tournamentId={tournament.id}
+                    player={selectedPlayer}
+                    roundNumber={currentRound}
+                    canEditPenalties={canManageStaff}
+                />
+            )}
+
+            {/* Time Extension Modal */}
+            {selectedMatch && (
+                <TimeExtensionModal
+                    isOpen={extensionModalOpen}
+                    onClose={() => {
+                        setExtensionModalOpen(false);
+                        setSelectedMatch(null);
+                    }}
+                    matchId={selectedMatch.id}
+                    tableNumber={selectedMatch.tableNumber}
+                    currentExtension={selectedMatch.extension}
+                />
+            )}
+        </div>
+    );
+}
+```
+
+### 4. **page.tsx** (Optimized Data Fetching)
+```typescript
+import { createClient } from "@/utils/supabase/server";
+import { notFound } from "next/navigation";
+import TournamentView, { Match, Tournament, RosterPlayer } from "./tournament-view";
+import { Role } from "@/lib/rbac";
+import { RealtimeListener } from "@/components/tournament/realtime-listener";
+
+interface Profile {
+    role?: string;
+    pokemon_player_id?: string;
+}
+
+export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    // 1. Fetch Tournament Details and User Data in parallel
+    const [tournamentPromise, userData] = await Promise.all([
+        supabase
+            .from("tournaments")
+            .select("*")
+            .eq("id", id)
+            .single(),
+        supabase.auth.getUser()
+    ]);
+
+    const { data: tournamentData, error: tournamentError } = await tournamentPromise;
+    
+    if (tournamentError || !tournamentData) {
+        console.error("Error fetching tournament:", tournamentError);
+        notFound();
+    }
+
+    const tournament = tournamentData as unknown as Tournament;
+    const { user } = userData.data;
+
+    // 2. Fetch User Profile and Role
+    let userRole: Role | undefined = undefined;
+    let profile: Profile | null = null;
+
+    if (user) {
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role, pokemon_player_id')
+            .eq('id', user.id)
+            .single();
+
+        profile = profileData;
+
+        if (profile?.role) {
+            userRole = profile.role as Role;
+        }
+    }
+
+    // Permission check for showing the "Manage" button
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tournamentRecord = tournamentData as any;
+    const isOrganizer = user && userRole !== 'admin' && (
+        tournamentRecord.organizer_id === user.id ||
+        (tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid)
+    );
+
+    const canManageStaff = userRole === 'admin' || !!isOrganizer;
+
+    // 3. Fetch user's registration status and deck list in parallel if user has profile
+    let myRegistrationStatus: string | null = null;
+    let deckList: any = null;
+    
+    if (profile?.pokemon_player_id) {
+        const [registrationData, deckListData] = await Promise.all([
+            supabase
+                .from("tournament_players")
+                .select("registration_status")
+                .eq("tournament_id", id)
+                .eq("player_id", profile.pokemon_player_id)
+                .maybeSingle(),
+            tournamentRecord.requires_deck_list ? 
+                supabase
+                    .from("deck_lists")
+                    .select("*")
+                    .eq("tournament_id", id)
+                    .eq("player_id", profile.pokemon_player_id)
+                    .maybeSingle() : 
+                Promise.resolve({ data: null })
+        ]);
+
+        if (registrationData.data) {
+            myRegistrationStatus = registrationData.data.registration_status;
+            deckList = deckListData.data;
+        }
+    }
+
+    // 4. Fetch matches and penalties in parallel (penalties only for staff)
+    const [matchesPromise, penaltiesPromise] = await Promise.all([
+        supabase
+            .from("matches")
+            .select(`
+                id,
+                round_number,
+                table_number,
+                player1_tom_id,
+                player2_tom_id,
+                winner_tom_id,
+                division,
+                is_finished,
+                outcome,
+                p1_display_record,
+                p2_display_record,
+                p1:players!player1_tom_id(first_name, last_name),
+                p2:players!player2_tom_id(first_name, last_name)
+            `)
+            .eq("tournament_id", id),
+        (userRole === 'judge' || canManageStaff) ? 
+            supabase
+                .from('player_penalties')
+                .select('player_id')
+                .eq('tournament_id', id) : 
+            Promise.resolve({ data: null, error: null })
+    ]);
+
+    const { data: matchesData, error: matchesError } = await matchesPromise;
+
+    if (matchesError) {
+        console.error("Error fetching matches:", matchesError);
+        return <div>Error loading matches.</div>;
+    }
+
+    // Cast matches to Match[]
+    const matches = matchesData as unknown as Match[];
+
+    // Determine current round (max round number)
+    const currentRound = matches.length > 0
+        ? Math.max(...matches.map(m => m.round_number))
+        : 1;
+
+    // Sort matches by table number
+    const allMatches = matches.sort((a, b) => a.table_number - b.table_number);
+
+    // Calculate stats for all players
+    const stats: Record<string, { wins: number; losses: number; ties: number }> = {};
+
+    matches.forEach((match) => {
+        if (!match.is_finished) return;
+
+        const p1 = match.player1_tom_id;
+        const p2 = match.player2_tom_id;
+        const winner = match.winner_tom_id;
+
+        // Initialize if not exists
+        if (!stats[p1]) stats[p1] = { wins: 0, losses: 0, ties: 0 };
+        if (!stats[p2]) stats[p2] = { wins: 0, losses: 0, ties: 0 };
+
+        if (winner === p1) {
+            stats[p1].wins++;
+            stats[p2].losses++;
+        } else if (winner === p2) {
+            stats[p2].wins++;
+            stats[p1].losses++;
+        } else if (match.outcome === 3 || winner === 'tie' || winner === 'draw' || !winner) {
+            // Tie (outcome 3, or explicit tie string, or null winner if finished)
+            stats[p1].ties++;
+            stats[p2].ties++;
+        }
+    });
+
+    // 5. Fetch Roster if Matches are empty (Pre-Tournament)
+    let rosterPlayers: RosterPlayer[] = [];
+    if (matches.length === 0) {
+        const { data: rosterData, error: rosterError } = await supabase
+            .from("tournament_players")
+            .select(`
+                player_id,
+                registration_status,
+                player:players!player_id(first_name, last_name, tom_player_id)
+            `)
+            .eq("tournament_id", id);
+
+        if (rosterError) {
+            console.error("Error fetching roster:", rosterError);
+        } else if (rosterData) {
+            // Map to flat structure
+            rosterPlayers = rosterData.map((item: any) => ({
+                id: item.player?.tom_player_id || item.player_id,
+                first_name: item.player?.first_name || "Unknown",
+                last_name: item.player?.last_name || "Unknown",
+                tom_player_id: item.player?.tom_player_id,
+                registration_status: item.registration_status
+            }));
+        }
+    }
+
+    // 6. Process penalty counts (if fetched)
+    let penaltyCounts: Record<string, number> = {};
+    if (penaltiesPromise) {
+        const { data: penalties } = await penaltiesPromise;
+        if (penalties) {
+            penalties.forEach((p: { player_id: string }) => {
+                penaltyCounts[p.player_id] = (penaltyCounts[p.player_id] || 0) + 1;
+            });
+        }
+    }
+
+    return (
+        <>
+            <RealtimeListener tournamentId={id} />
+            <TournamentView
+                tournament={{
+                    ...tournament,
+                    requires_deck_list: tournamentRecord.requires_deck_list,
+                    deck_list_submission_deadline: tournamentRecord.deck_list_submission_deadline
+                }}
+                matches={allMatches}
+                currentRound={currentRound}
+                stats={stats}
+                userRole={userRole}
+                canManageStaff={canManageStaff}
+                rosterPlayers={rosterPlayers}
+                myPlayerId={profile?.pokemon_player_id}
+                myRegistrationStatus={myRegistrationStatus}
+                penaltyCounts={penaltyCounts}
+                deckList={deckList}
+            />
+        </>
+    );
+}
+```
+
+## Summary of Changes
+
+### 1. **Type Standardization**
+- Added `ParsedDeckCategories` interface to `deck-validator.ts`
+- Updated `DeckSubmissionModal.tsx` to import types from `deck-validator.ts`
+- Removed redundant type definitions in modal
+
+### 2. **UX Polish**
+- **Success Feedback**: 
+  - Added `router.refresh()` for smoother page updates
+  - Added `onSuccess` callback with local state updates
+  - Removed jarring `window.location.reload()`
+  
+- **Deadline Handling**:
+  - Added real-time countdown timer (hours/minutes/seconds)
+  - Visual warning when deadline is close (<1 hour)
+  - Color-coded deadline warnings (amber for <1 hour)
+  - Clock icon and countdown display in button
+
+- **Button UX**:
+  - Enhanced deadline warnings in deck submission button
+  - Added amber border/text for close deadlines
+  - Improved visual hierarchy for deadline information
+
+### 3. **Code Quality**
+- **Optimized Data Fetching**:
+  - Used `Promise.all` for parallel fetching where possible
+  - Tournament + user data fetched in parallel initially
+  - Registration + deck list fetched together if user has profile
+  - Matches + penalties fetched in parallel (penalties conditionally)
+  
+- **Race Conditions**:
+  - Maintained ref-based race condition guards in modal
+  - Added proper cleanup for interval timers
+  
+- **Error Boundaries**:
+  - Preserved existing ErrorBoundary in modal
+  - Added proper error handling in data fetching
+
+The refinement improves performance through parallel fetching, enhances UX with better deadline handling and smoother state updates, and ensures type consistency across the application.

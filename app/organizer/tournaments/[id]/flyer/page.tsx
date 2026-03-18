@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { authorizeTournamentManagement } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { headers } from "next/headers";
@@ -6,32 +7,22 @@ import { PrintButton } from "./print-button";
 
 export default async function TournamentFlyerPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
-    // Fetch tournament details
-    const { data: tournament, error } = await supabase
-        .from("tournaments")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (error || !tournament) {
-        notFound();
-    }
-
-    // Authorization check
-    if (tournament.organizer_id !== user.id) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'admin') {
-            redirect("/");
+    let authResult;
+    try {
+        authResult = await authorizeTournamentManagement(id);
+    } catch (error) {
+        if (error instanceof Error && error.message === 'Tournament not found') {
+            notFound();
         }
+        throw error;
     }
+
+    if (!authResult || !authResult.isAuthorized) {
+        redirect("/?error=unauthorized");
+    }
+
+    const { tournament } = authResult;
 
     // Construct Public URL
     const headersList = await headers();

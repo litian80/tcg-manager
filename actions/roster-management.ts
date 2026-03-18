@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export interface RosterCandidate {
@@ -48,36 +48,38 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
         return { error: "Unauthorized" };
     }
 
-    // 1. Fetch Tournament to check Organizer
+    // 2. Fetch Tournament and current profile
     const { data: tournament, error: tError } = await supabase
         .from('tournaments')
-        .select('organizer_id, organizer_popid')
+        .select('organizer_popid')
         .eq('id', tournamentId)
         .single();
 
     if (tError || !tournament) {
-        console.error("AddPlayer Error: Tournament not found. ID:", tournamentId, "Supabase Error:", tError);
-        console.error("AddPlayer Error: Tournament not found. ID:", tournamentId, "Supabase Error:", tError);
+        console.error("AddPlayer Error: Tournament not found or error fetching.", tError);
         return { error: "Tournament not found" };
     }
 
-    // 2. Fetch Current User Role
-    const { data: currentUserProfile } = await supabase
+    const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, pokemon_player_id')
         .eq('id', user.id)
         .single();
 
-    // Check if the current user is the organizer (UUID check)
-    const isOrganizer = tournament.organizer_id === user.id;
-    const isAdmin = currentUserProfile?.role === 'admin';
+    // Multi-tier authorization consistent with lib/auth.ts
+    const isAdmin = profile?.role === 'admin';
+    const isPopIdMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
 
-    if (!isOrganizer && !isAdmin) {
+    if (!isAdmin && !isPopIdMatch) {
+        console.error("AddPlayer Unauthorized: User", user.id, "attempted to manage tournament", tournamentId);
         return { error: "Unauthorized" };
     }
 
-    // 3. Check Restriction: Organizer cannot add themselves
-    if (isOrganizer && !isAdmin && user.id === profileId) {
+    // 3. Restriction: Organizer cannot add themselves
+    // Match by both UUID and POP ID to be safe
+    const isSelfByUuid = user.id === profileId;
+    // We fetch the candidate's POP ID later, but the profileId is the candidate's profile UUID.
+    if (!isAdmin && isSelfByUuid) {
         return { error: "Organizers cannot participate as players in their own tournament." };
     }
 
@@ -165,10 +167,71 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
         return { error: "Unauthorized" };
     }
 
-    // 1. Fetch Tournament to check Organizer
+    // 1. Fetch Tournament and Current Profile for Multi-tier Authorization
+    // We use the ADMIN client here for the fetch to rule out RLS issues on the tournaments table
+    const adminSupabase = await createAdminClient();
+    const { data: tournament, error: tError } = await adminSupabase
+        .from('tournaments')
+        .select('organizer_popid')
+        .eq('id', tournamentId)
+        .single();
+
+    if (tError || !tournament) {
+        console.error("RemovePlayer Error: Tournament not found.", tError);
+        return { error: `Tournament not found. ${tError?.message || 'No row returned'}` };
+    }
+
+    const { data: profile } = await adminSupabase
+        .from('profiles')
+        .select('role, pokemon_player_id')
+        .eq('id', user.id)
+        .single();
+
+    // Multi-tier authorization logic
+    const isAdmin = profile?.role === 'admin';
+    const isPopIdMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
+
+    if (!isAdmin && !isPopIdMatch) {
+        console.error("RemovePlayer Unauthorized: User", user.id, "attempted to remove player from", tournamentId);
+        return { error: "Unauthorized" };
+    }
+
+    // 2. Delete from tournament_players
+    // tournament_players.player_id is a foreign key to players.tom_player_id (the POP ID string)
+    // We use the ADMIN client here to bypass RLS, since we already manually authorized the user above.
+    const { error: deleteError, count } = await adminSupabase
+        .from('tournament_players')
+        .delete({ count: 'exact' })
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId); 
+
+    if (deleteError) {
+        console.error("RemovePlayer DB Error:", deleteError);
+        return { error: `Failed to remove player from roster: ${deleteError.message}` };
+    }
+
+    if (count === 0) {
+        console.warn(`RemovePlayer: No record found for tournament ${tournamentId} and player ${playerId}`);
+        // This could happen if the ID in the UI is out of sync or already deleted
+    } else {
+        console.log(`RemovePlayer Success: Deleted ${count} record(s).`);
+    }
+
+    revalidatePath(`/organizer/tournaments/${tournamentId}`);
+    return { success: true };
+}
+
+export async function updateRegistrationStatus(tournamentId: string, playerId: string, status: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
     const { data: tournament, error: tError } = await supabase
         .from('tournaments')
-        .select('organizer_id')
+        .select('organizer_id, organizer_popid')
         .eq('id', tournamentId)
         .single();
 
@@ -176,30 +239,27 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
         return { error: "Tournament not found" };
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
 
-    // Check if the current user is the organizer (UUID check)
-    const isOrganizer = tournament.organizer_id === user.id;
+    const isOrganizer = tournament.organizer_id === user.id || tournament.organizer_popid === profile?.pokemon_player_id;
     const isAdmin = profile?.role === 'admin';
+    const isJudge = profile?.role === 'judge'; // If judges can check in, allow them
 
-    if (!isOrganizer && !isAdmin) {
+    if (!isOrganizer && !isAdmin && !isJudge) {
         return { error: "Unauthorized" };
     }
 
-    // 2. Delete from tournament_players
-    // We expect playerId to be the `player_id` (UUID of the player entity), not the Profile ID.
-    // The UI should pass the `player_id`.
-
     const { error } = await supabase
         .from('tournament_players')
-        .delete()
+        .update({ registration_status: status })
         .eq('tournament_id', tournamentId)
-        .eq('player_id', playerId); // playerId here MUST be the tom_player_id (POP ID) based on the schema discovery.
+        .eq('player_id', playerId);
 
     if (error) {
-        return { error: "Failed to remove player." };
+        return { error: "Failed to update registration status." };
     }
 
+    revalidatePath(`/tournament/${tournamentId}`);
     revalidatePath(`/organizer/tournaments/${tournamentId}`);
     return { success: true };
 }

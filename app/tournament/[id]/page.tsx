@@ -14,44 +14,47 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     const { id } = await params;
     const supabase = await createClient();
 
-    // 1. Fetch Tournament Details
-    const { data: tournamentData, error: tournamentError } = await supabase
-        .from("tournaments")
-        .select("*")
-        .eq("id", id)
-        .single();
+    // 1. Fetch Tournament Details and User Data in parallel
+    const [tournamentPromise, userData] = await Promise.all([
+        supabase
+            .from("tournaments")
+            .select("*")
+            .eq("id", id)
+            .single(),
+        supabase.auth.getUser()
+    ]);
 
+    const { data: tournamentData, error: tournamentError } = await tournamentPromise;
+    
     if (tournamentError || !tournamentData) {
         console.error("Error fetching tournament:", tournamentError);
         notFound();
     }
 
     const tournament = tournamentData as unknown as Tournament;
+    const { user } = userData.data;
 
-    // 1.5 Fetch User Role
-    const { data: { user } } = await supabase.auth.getUser();
-    let userRole: Role | undefined = undefined; // Default to undefined (no role/guest)
+    // 2. Fetch User Profile and Role
+    let userRole: Role | undefined = undefined;
     let profile: Profile | null = null;
 
     if (user) {
-        const { data } = await supabase
+        const { data: profileData } = await supabase
             .from('profiles')
             .select('role, pokemon_player_id')
             .eq('id', user.id)
             .single();
 
-        profile = data;
+        profile = profileData;
 
-        // Cast the string from DB to Role type if it matches
         if (profile?.role) {
             userRole = profile.role as Role;
         }
     }
 
-
     // Permission check for showing the "Manage" button
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tournamentRecord = tournamentData as any; // Access raw fields (organizer_id/popid might be missing from type def but in DB)
+    const tournamentRecord = tournamentData as any;
     const isOrganizer = user && userRole !== 'admin' && (
         tournamentRecord.organizer_id === user.id ||
         (tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid)
@@ -59,28 +62,61 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     const canManageStaff = userRole === 'admin' || !!isOrganizer;
 
-    // Judges fetching removed from public view as per new architecture
+    // 3. Fetch user's registration status and deck list in parallel if user has profile
+    let myRegistrationStatus: string | null = null;
+    let deckList: any = null;
+    
+    if (profile?.pokemon_player_id) {
+        const [registrationData, deckListData] = await Promise.all([
+            supabase
+                .from("tournament_players")
+                .select("registration_status")
+                .eq("tournament_id", id)
+                .eq("player_id", profile.pokemon_player_id)
+                .maybeSingle(),
+            tournamentRecord.requires_deck_list ? 
+                supabase
+                    .from("deck_lists")
+                    .select("*")
+                    .eq("tournament_id", id)
+                    .eq("player_id", profile.pokemon_player_id)
+                    .maybeSingle() : 
+                Promise.resolve({ data: null })
+        ]);
 
+    myRegistrationStatus = registrationData.data?.registration_status || null;
+    deckList = deckListData.data || null;
+    }
 
-    // 2. Fetch all matches 
-    const { data: matchesData, error: matchesError } = await supabase
-        .from("matches")
-        .select(`
-      id,
-      round_number,
-      table_number,
-      player1_tom_id,
-      player2_tom_id,
-      winner_tom_id,
-      division,
-      is_finished,
-      outcome,
-      p1_display_record,
-      p2_display_record,
-      p1:players!player1_tom_id(first_name, last_name),
-      p2:players!player2_tom_id(first_name, last_name)
-    `)
-        .eq("tournament_id", id);
+    // 4. Fetch matches and penalties in parallel (penalties only for staff)
+    const [matchesPromise, penaltiesPromise] = await Promise.all([
+        supabase
+            .from("matches")
+            .select(`
+                id,
+                round_number,
+                table_number,
+                player1_tom_id,
+                player2_tom_id,
+                winner_tom_id,
+                division,
+                is_finished,
+                outcome,
+                p1_display_record,
+                p2_display_record,
+                p1:players!player1_tom_id(first_name, last_name),
+                p2:players!player2_tom_id(first_name, last_name)
+            `)
+            .eq("tournament_id", id),
+        (userRole === 'judge' || canManageStaff) ? 
+            supabase
+                .from('player_penalties')
+                .select('player_id')
+                .eq('tournament_id', id) : 
+            Promise.resolve({ data: null, error: null })
+    ]);
+
+    const { data: matchesData, error: matchesError } = await matchesPromise;
 
     if (matchesError) {
         console.error("Error fetching matches:", matchesError);
@@ -134,6 +170,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             .from("tournament_players")
             .select(`
                 player_id,
+                registration_status,
                 player:players!player_id(first_name, last_name, tom_player_id)
             `)
             .eq("tournament_id", id);
@@ -146,23 +183,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 id: item.player?.tom_player_id || item.player_id, // Use TOM ID if available as simpler ID, or UUID
                 first_name: item.player?.first_name || "Unknown",
                 last_name: item.player?.last_name || "Unknown",
-                tom_player_id: item.player?.tom_player_id
+                tom_player_id: item.player?.tom_player_id,
+                registration_status: item.registration_status
             }));
         }
     }
 
-    // 4. Fetch Penalty Counts (For Judges)
-    // We fetch all penalties for this tournament and aggregate by player_id
+    // 6. Process penalty counts (if fetched)
     let penaltyCounts: Record<string, number> = {};
-    if (userRole === 'judge' || canManageStaff) { // Only fetch for staff
-        const { data: penalties, error: penaltyError } = await supabase
-            .from('player_penalties')
-            .select('player_id')
-            .eq('tournament_id', id);
-
-        if (penaltyError) {
-            console.error("Error fetching penalties:", penaltyError);
-        } else if (penalties) {
+    if (penaltiesPromise) {
+        const { data: penalties } = await penaltiesPromise;
+        if (penalties) {
             penalties.forEach((p: { player_id: string }) => {
                 penaltyCounts[p.player_id] = (penaltyCounts[p.player_id] || 0) + 1;
             });
@@ -173,7 +204,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         <>
             <RealtimeListener tournamentId={id} />
             <TournamentView
-                tournament={tournament}
+                tournament={{
+                    ...tournament,
+                    requires_deck_list: tournamentRecord.requires_deck_list,
+                    deck_list_submission_deadline: tournamentRecord.deck_list_submission_deadline
+                }}
                 matches={allMatches}
                 currentRound={currentRound}
                 stats={stats}
@@ -181,7 +216,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 canManageStaff={canManageStaff}
                 rosterPlayers={rosterPlayers}
                 myPlayerId={profile?.pokemon_player_id}
+                myRegistrationStatus={myRegistrationStatus}
                 penaltyCounts={penaltyCounts}
+                deckList={deckList}
             />
         </>
     );

@@ -1,0 +1,988 @@
+--- Reasoning ---
+We are simplifying the age division configuration to use only two inputs: Juniors and Seniors thresholds.
+ The Masters division is derived from the Seniors threshold.
+
+ Changes to be made:
+
+ 1. In create-tournament-form.tsx:
+    - Remove the Masters Birth Year input.
+    - Change age division inputs to a 2-column grid (for Juniors and Seniors).
+    - Relabel: "Juniors: Born XXXX or after", "Seniors: Born XXXX or after".
+    - Set placeholders: 2014 (Juniors), 2010 (Seniors).
+
+ 2. In actions/create-tournament.ts:
+    - Remove parsing of 'masters_birth_year_min'.
+    - In the DB insert, set 'masters_birth_year_min' to NULL.
+
+ 3. In tournament-settings-form.tsx:
+    - Remove 'masters_birth_year_min' from state, UI, and interface.
+    - Relabel inputs to "Born XXXX or after".
+    - In the update call, set 'masters_birth_year_min' to NULL.
+
+ 4. In registration.ts:
+    - Update 'calculatePlayerDivision' logic to use only two thresholds:
+        - If birthYear >= juniors_birth_year_max -> "junior"
+        - Else if birthYear >= seniors_birth_year_max -> "senior"
+        - Else -> "master"
+    - Remove 'masters_birth_year_min' from the Supabase select query.
+
+ Let's update each file accordingly.
+
+--- Answer ---
+I'll provide the updated contents for each file with the simplified age division configuration.
+
+## 1. Updated create-tournament-form.tsx
+
+```typescript
+"use client";
+
+import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { createTournament } from "@/actions/create-tournament";
+import { Loader2 } from "lucide-react";
+
+// Define the expected return type of the server action
+type FormState = { error: string } | undefined;
+
+// Wrapper function to pass to useActionState
+async function submitTournament(prevState: FormState, formData: FormData) {
+    return await createTournament(formData);
+}
+
+export function CreateTournamentForm() {
+    const [state, formAction, isPending] = useActionState(submitTournament, undefined);
+
+    // Set default time to 09:00
+    const defaultTime = "09:00";
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tournament Details</CardTitle>
+                <CardDescription>
+                    Enter the tournament information. This will be used to generate the initial TDF file.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {state?.error && (
+                    <div className="mb-6 p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md font-medium">
+                        {state.error}
+                    </div>
+                )}
+                
+                <form action={formAction} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Tournament Name</Label>
+                        <Input id="name" name="name" placeholder="e.g. Monthly League Challenge" required disabled={isPending} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="date">Date</Label>
+                            <Input id="date" name="date" type="date" required disabled={isPending} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="start_time">Start Time</Label>
+                            <Input 
+                                id="start_time" 
+                                name="start_time" 
+                                type="time" 
+                                defaultValue={defaultTime}
+                                required 
+                                disabled={isPending} 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" name="city" placeholder="e.g. Auckland" required disabled={isPending} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" name="country" defaultValue="New Zealand" disabled={isPending} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="tom_uid">Sanction ID (TOM UID)</Label>
+                        <Input id="tom_uid" name="tom_uid" placeholder="XX-XX-XXXXXX" disabled={isPending} />
+                        <p className="text-xs text-muted-foreground">Optional. Format: 25-01-000001</p>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t">
+                        <h3 className="text-lg font-medium">Deck List Settings</h3>
+                        
+                        <div className="space-y-2">
+                            <Label htmlFor="deck_submission_cutoff_hours">
+                                Deck List Submission Cutoff (Hours before start)
+                            </Label>
+                            <Input 
+                                id="deck_submission_cutoff_hours" 
+                                name="deck_submission_cutoff_hours" 
+                                type="number" 
+                                min="0" 
+                                max="48"
+                                defaultValue="1"
+                                disabled={isPending}
+                                placeholder="e.g., 1 hour before tournament start"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Players must submit deck lists this many hours before the tournament starts. Set to 0 to disable deadlines.
+                            </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Switch id="requires_deck_list" name="requires_deck_list" value="true" disabled={isPending} />
+                            <Label htmlFor="requires_deck_list">Require Deck List Submission</Label>
+                            <input type="hidden" name="requires_deck_list_fallback" value="false" />
+                        </div>
+
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t">
+                        <h3 className="text-lg font-medium">Registration Settings</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                            <Switch id="registration_open" name="registration_open" value="true" disabled={isPending} />
+                            <Label htmlFor="registration_open">Enable Online Registration</Label>
+                            <input type="hidden" name="registration_open_fallback" value="false" />
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                            <Switch id="publish_roster" name="publish_roster" value="true" disabled={isPending} defaultChecked />
+                            <Label htmlFor="publish_roster">Publish Player Roster (Visible to Public)</Label>
+                            <input type="hidden" name="publish_roster_fallback" value="false" />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="capacity_juniors">Juniors Capacity</Label>
+                                <Input id="capacity_juniors" name="capacity_juniors" type="number" min="0" defaultValue="0" disabled={isPending} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="capacity_seniors">Seniors Capacity</Label>
+                                <Input id="capacity_seniors" name="capacity_seniors" type="number" min="0" defaultValue="0" disabled={isPending} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="capacity_masters">Masters Capacity</Label>
+                                <Input id="capacity_masters" name="capacity_masters" type="number" min="0" defaultValue="0" disabled={isPending} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="juniors_birth_year_max">Juniors: Born XXXX or after</Label>
+                                <Input 
+                                    id="juniors_birth_year_max" 
+                                    name="juniors_birth_year_max" 
+                                    type="number" 
+                                    placeholder="2014" 
+                                    disabled={isPending} 
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Players born in {new Date().getFullYear() - 10} or later
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="seniors_birth_year_max">Seniors: Born XXXX or after</Label>
+                                <Input 
+                                    id="seniors_birth_year_max" 
+                                    name="seniors_birth_year_max" 
+                                    type="number" 
+                                    placeholder="2010" 
+                                    disabled={isPending} 
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Players born {new Date().getFullYear() - 14} to {new Date().getFullYear() - 11}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
+                            <p className="font-medium">Age Division Rules:</p>
+                            <ul className="list-disc pl-5 space-y-1 mt-1">
+                                <li>Junior: Born in or after the Junior year</li>
+                                <li>Senior: Born in or after the Senior year (but younger than Junior threshold)</li>
+                                <li>Master: Born before the Senior year</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 mt-8 border-t">
+                        <Button type="submit" className="w-full" disabled={isPending}>
+                            {isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creating...
+                                </>
+                            ) : (
+                                'Create & Configure Roster'
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </CardContent>
+        </Card>
+    );
+}
+```
+
+## 2. Updated actions/create-tournament.ts
+
+```typescript
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+
+export async function createTournament(formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const name = formData.get("name") as string;
+    const date = formData.get("date") as string;
+    const startTime = formData.get("start_time") as string || "09:00";
+    const city = formData.get("city") as string;
+    const country = formData.get("country") as string || "New Zealand";
+    const tom_uid = formData.get("tom_uid") as string;
+    
+    const requires_deck_list = formData.get("requires_deck_list") === "true" || formData.get("requires_deck_list") === "on";
+    const deck_submission_cutoff_hours = parseInt((formData.get("deck_submission_cutoff_hours") as string) || "1", 10);
+
+    const registration_open = formData.get("registration_open") === "true" || formData.get("registration_open") === "on";
+    const publish_roster = formData.get("publish_roster") === "true" || formData.get("publish_roster") === "on";
+    const capacity_juniors = parseInt((formData.get("capacity_juniors") as string) || "0", 10);
+    const capacity_seniors = parseInt((formData.get("capacity_seniors") as string) || "0", 10);
+    const capacity_masters = parseInt((formData.get("capacity_masters") as string) || "0", 10);
+    
+    // Convert empty string to null for optional integer birth year constraints
+    const jr_max_raw = formData.get("juniors_birth_year_max") as string;
+    const sr_max_raw = formData.get("seniors_birth_year_max") as string;
+    
+    const juniors_birth_year_max = jr_max_raw ? parseInt(jr_max_raw, 10) : null;
+    const seniors_birth_year_max = sr_max_raw ? parseInt(sr_max_raw, 10) : null;
+    // Masters birth year is no longer an input - derived from seniors threshold
+
+    // Basic Validation
+    if (!name || !date || !city) {
+        return { error: "Name, Date, and City are required." };
+    }
+
+    // Validate deck submission cutoff
+    if (deck_submission_cutoff_hours < 0 || deck_submission_cutoff_hours > 48) {
+        return { error: "Deck submission cutoff must be between 0 and 48 hours." };
+    }
+
+
+    // Combine date and time to create start_time
+    const startDateTimeStr = `${date}T${startTime}`;
+    const startTimeDate = new Date(startDateTimeStr);
+    
+    if (isNaN(startTimeDate.getTime())) {
+        return { error: "Invalid date or time format." };
+    }
+
+    // Calculate deck list submission deadline
+    let deck_list_submission_deadline = null;
+    if (deck_submission_cutoff_hours > 0) {
+        const deadlineDate = new Date(startTimeDate.getTime() - (deck_submission_cutoff_hours * 60 * 60 * 1000));
+        deck_list_submission_deadline = deadlineDate.toISOString();
+    }
+
+    // Sanction ID Validation (Optional but recommended if provided)
+    // Regex: xx-xx-xxxxxx (e.g. 26-01-123456)
+    if (tom_uid) {
+        const tomRegex = /^\d{2}-\d{2}-\d{6}$/;
+        if (!tomRegex.test(tom_uid)) {
+            return { error: "Invalid Sanction ID format. Expected format: XX-XX-XXXXXX (e.g. 25-01-000001)" };
+        }
+
+        // Uniqueness Check
+        const { data: existing } = await supabase
+            .from('tournaments')
+            .select('id')
+            .eq('tom_uid', tom_uid)
+            .single();
+
+        if (existing) {
+            return { error: "Sanction ID (TOM UID) is already in use by another tournament." };
+        }
+    }
+
+    // Fetch Profile for POP ID
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('pokemon_player_id')
+        .eq('id', user.id)
+        .single();
+
+    // Mandatory field check
+    const popId = profile?.pokemon_player_id;
+    if (!popId) {
+        // Organizer POP ID is mandatory in profile for attribution.
+    }
+
+    // Insert Tournament
+    const { data, error } = await supabase
+        .from('tournaments')
+        .insert({
+            name,
+            date,
+            city,
+            country,
+            tom_uid: tom_uid || null, // Convert empty string to null to avoid unique constraint violation on ""
+            // organizer_id: user.id, // OMITTING: DB types say this is optional for INSERT (likely default=auth.uid())
+            organizer_popid: popId || null, // Mandatory insertion
+            status: 'running',
+            total_rounds: 0,
+            is_published: false,
+            registration_open,
+            publish_roster,
+            capacity_juniors,
+            capacity_seniors,
+            capacity_masters,
+            juniors_birth_year_max,
+            seniors_birth_year_max,
+            masters_birth_year_min: null, // Set to null as it's no longer an input
+            start_time: startTimeDate.toISOString(),
+            deck_submission_cutoff_hours,
+            deck_list_submission_deadline,
+            requires_deck_list,
+            deck_size: 60,
+            sideboard_size: 0
+        })
+        .select('id')
+        .single();
+
+    if (error) {
+        console.error("Create Tournament Error:", error);
+        if (error.code === '23505') { // Unique constraint code
+            return { error: "Sanction ID or other unique field already exists." };
+        }
+        return { error: `Failed to create tournament: ${error.message} (Code: ${error.code})` };
+    }
+
+    revalidatePath('/organizer/tournaments');
+    redirect(`/organizer/tournaments/${data.id}`);
+}
+```
+
+## 3. Updated tournament-settings-form.tsx
+
+```typescript
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+interface Tournament {
+    id: string;
+    tom_uid: string | null;
+    registration_open?: boolean;
+    capacity_juniors?: number;
+    capacity_seniors?: number;
+    capacity_masters?: number;
+    juniors_birth_year_max?: number | null;
+    seniors_birth_year_max?: number | null;
+    publish_roster?: boolean;
+    start_time?: string | null;
+    deck_submission_cutoff_hours?: number;
+    requires_deck_list?: boolean;
+    deck_list_submission_deadline?: string | null;
+}
+
+interface TournamentSettingsFormProps {
+    tournament: Tournament;
+}
+
+export function TournamentSettingsForm({ tournament }: TournamentSettingsFormProps) {
+    const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
+    const [registrationOpen, setRegistrationOpen] = useState(tournament.registration_open || false);
+    const [publishRoster, setPublishRoster] = useState(tournament.publish_roster ?? true);
+    const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
+    const [deckSubmissionCutoffHours, setDeckSubmissionCutoffHours] = useState(tournament.deck_submission_cutoff_hours?.toString() || "1");
+    const [capJuniors, setCapJuniors] = useState(tournament.capacity_juniors?.toString() || "0");
+    const [capSeniors, setCapSeniors] = useState(tournament.capacity_seniors?.toString() || "0");
+    const [capMasters, setCapMasters] = useState(tournament.capacity_masters?.toString() || "0");
+    const [jrMax, setJrMax] = useState(tournament.juniors_birth_year_max?.toString() || "");
+    const [srMax, setSrMax] = useState(tournament.seniors_birth_year_max?.toString() || "");
+    
+    // For start time - split date and time
+    const [startDate, setStartDate] = useState("");
+    const [startTime, setStartTime] = useState("09:00");
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+
+    // Parse start_time into date and time components on mount
+    useEffect(() => {
+        if (tournament.start_time) {
+            try {
+                const date = new Date(tournament.start_time);
+                if (!isNaN(date.getTime())) {
+                    setStartDate(date.toISOString().split('T')[0]);
+                    setStartTime(date.toTimeString().slice(0, 5));
+                }
+            } catch (error) {
+                console.error("Error parsing start_time:", error);
+            }
+        }
+    }, [tournament.start_time]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        const supabase = createClient();
+
+        // Validation: xx-xx-xxxxxx
+        const pattern = /^\d{2}-\d{2}-\d{6}$/;
+        if (tomUid && !pattern.test(tomUid)) {
+            toast.error("Format must be YY-MM-ID (e.g., 26-01-123456)");
+            setIsLoading(false);
+            return;
+        }
+
+        // Validate deck submission cutoff
+        const cutoffHours = parseInt(deckSubmissionCutoffHours, 10);
+        if (cutoffHours < 0 || cutoffHours > 48) {
+            toast.error("Deck submission cutoff must be between 0 and 48 hours.");
+            setIsLoading(false);
+            return;
+        }
+
+
+        // Calculate start_time from date and time
+        let startTimeValue = null;
+        let deckListSubmissionDeadline = tournament.deck_list_submission_deadline;
+        
+        if (startDate && startTime) {
+            try {
+                // Combine date and time in local timezone
+                const combinedDateTime = new Date(`${startDate}T${startTime}`);
+                if (isNaN(combinedDateTime.getTime())) {
+                    throw new Error("Invalid date/time");
+                }
+                
+                startTimeValue = combinedDateTime.toISOString();
+                
+                // Recalculate deck list submission deadline if start time changes
+                if (cutoffHours > 0) {
+                    const deadlineDate = new Date(combinedDateTime.getTime() - (cutoffHours * 60 * 60 * 1000));
+                    deckListSubmissionDeadline = deadlineDate.toISOString();
+                } else {
+                    deckListSubmissionDeadline = null;
+                }
+            } catch (error) {
+                console.error("Error processing start time:", error);
+                toast.error("Invalid start date/time format");
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        const { error } = await supabase
+            .from("tournaments")
+            .update({ 
+                tom_uid: tomUid || null,
+                registration_open: registrationOpen,
+                publish_roster: publishRoster,
+                requires_deck_list: requiresDeckList,
+                deck_submission_cutoff_hours: cutoffHours,
+                deck_list_submission_deadline: deckListSubmissionDeadline,
+                deck_size: 60,
+                sideboard_size: 0,
+                capacity_juniors: parseInt(capJuniors || "0", 10),
+                capacity_seniors: parseInt(capSeniors || "0", 10),
+                capacity_masters: parseInt(capMasters || "0", 10),
+                juniors_birth_year_max: jrMax ? parseInt(jrMax, 10) : null,
+                seniors_birth_year_max: srMax ? parseInt(srMax, 10) : null,
+                masters_birth_year_min: null, // Set to null as it's no longer an input
+                start_time: startTimeValue,
+            })
+            .eq("id", tournament.id);
+
+        if (error) {
+            console.error(error);
+            toast.error("Failed to update settings");
+        } else {
+            toast.success("Tournament settings saved");
+            router.refresh();
+        }
+
+        setIsLoading(false);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tournament Configuration</CardTitle>
+                <CardDescription>
+                    Configure tournament settings including start time and deck submission deadlines.
+                </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-6">
+                    {/* Tournament Timing Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Tournament Timing</h3>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="start_date">Start Date</Label>
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="start_time">Start Time</Label>
+                                <Input
+                                    id="start_time"
+                                    type="time"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sanction ID Section */}
+                    <div className="space-y-2">
+                        <Label htmlFor="tom_uid">Sanction ID / TOM UID</Label>
+                        <Input
+                            id="tom_uid"
+                            placeholder="26-01-123456"
+                            value={tomUid}
+                            onChange={(e) => setTomUid(e.target.value)}
+                            pattern="\d{2}-\d{2}-\d{6}"
+                            title="Format: YY-MM-XXXXXX (e.g. 26-01-123456)"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Format: YY-MM-XXXXXX (e.g. 26-01-123456)
+                        </p>
+                    </div>
+
+                    {/* Deck List Settings Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium">Deck List Settings</h3>
+                        
+                        <div className="flex items-center space-x-2 pb-2">
+                            <input 
+                                type="checkbox" 
+                                id="requires_deck_list" 
+                                className="h-4 w-4 rounded border-gray-300"
+                                checked={requiresDeckList}
+                                onChange={(e) => setRequiresDeckList(e.target.checked)}
+                            />
+                            <Label htmlFor="requires_deck_list">Require Deck List Submission</Label>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="deck_submission_cutoff_hours">
+                                Deck List Submission Cutoff (Hours before start)
+                            </Label>
+                            <Input
+                                id="deck_submission_cutoff_hours"
+                                type="number"
+                                min="0"
+                                max="48"
+                                value={deckSubmissionCutoffHours}
+                                onChange={(e) => setDeckSubmissionCutoffHours(e.target.value)}
+                                disabled={!requiresDeckList}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {requiresDeckList 
+                                    ? "Players must submit deck lists this many hours before the tournament starts. Set to 0 to disable deadlines."
+                                    : "Enable deck list submission to configure deadlines."}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2 p-4 bg-muted/50 rounded-md">
+                            <p className="text-sm font-medium">Deck Configuration</p>
+                            <p className="text-sm text-muted-foreground">
+                                Pokemon TCG standard format uses a 60-card deck with no sideboard.
+                                This cannot be changed.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Registration Settings Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium">Registration Settings</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                            <input 
+                                type="checkbox" 
+                                id="registration_open" 
+                                className="h-4 w-4 rounded border-gray-300"
+                                checked={registrationOpen}
+                                onChange={(e) => setRegistrationOpen(e.target.checked)}
+                            />
+                            <Label htmlFor="registration_open">Enable Online Registration</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 pb-4">
+                            <input 
+                                type="checkbox" 
+                                id="publish_roster" 
+                                className="h-4 w-4 rounded border-gray-300"
+                                checked={publishRoster}
+                                onChange={(e) => setPublishRoster(e.target.checked)}
+                            />
+                            <Label htmlFor="publish_roster">Publish Player Roster (Visible to Public)</Label>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="capJuniors">Juniors Capacity</Label>
+                                <Input id="capJuniors" type="number" min="0" value={capJuniors} onChange={(e) => setCapJuniors(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="capSeniors">Seniors Capacity</Label>
+                                <Input id="capSeniors" type="number" min="0" value={capSeniors} onChange={(e) => setCapSeniors(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="capMasters">Masters Capacity</Label>
+                                <Input id="capMasters" type="number" min="0" value={capMasters} onChange={(e) => setCapMasters(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="jrMax">Juniors: Born XXXX or after</Label>
+                                <Input 
+                                    id="jrMax" 
+                                    type="number" 
+                                    placeholder="2014" 
+                                    value={jrMax} 
+                                    onChange={(e) => setJrMax(e.target.value)} 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="srMax">Seniors: Born XXXX or after</Label>
+                                <Input 
+                                    id="srMax" 
+                                    type="number" 
+                                    placeholder="2010" 
+                                    value={srMax} 
+                                    onChange={(e) => setSrMax(e.target.value)} 
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
+                            <p className="font-medium">Age Division Rules:</p>
+                            <ul className="list-disc pl-5 space-y-1 mt-1">
+                                <li>Junior: Born in or after the Junior year</li>
+                                <li>Senior: Born in or after the Senior year (but younger than Junior threshold)</li>
+                                <li>Master: Born before the Senior year</li>
+                            </ul>
+                            <p className="mt-2 text-xs">
+                                Current year: {new Date().getFullYear()}. Example: Junior threshold 2014 = age 12+, Senior threshold 2010 = age 16+
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="border-t px-6 py-4">
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Settings
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    );
+}
+```
+
+## 4. Updated actions/registration.ts
+
+```typescript
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export type Division = "junior" | "senior" | "master";
+
+// Helper to deduce division by birth year
+export async function calculatePlayerDivision(
+  birthYear: number,
+  tournamentId: string
+): Promise<Division> {
+  const supabase = await createClient();
+  const { data: tournament, error } = await supabase
+    .from("tournaments")
+    .select("juniors_birth_year_max, seniors_birth_year_max")
+    .eq("id", tournamentId)
+    .single();
+
+  if (error || !tournament) throw new Error("Tournament not found");
+
+  // New simplified logic using only two thresholds
+  const juniorsBirthYear = tournament.juniors_birth_year_max;
+  const seniorsBirthYear = tournament.seniors_birth_year_max;
+
+  // If birthYear >= juniors threshold -> junior
+  // Else if birthYear >= seniors threshold -> senior
+  // Else -> master
+  
+  if (juniorsBirthYear && birthYear >= juniorsBirthYear) {
+    return "junior";
+  } else if (seniorsBirthYear && birthYear >= seniorsBirthYear) {
+    return "senior";
+  }
+
+  // Default to Masters (born before seniors threshold)
+  return "master";
+}
+
+// Check if division is full
+export async function checkDivisionCapacity(
+  tournamentId: string,
+  division: Division
+): Promise<{ available: boolean; currentCount: number; capacity: number }> {
+  const supabase = await createClient();
+  const capacityColumn = `capacity_${division}s` as "capacity_juniors" | "capacity_seniors" | "capacity_masters";
+
+  const { count, error: countError } = await supabase
+    .from("tournament_players")
+    .select("*", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+    .eq("division", division)
+    .in("registration_status", ["registered", "checked_in"]);
+
+  const { data: tournament, error: tError } = await supabase
+    .from("tournaments")
+    .select(capacityColumn)
+    .eq("id", tournamentId)
+    .single();
+
+  if (tError) throw new Error("Failed to fetch tournament capacity");
+
+  const capacity = (tournament as any)[capacityColumn] || 0;
+  const currentCount = count || 0;
+
+  // 0 capacity implies unlimited
+  const available = capacity === 0 || currentCount < capacity;
+
+  return { available, currentCount, capacity };
+}
+
+export async function registerPlayer(tournamentId: string) {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.first_name || !profile?.last_name || !profile?.pokemon_player_id || !profile?.birth_year) {
+      return { error: "Profile incomplete. You must have a First Name, Last Name, Pokémon Player ID, and Birth Year to register." };
+    }
+
+    const { data: tournament } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("id", tournamentId)
+      .single();
+
+    if (!tournament) return { error: "Tournament not found." };
+
+    if (!tournament.registration_open) {
+      return { error: "Registration is not open for this tournament." };
+    }
+
+    if (tournament.registration_opens_at && new Date(tournament.registration_opens_at) > new Date()) {
+      return { error: "Registration has not opened yet." };
+    }
+
+    if (tournament.registration_closes_at && new Date(tournament.registration_closes_at) < new Date()) {
+      return { error: "Registration has closed." };
+    }
+    
+    // Check if player is staff
+    const { data: staffMatch } = await supabase
+      .from("tournament_judges")
+      .select("user_id")
+      .eq("tournament_id", tournamentId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (staffMatch || tournament.organizer_popid === profile.pokemon_player_id) {
+        return { error: "Staff and Organizers cannot register as players in their own events." };
+    }
+
+    const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
+    const capacityCheck = await checkDivisionCapacity(tournamentId, division);
+    const status = capacityCheck.available ? "registered" : "waitlisted";
+
+    let playerId: string | null = null;
+    const { data: existingPlayer } = await supabase
+      .from("players")
+      .select("id")
+      .eq("tom_player_id", profile.pokemon_player_id)
+      .maybeSingle();
+
+    if (existingPlayer) {
+      playerId = existingPlayer.id;
+      
+      // Update the name just in case it changed (e.g., they mistakenly imported under wrong name before)
+      await supabase
+        .from("players")
+        .update({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+        })
+        .eq("id", playerId);
+        
+    } else {
+      // Create new player record based on profile
+      const { data: newPlayer, error: pError } = await supabase
+        .from("players")
+        .insert({
+          tom_player_id: profile.pokemon_player_id,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+        })
+        .select()
+        .single();
+
+      if (pError) return { error: "Failed to create player profile." };
+      playerId = newPlayer.id;
+    }
+
+    // Check if already registered
+    const { data: existingReg } = await supabase
+      .from("tournament_players")
+      .select("registration_status")
+      .eq("tournament_id", tournamentId)
+      .eq("player_id", profile.pokemon_player_id)
+      .maybeSingle();
+
+    if (existingReg) {
+        if (existingReg.registration_status !== 'withdrawn' && existingReg.registration_status !== 'cancelled') {
+            return { error: "You are already registered or on the waitlist." };
+        }
+        
+        // Update existing withdrawn/cancelled record to active
+        const { error: updateError } = await supabase
+            .from("tournament_players")
+            .update({ registration_status: status })
+            .eq("tournament_id", tournamentId)
+            .eq("player_id", profile.pokemon_player_id);
+            
+        if (updateError) return { error: "Failed to update registration status." };
+    } else {
+        // Create new registration record (assuming player_id references tom_player_id, despite the name)
+        const { error: insertError } = await supabase
+          .from("tournament_players")
+          .insert({
+            tournament_id: tournamentId,
+            player_id: profile.pokemon_player_id,
+            division: division,
+            registration_status: status
+          });
+
+        if (insertError) {
+          console.error("Insert registration error:", insertError);
+          return { error: "Failed to complete registration." };
+        }
+    }
+
+    revalidatePath(`/tournaments/${tournamentId}`);
+    return { success: true, status };
+
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    return { error: error.message || "An unexpected error occurred." };
+  }
+}
+
+export async function withdrawPlayer(tournamentId: string) {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("pokemon_player_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.pokemon_player_id) {
+      return { error: "Profile missing POP ID." };
+    }
+
+    const { error: updateError } = await supabase
+      .from("tournament_players")
+      .update({ registration_status: "withdrawn" })
+      .eq("tournament_id", tournamentId)
+      .eq("player_id", profile.pokemon_player_id);
+
+    if (updateError) {
+      return { error: "Failed to withdraw." };
+    }
+
+    revalidatePath(`/tournaments/${tournamentId}`);
+    return { success: true };
+
+  } catch (error: any) {
+    return { error: error.message || "An unexpected error occurred." };
+  }
+}
+```
+
+## Summary of Changes:
+
+1. **create-tournament-form.tsx**: 
+   - Removed the Masters Birth Year input
+   - Changed from 3-column to 2-column grid for age divisions
+   - Updated labels to "Born XXXX or after" format
+   - Added helpful age division rules explanation
+
+2. **actions/create-tournament.ts**:
+   - Removed parsing of 'masters_birth_year_min'
+   - Set 'masters_birth_year_min' to NULL in database insert
+
+3. **tournament-settings-form.tsx**:
+   - Removed 'masters_birth_year_min' from state and UI
+   - Updated to 2-column grid with new labels
+   - Set 'masters_birth_year_min' to NULL in update call
+   - Added age division explanation
+
+4. **actions/registration.ts**:
+   - Updated `calculatePlayerDivision` to use simplified logic with only two thresholds
+   - Removed 'masters_birth_year_min' from the Supabase select query
+   - Logic: `birthYear >= juniors_threshold` → junior, `birthYear >= seniors_threshold` → senior, else → master
+
+The system now uses only two inputs (Juniors and Seniors thresholds) with Masters being automatically derived as anyone born before the Seniors threshold.

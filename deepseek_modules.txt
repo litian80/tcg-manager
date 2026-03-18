@@ -1,0 +1,639 @@
+--- Reasoning ---
+We are breaking down the "Deck List Submission" module into the absolute minimum actionable modules.
+ Prioritization: We start with the database schema because it's the foundation, then move to server-side validation logic, then UI, and finally integration.
+
+ Modules:
+
+ 1. Database Schema for Deck Lists and Related Data
+    - Create tables for `deck_lists`, `deck_cards`, and `deck_equivalency_groups` (if needed).
+    - Update existing tables if necessary (like adding a column to `tournament_registrations` to link to a deck list).
+
+ 2. Server Actions for Deck List Validation and Storage
+    - Create server actions (Next.js) that will:
+        a. Parse the uploaded deck list (using the existing `utils/deck_validator.py` or a JS/TS equivalent).
+        b. Validate the deck list (checking for card existence, set codes, functional reprints via equivalency groups, and deck construction rules).
+        c. Store the validated deck list in the database (with atomicity: either the whole deck is stored or nothing).
+
+ 3. UI Components for Deck List Submission
+    - Create a modal or side-by-side view for deck list submission.
+    - Include a text area for pasting the deck list and a file upload option.
+    - Show real-time validation feedback (if possible) or after submission.
+
+ 4. Integration with Tournament Registration
+    - Modify the tournament registration flow to include deck list submission (either as part of registration or as a separate step).
+    - Link the deck list to the tournament registration in the database.
+
+ 5. Testing and Verification
+    - Test the entire flow: from registration to deck list submission and validation.
+
+ Let's elaborate on each module:
+
+ Module 1: Database Schema
+
+    We need to store:
+        - Deck list metadata (id, user_id, tournament_id, name, format, submission_time, etc.)
+        - Individual cards in the deck (with their set and card number, and optionally the equivalency group they belong to for functional reprints)
+
+    Tables:
+
+    a. deck_lists:
+        id (uuid, primary key)
+        user_id (uuid, references auth.users)
+        tournament_id (uuid, references tournaments) -- if deck is tied to a tournament
+        name (text)
+        format (text) -- e.g., "Standard", "Expanded"
+        submission_time (timestamptz)
+        is_valid (boolean) -- if we want to mark validation status
+
+    b. deck_cards:
+        id (uuid, primary key)
+        deck_list_id (uuid, references deck_lists)
+        card_id (uuid, references cards) -- the specific card by set and number
+        quantity (integer)
+        is_sideboard (boolean) -- false for main, true for sideboard (if applicable)
+
+    Alternatively, we could store the card information as text (set and number) and not link to the cards table to avoid updates when cards are added?
+    But we want to use the equivalency groups, so we need to link to the cards table to get the equivalency_group_id.
+
+    However, note: the parser returns set code and card number. We need to map that to a card_id in our database.
+
+    We have two options for handling functional reprints (equivalency groups):
+        1. Store the equivalency_group_id in the deck_cards table (and then we can validate that the deck doesn't have more than 4 cards from the same equivalency group).
+        2. Do the validation at submission time and then store the specific card_id, but then when checking for the 4-card limit we have to join via the equivalency groups.
+
+    Option 1: store equivalency_group_id in deck_cards. This makes validation of the 4-card limit trivial when querying for a deck list, but it means we have to update the equivalency_group_id in deck_cards if the card's equivalency group changes (unlikely but possible).
+
+    Option 2: store only card_id and then join with the cards table to get the equivalency_group_id when needed.
+
+    Since the equivalency groups are stable (a reprint group doesn't change), I would go with Option 2 to avoid data duplication and keep the deck_cards table simple.
+
+    So, the deck_cards table will have:
+        id, deck_list_id, card_id, quantity, is_sideboard
+
+    Then, to validate the 4-card limit for a deck list, we can do:
+
+        SELECT equivalency_group_id, SUM(quantity) as total
+        FROM deck_cards
+        JOIN cards ON deck_cards.card_id = cards.id
+        WHERE deck_list_id = ? AND is_sideboard = false
+        GROUP BY equivalency_group_id
+        HAVING SUM(quantity) > 4;
+
+    Similarly for sideboard.
+
+    We also need to store the equivalency groups for the deck? Not necessary, because we can get them from the cards.
+
+    However, note: the parser might return a set and number that is not in our database? Then we cannot store the deck list until we have that card in the database. We must have a complete and updated cards database.
+
+    We also need to consider that the same card (by name and effect) might be in multiple sets (functional reprints). We want to allow up to 4 copies across all functional reprints. That's why we use equivalency groups.
+
+    Steps in validation:
+
+        1. Parse the deck list string to get a list of cards (with set code, card number, quantity, and whether it's sideboard).
+        2. For each card, look up in the cards table by set code and card number to get the card_id and equivalency_group_id.
+        3. Check if the total quantity of cards in the same equivalency group (across main and sideboard) is <= 4.
+
+    But note: the rule is that you cannot have more than 4 copies of the same card (by name) in your deck, but functional reprints are considered the same card. So we use equivalency groups to group functional reprints.
+
+    So, the validation must consider the entire deck (main + sideboard) for the 4-card limit? Actually, in Pokemon TCG, the 4-card limit applies to the entire deck (main + sideboard). However, note that the sideboard is not officially used in Pokemon TCG, but for tournaments that allow it, we must consider the total.
+
+    We'll assume that the 4-card limit applies to the entire deck (main + sideboard) for functional reprints.
+
+    Therefore, we need to check the total quantity per equivalency group in the entire deck list (both main and sideboard) and ensure it is <= 4.
+
+    Additionally, we must check the deck size (60 cards minimum for main, and up to 15 for sideboard if sideboard is allowed).
+
+    We also need to check for banned cards (maybe by format). We can have a `banned_cards` table or a `format_legality` table. But for now, let's assume we only validate the 4-card rule and deck size.
+
+    We'll also need to validate the set code and card number are valid (by checking the cards table).
+
+    So, the validation steps in the server action:
+
+        a. Parse the input string to get an array of: { set_code, card_number, quantity, is_sideboard }.
+        b. For each item, try to find the card in the database (by set_code and card_number). If not found, throw an error.
+        c. Group by equivalency_group_id and sum the quantities. If any group has total > 4, throw an error.
+        d. Check total main deck cards (sum of quantities where is_sideboard = false) is at least 60.
+        e. Check total sideboard cards (sum of quantities where is_sideboard = true) is at most 15 (if sideboard is allowed, otherwise 0).
+
+    Then, if all validations pass, store the deck list and its cards.
+
+ Module 2: Server Actions
+
+    We'll create a server action `submitDeckList` that takes:
+        - tournament_id (if applicable)
+        - deck_list_string (the pasted text)
+        - format (to know the rules, e.g., sideboard allowed or not)
+
+    Steps:
+
+        1. Parse the deck_list_string (using a JS/TS parser). We might need to convert the existing Python parser to JS/TS, or use a regex-based parser in JS.
+        2. Validate the parsed cards as above.
+        3. If valid, create a new record in `deck_lists` and then create the associated `deck_cards` records.
+        4. Return success or error messages.
+
+    We must do this in a transaction (Supabase transactions) to ensure atomicity.
+
+    We also need to consider that the same user might submit multiple deck lists for the same tournament? Usually, one deck list per tournament per user. We can enforce that by having a unique constraint on (user_id, tournament_id) in the deck_lists table, or allow multiple but only one active? Let's assume one deck list per tournament.
+
+    We also need to update the tournament_registration table to link to the deck_list_id? Or we can just have the deck_lists table reference the tournament_id and user_id, and then we can join.
+
+    We can either:
+        - Add a `deck_list_id` to the `tournament_registrations` table, or
+        - Have the `deck_lists` table reference the `tournament_registrations` table by (user_id, tournament_id) but that would be redundant.
+
+    Since a deck list is part of a tournament registration, we can have:
+
+        tournament_registrations:
+            id, user_id, tournament_id, ... , deck_list_id (nullable)
+
+    Then, when we create a deck list, we update the tournament_registration record to set the deck_list_id.
+
+    Alternatively, we can have the deck_lists table have a foreign key to tournament_registrations (tournament_registration_id). But then we need to have the registration done first.
+
+    Let's go with:
+
+        deck_lists:
+            id, user_id, tournament_id, ... (as above)
+
+        and then tournament_registrations has a deck_list_id.
+
+    But note: a user might register for a tournament without a deck list and then submit later. So we allow deck_list_id to be nullable.
+
+    Steps in the server action:
+
+        - We have the user_id from the session.
+        - We have the tournament_id and the deck list string.
+        - We parse and validate.
+        - We create a deck list record and then update the tournament_registration record for that user and tournament to set the deck_list_id.
+
+    However, note that the tournament registration might not exist? We must have the user registered for the tournament first.
+
+    We can also design it as: the deck list submission is part of the registration flow, so the registration is not complete without a deck list? Or we allow registration without a deck list and then the user can submit later.
+
+    We'll assume the latter: registration first, then deck list submission.
+
+    So, in the server action, we check if there is a tournament registration for the user and tournament, and then proceed.
+
+ Module 3: UI Components
+
+    We need a form for deck list submission. It can be a modal that opens from the tournament registration page, or a separate page.
+
+    The form should have:
+        - A text area for pasting the deck list (with an example format).
+        - A file upload for a .txt file (optional).
+        - A dropdown to select the format (if not determined by the tournament).
+        - A submit button.
+
+    We'll use React state to manage the input and show validation errors.
+
+    We can also show a preview of the parsed cards (with their images if available) and highlight any errors.
+
+    We can use the server action to validate and then show the result.
+
+    We might want to do some basic validation on the client (like minimum 60 cards) before sending to the server.
+
+ Module 4: Integration
+
+    We need to link the deck list submission to the tournament registration.
+
+    In the tournament registration page, we can have a button "Submit Deck List" that opens the modal.
+
+    After successful submission, we update the UI to show that the deck list has been submitted.
+
+ Module 5: Testing
+
+    We need to test the entire flow with sample deck lists (valid and invalid).
+
+    We also need to test the performance of the validation (especially for large tournaments with many deck lists).
+
+    We might want to cache the card lookups (set code and number to card_id and equivalency_group_id) for performance.
+
+    Since the cards database is relatively stable, we can cache it in memory (like in a JS object) in the server action. But note that server actions run in a serverless environment, so we need to use a global cache or use an in-memory database like Redis.
+
+    Alternatively, we can rely on the database indexes for fast lookups.
+
+    Given that the cards table is not huge (a few thousand cards) and we are doing individual lookups, it might be acceptable to query the database for each card. But we can also do a batch query: get all the set codes and card numbers from the parsed deck list and then do one query to get the card_id and equivalency_group_id for all of them.
+
+    Example:
+
+        SELECT set_code, card_number, id, equivalency_group_id FROM cards 
+        WHERE (set_code, card_number) IN ( ... );
+
+    Then, we can create a map from (set_code, card_number) to (card_id, equivalency_group_id).
+
+    This is more efficient.
+
+    We also need to consider that the same card might appear multiple times in the deck list string (for main and sideboard). We can group by (set_code, card_number) in the parsed data and then look up once.
+
+    So, the server action steps:
+
+        1. Parse the string and get an array of objects with set_code, card_number, quantity, is_sideboard.
+        2. Create a set of unique (set_code, card_number) pairs.
+        3. Query the cards table for these pairs to get the card_id and equivalency_group_id.
+        4. If any card is not found, throw an error.
+        5. Then, for each card in the parsed array, assign the card_id and equivalency_group_id from the map.
+        6. Group by equivalency_group_id and sum the quantities to check the 4-card rule.
+        7. Check the deck size and sideboard size.
+
+    This way we minimize database queries.
+
+    We also need to consider that the same card (by set and number) might be in multiple equivalency groups? No, because a card is in exactly one equivalency group (or none). So we are safe.
+
+    Let's break down the tasks by priority and dependency:
+
+    Priority and Dependencies:
+
+        Module 1 (Database Schema) is the foundation and must be done first.
+        Module 2 (Server Actions) depends on the database schema.
+        Module 3 (UI Components) can be built in parallel but depends on the server actions.
+        Module 4 (Integration) depends on all the above.
+
+    So, the order:
+
+        1. Module 1: Design and create the database tables (including any necessary indexes for performance).
+        2. Module 2: Implement the server actions for validation and storage.
+        3. Module 3: Build the UI components for deck list submission.
+        4. Module 4: Integrate the deck list submission into the tournament registration flow.
+
+    We also need to update the existing registration flow to include a step for deck list submission (or a separate page).
+
+    Let's create a detailed plan for each module.
+
+    Module 1: Database Schema
+
+        Tables:
+
+            deck_lists:
+                id: uuid default uuid_generate_v4() primary key
+                user_id: uuid references auth.users(id)
+                tournament_id: uuid references tournaments(id)
+                name: text
+                format: text
+                submission_time: timestamptz default now()
+                is_valid: boolean default true
+
+            deck_cards:
+                id: uuid default uuid_generate_v4() primary key
+                deck_list_id: uuid references deck_lists(id) on delete cascade
+                card_id: uuid references cards(id)
+                quantity: integer
+                is_sideboard: boolean default false
+
+        We also need to update the tournament_registrations table to have a reference to the deck list:
+
+            ALTER TABLE tournament_registrations ADD COLUMN deck_list_id uuid references deck_lists(id);
+
+        Indexes:
+
+            For deck_lists:
+                - index on (user_id, tournament_id) to quickly find a user's deck list for a tournament.
+                - index on tournament_id to list all deck lists for a tournament.
+
+            For deck_cards:
+                - index on deck_list_id for fast retrieval of cards in a deck list.
+                - index on card_id for potential analytics.
+
+        We also need to consider that we might want to enforce that a user can only have one deck list per tournament. We can do that with a unique constraint on (user_id, tournament_id) in deck_lists.
+
+        However, note that a user might submit multiple deck lists (for different phases or corrections). We can allow multiple but only one active? Or we can allow multiple and then the tournament registration points to the latest.
+
+        Let's assume we allow only one deck list per tournament per user. We can enforce that by:
+
+            ALTER TABLE deck_lists ADD CONSTRAINT unique_user_tournament UNIQUE (user_id, tournament_id);
+
+        Then, when a user submits a new deck list for the same tournament, we update the existing one? Or we delete the old and create a new? We can do:
+
+            ON CONFLICT (user_id, tournament_id) DO UPDATE ... 
+
+        But note: the deck_list_id might be referenced by tournament_registrations. So we must update the tournament_registration's deck_list_id to the new one.
+
+        Alternatively, we can allow multiple deck lists and then have a way to mark one as active for the tournament. But for simplicity, let's do one deck list per tournament per user.
+
+        We'll design the server action to upsert the deck list (and its cards) for the user and tournament.
+
+    Module 2: Server Actions
+
+        We'll create a server action `submitDeckList` that does:
+
+            Input: tournament_id, deck_list_string, format (optional, can be inferred from tournament)
+
+            Steps:
+
+                1. Get the current user's id from the session.
+                2. Check if the user is registered for the tournament (in tournament_registrations). If not, throw an error.
+                3. Parse the deck_list_string to get an array of { set_code, card_number, quantity, is_sideboard }.
+                4. Create a set of unique (set_code, card_number) from the parsed array.
+                5. Query the cards table for these (set_code, card_number) pairs to get id and equivalency_group_id.
+                6. If the number of cards returned is less than the unique set, then some cards are not found. Throw an error with the missing cards.
+                7. Create a map: (set_code, card_number) -> (card_id, equivalency_group_id).
+                8. For each parsed card, assign the card_id and equivalency_group_id.
+                9. Group by equivalency_group_id and sum the quantities (across main and sideboard). Check if any group has total > 4. If so, throw an error.
+                10. Calculate total main deck cards (sum of quantities where is_sideboard = false) and total sideboard cards (sum of quantities where is_sideboard = true).
+                11. Check if total main deck cards >= 60 and total sideboard cards <= 15 (if sideboard is allowed, else 0). Throw an error if not.
+                12. Start a transaction:
+                    a. Insert or update the deck_lists table for the (user_id, tournament_id) with the new deck list (name, format, etc.). We can use the tournament's format if not provided.
+                    b. Get the deck_list_id (if inserting, return the new id; if updating, return the existing id).
+                    c. Delete all existing deck_cards for this deck_list_id (if updating).
+                    d. Insert the new deck_cards for this deck_list_id.
+                    e. Update the tournament_registration record for this user and tournament to set the deck_list_id (if not already set).
+                13. Commit the transaction.
+
+            Return: success message or error.
+
+        We must handle errors gracefully and rollback the transaction on error.
+
+    Module 3: UI Components
+
+        We'll create a React component `DeckListSubmissionModal` that:
+
+            - Takes `tournament_id` and `format` as props.
+            - Has a textarea for the deck list.
+            - A button to submit.
+            - Displays validation errors if any.
+
+        We can use `react-hook-form` for form handling.
+
+        We'll use the server action to submit and then show the result.
+
+        We can also add a preview of the parsed cards (with images) before submission.
+
+        We might want to add a loading state during submission.
+
+    Module 4: Integration
+
+        We'll add a button "Submit Deck List" on the tournament registration page (or in the user's tournament registration dashboard).
+
+        When clicked, it opens the `DeckListSubmissionModal`.
+
+        After successful submission, we update the UI to show that the deck list has been submitted (and maybe a link to view it).
+
+    Module 5: Testing
+
+        We need to test:
+
+            - Parsing of the deck list string (valid and invalid formats).
+            - Validation of the 4-card rule.
+            - Validation of deck size and sideboard size.
+            - Database operations (insert, update, delete).
+            - Integration with the tournament registration.
+
+        We can write unit tests for the parser and validation logic, and integration tests for the server action and database.
+
+    This is a high-level plan. We can now break each module into smaller tasks for implementation.
+
+    Let's list the tasks for each module:
+
+    Module 1: Database Schema
+        Task 1.1: Create `deck_lists` table.
+        Task 1.2: Create `deck_cards` table.
+        Task 1.3: Update `tournament_registrations` table to add `deck_list_id`.
+        Task 1.4: Create necessary indexes and constraints.
+
+    Module 2: Server Actions
+        Task 2.1: Create a JS/TS parser for the deck list string (or use the existing Python one via an API? but we want to keep it in JS for the server action). We'll write a JS parser.
+        Task 2.2: Implement the `submitDeckList` server action with the steps outlined above.
+
+    Module 3: UI Components
+        Task 3.1: Create the `DeckListSubmissionModal` component.
+        Task 3.2: Integrate the server action into the component.
+        Task 3.3: Add form validation and error handling.
+
+    Module 4: Integration
+        Task 4.1: Add the "Submit Deck List" button to the tournament registration page.
+        Task 4.2: Open the modal when the button is clicked.
+        Task 4.3: Update the page after successful submission.
+
+    Module 5: Testing
+        Task 5.1: Write unit tests for the parser.
+        Task 5.2: Write unit tests for the validation logic.
+        Task 5.3: Write integration tests for the server action.
+
+    We can start with Module 1 and then proceed to Module 2, etc.
+
+    Let me know if you need more details on any specific task.
+
+--- Answer ---
+# Pokémon TCG Deck List Submission Module - Implementation Plan
+
+## **Priority 1: Database Schema & Storage Layer** (Week 1)
+*Prerequisite for all other modules*
+
+### **1.1 Deck Storage Schema**
+```sql
+-- deck_lists table
+CREATE TABLE deck_lists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  tournament_id UUID REFERENCES tournaments NOT NULL,
+  deck_name VARCHAR(100) NOT NULL,
+  format VARCHAR(20) NOT NULL,  -- 'standard', 'expanded', etc.
+  submitted_at TIMESTAMPTZ DEFAULT NOW(),
+  validated_at TIMESTAMPTZ,
+  is_valid BOOLEAN DEFAULT FALSE,
+  validation_errors JSONB,
+  
+  -- Performance indexes
+  INDEX idx_deck_tournament (tournament_id),
+  INDEX idx_deck_user (user_id),
+  INDEX idx_deck_submitted (submitted_at)
+);
+
+-- deck_cards table (normalized for queries)
+CREATE TABLE deck_cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deck_list_id UUID REFERENCES deck_lists ON DELETE CASCADE,
+  card_id UUID REFERENCES cards NOT NULL,
+  equivalency_group_id UUID REFERENCES equivalency_groups,
+  quantity INTEGER NOT NULL CHECK (quantity >= 0 AND quantity <= 4),
+  is_sideboard BOOLEAN DEFAULT FALSE,
+  position INTEGER,  -- optional: maintain deck order
+  
+  INDEX idx_deck_cards_deck (deck_list_id),
+  INDEX idx_deck_cards_card (card_id),
+  UNIQUE(deck_list_id, card_id, is_sideboard)  -- prevent duplicates
+);
+```
+
+### **1.2 Cache Tables for Validation**
+```sql
+-- card_validation_cache (materialized view or table)
+CREATE TABLE card_validation_cache (
+  set_code VARCHAR(10),
+  card_number VARCHAR(10),
+  card_id UUID,
+  equivalency_group_id UUID,
+  is_legal_standard BOOLEAN,
+  is_legal_expanded BOOLEAN,
+  last_updated TIMESTAMPTZ,
+  PRIMARY KEY (set_code, card_number)
+);
+
+-- Create function to refresh cache
+CREATE OR REPLACE FUNCTION refresh_validation_cache()
+RETURNS VOID AS $$
+BEGIN
+  TRUNCATE card_validation_cache;
+  INSERT INTO card_validation_cache
+  SELECT ...; -- Join cards, sets, equivalency_groups
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## **Priority 2: Validation Engine** (Week 2)
+*Core business logic - must be robust before UI*
+
+### **2.1 TypeScript Parser & Validator**
+```
+utils/deck-validator/
+├── types.ts              # TypeScript interfaces
+├── parser.ts             # Regex-based PTCG Live parser (port from Python)
+├── validator.ts          # Format rules, 4-card limit, banned cards
+├── equivalency-checker.ts # Functional reprint validation
+└── index.ts              # Main export
+```
+
+### **2.2 Server Actions**
+```
+app/api/deck/actions/
+├── submit-deck-action.ts        # Main submission endpoint
+├── validate-deck-action.ts      # Validation-only endpoint
+├── parse-deck-action.ts         # Parse without validation
+└── cache/                       # Hybrid cache implementation
+    ├── validation-cache.ts      # In-memory cache layer
+    └── refresh-cache-action.ts  # Admin-only cache refresh
+```
+
+**Key Implementation:**
+```typescript
+// Hybrid cache approach
+interface ValidationCache {
+  getCard(setCode: string, cardNumber: string): Promise<CardData>;
+  preloadTournamentCards(tournamentId: string): Promise<void>;
+  invalidateCache(): Promise<void>;
+}
+
+// Server action with caching
+export async function validateDeckList(
+  deckText: string, 
+  tournamentId: string
+) {
+  // 1. Check memory cache first
+  const cached = await validationCache.getDeckValidation(deckText);
+  if (cached) return cached;
+  
+  // 2. Parse deck list
+  const parsed = await parseDeckList(deckText);
+  
+  // 3. Preload all cards for this tournament format
+  await validationCache.preloadFormatCards(tournamentId);
+  
+  // 4. Validate against database (batch queries)
+  const results = await validateCards(parsed.cards, tournamentId);
+  
+  // 5. Cache results (5 minute TTL for tournament submissions)
+  await validationCache.setDeckValidation(deckText, results);
+  
+  return results;
+}
+```
+
+## **Priority 3: UI Components** (Week 3)
+*User-facing interface*
+
+### **3.1 Deck Submission Modal**
+```
+components/deck-submission/
+├── DeckSubmissionModal.tsx      # Main modal component
+├── DeckTextArea.tsx            # Text input with syntax highlighting
+├── DeckPreview.tsx             # Parsed card list preview
+├── ValidationErrors.tsx        # Error display component
+├── CardSearch.tsx              # Typeahead card search
+└── FileUpload.tsx              # .txt file upload
+```
+
+**Modal Features:**
+- Real-time parsing as user types
+- Visual card count (60/40 + sideboard)
+- Set icon display
+- Copy-paste from PTCG Live
+- Save as draft / submit final
+
+### **3.2 Validation Feedback UI**
+```tsx
+interface ValidationState {
+  status: 'idle' | 'parsing' | 'validating' | 'valid' | 'invalid';
+  cards: ParsedCard[];
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  deckSize: { main: number; sideboard: number };
+  formatCompat: boolean;
+}
+```
+
+## **Priority 4: Integration Points** (Week 4)
+*Connect to existing systems*
+
+### **4.1 Tournament Registration Flow**
+```
+app/tournaments/[id]/register/
+├── page.tsx                    # Existing registration
+├── deck-step.tsx              # New deck submission step
+└── actions/
+    └── complete-registration-with-deck.ts
+```
+
+**Registration Flow Changes:**
+1. Add "deck list" step to registration wizard
+2. Require valid deck for tournament start
+3. Allow deck edits until deadline
+4. Show deck status on tournament dashboard
+
+### **4.2 Admin & Judge Views**
+```
+app/admin/tournaments/[id]/decks/
+├── page.tsx                    # All deck lists table
+├── [deck_id]/page.tsx         # Individual deck view
+├── validation-report.tsx      # Bulk validation report
+└── export.tsx                 # Export to Excel/JSON
+```
+
+### **4.3 Real-time Updates**
+- WebSocket for deck validation status
+- Live deck list count on tournament page
+- Judge notifications for problematic decks
+
+## **Priority 5: Performance & Polish** (Week 5+)
+
+### **5.1 Optimization Tasks**
+- [ ] Database query optimization (batched card lookups)
+- [ ] Redis cache for validation results
+- [ ] CDN for card images
+- [ ] Debounced validation (300ms delay)
+- [ ] Progressive loading for large tournaments
+
+### **5.2 Monitoring & Analytics**
+- [ ] Deck submission metrics dashboard
+- [ ] Validation error tracking
+- [ ] Performance monitoring (parse/validate times)
+- [ ] Popular cards analytics
+
+## **Dependency Order:**
+1. **Schema** → Required for storage
+2. **Validator** → Required for UI feedback  
+3. **UI Components** → Depends on validator
+4. **Integration** → Depends on all above
+5. **Optimization** → Final polish
+
+## **Quick Wins (First 2 Days):**
+1. Create basic `deck_lists` table schema
+2. Implement TypeScript parser (port from Python)
+3. Create simple textarea form with console logging
+4. Add to registration as optional "beta" feature
+
+## **Risk Mitigation:**
+- Start with permissive validation (just parsing)
+- Gradual rollout: optional → recommended → required
+- Fallback to manual deck list upload if validation fails
+- Admin override capability for edge cases
+
+Each module is designed to be testable in isolation. Start with the database schema and work upward, validating each layer before moving to the next.

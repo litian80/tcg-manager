@@ -24,7 +24,7 @@ export async function getTournaments({
         let query = supabase
             .from('tournaments')
             .select('*')
-            .eq('is_published', true)
+            .or('is_published.eq.true,registration_open.eq.true')
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
 

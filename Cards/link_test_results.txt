@@ -1,0 +1,3 @@
+Total Cards Available: 19915
+Working Links: 19247
+Broken Links: 668

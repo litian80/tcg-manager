@@ -1,0 +1,38 @@
+--- Reasoning ---
+Hmm, the user has provided a detailed overview of the TCG Manager project's current state, including the backlog, UAT plan, and completed tasks. They want to know the next priority task to work on. 
+
+Looking at the context, I can see that two UAT test cases are still pending: TC-003 (Parsing & Validation Rules) and TC-004 (Performance & UX Verification). TC-003 is particularly important because it validates the core functionality of deck parsing and error handling. Without proper validation, users might submit invalid decks, causing issues down the line. 
+
+The user mentioned they just finished simplifying age divisions and hardcoding deck sizes, so the next logical step would be to ensure the validation logic aligns with these changes. TC-003 is also a dependency for UAT Phase 2, so completing it would unblock further testing. 
+
+I should suggest focusing on TC-003 first, with a clear sub-task: implementing validation for partial deck lists. This is a targeted goal that moves the project forward and reduces risk. TC-004 can follow afterward since it’s more about verifying existing behavior rather than implementing new features. 
+
+The explanation should highlight why TC-003 is higher priority than other backlog items like role management UI or technical debt—because it directly impacts user functionality and testing progress.
+
+--- Answer ---
+Based on your current project state and pending UAT tests, **the next highest priority task is [TC-003] Parsing & Validation Rules**.
+
+### **Why This is the Highest Priority:**
+
+1.  **Critical Path for UAT:** TC-003 is a foundational test case in **Phase 2: Deck Management & Validation**. Completing its functionality is a blocker for executing the UAT plan fully and confidently.
+2.  **Core Functionality Gap:** You have the "happy path" (TC-001) working, but a production-ready system **must** properly handle invalid and partial user inputs. This is a core piece of the deck submission feature that is currently incomplete.
+3.  **Directly Follows Recent Work:** You just simplified the age/division config and hardcoded deck size to 60/0. The validation logic (especially the "partial list" check) should now be updated and tested to reflect this exact rule (60 cards required), making this a logical and timely next step.
+4.  **Risk Mitigation:** Without validation, users can submit malformed data, which could break the parser, cause confusing UI states, or create invalid data in your system.
+5.  **Higher Priority than Tech Debt:** While infrastructure tasks (like Role Management UI or Sentry) are important, they support features. **Completing the core user-facing feature (deck submission with validation) takes precedence.**
+
+### **Clear, Actionable Goal for the Next Sub-Task:**
+
+**Goal:** Implement and verify the UI validation warning for a deck list with **fewer than 60 cards**, ensuring it aligns with the newly hardcoded deck size rule.
+
+**Action Steps:**
+1.  **Locate the validation logic:** Find the function in your codebase that checks deck length after parsing (likely in a file like `utils/deckParser.ts` or within the `DeckSubmissionModal` component).
+2.  **Update the rule:** Ensure it flags a deck as `invalid` or `partial` if `cardCount < 60`. Remove any ambiguity or legacy logic related to variable sideboard sizes.
+3.  **Trigger the UI badge:** Confirm that this validation state triggers the correct "Warning" or "Error" badge in the "Preview & Validation" tab of your modal.
+4.  **Quick Manual Test:**
+    *   Go to the tournament page.
+    *   Open the "Submit Deck" modal.
+    *   Paste a valid PTCG Live export string for **only 59 cards**.
+    *   Navigate to the "Preview & Validation" tab.
+    *   **Verify:** A clear warning/error message appears (e.g., "Deck must contain exactly 60 cards. Found: 59").
+
+Once this sub-task is complete, you can finish TC-003 by implementing the "Invalid Format" check, and then move to **TC-004 (Performance & UX Verification)** as a final check on the complete feature.

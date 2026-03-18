@@ -1,0 +1,727 @@
+--- Reasoning ---
+We are going to implement the security hardening for organizer routes.
+ Steps:
+ 1. Create a shared `lib/auth.ts` utility for server-side role checks.
+ 2. Implement a global `middleware.ts` to protect `/organizer/*` routes.
+ 3. Update the specific pages that are missing or have inconsistent checks.
+
+ Let's break down:
+
+ 1. `lib/auth.ts`:
+    We are going to create a utility that can be used in server components and server actions to check authorization.
+    We'll have functions to check if the current user is allowed to manage a tournament (by tournament id) or if they are allowed to create a tournament (by role).
+
+ 2. `middleware.ts`:
+    We'll protect the `/organizer/*` routes by checking the user's role and redirecting if they are not an admin or organizer.
+    We'll use `createServerClient` from `@supabase/ssr` to get the user's session and profile.
+
+ 3. Update the pages:
+    - `/organizer/tournaments/new/page.tsx`: Add role check using the shared utility or a direct check.
+    - `/organizer/tournaments/[id]/flyer/page.tsx`: Update to use the shared utility for authorization.
+    - `/organizer/tournaments/[id]/page.tsx`: Already has a check, but we can standardize by using the shared utility.
+
+ However, note that the authorization for a specific tournament is more complex (organizer_id, admin, or same POP ID). We can create a function in `lib/auth.ts` to handle that.
+
+ Let's create the `lib/auth.ts` first.
+
+ We'll have:
+  - A function to get the current user's profile (if needed) and check their role.
+  - A function to check if the user is authorized to manage a specific tournament.
+
+ Since we are using server components, we can use `createClient` from `@/utils/supabase/server` to get the Supabase client.
+
+ We are going to design:
+
+  export async function requireOrganizerOrAdmin() -> returns user and profile if they are organizer or admin, otherwise redirects.
+
+  export async function authorizeTournamentManagement(tournamentId: string) -> returns { tournament, user } if authorized, otherwise redirects.
+
+ But note: In the middleware, we are only checking the role for the `/organizer/*` path. We cannot check tournament-specific authorization in the middleware because the tournament id is dynamic.
+
+ So, we'll do:
+
+  - Middleware: checks if the user is at least an organizer (role 'organizer' or 'admin') for the `/organizer/*` path. If not, redirect to home.
+
+  - For tournament-specific pages (like `/organizer/tournaments/[id]/*`), we'll use a server-side check in the page (or in a shared function) that also checks the tournament's organizer_id and POP ID.
+
+ Let's write the code:
+
+ 1. `lib/auth.ts`:
+    We'll have two main functions for server components:
+
+    a) `getUserProfile()`: returns the user and profile, and if the user is not logged in, redirects to login.
+
+    b) `requireOrganizerOrAdmin()`: uses `getUserProfile` and checks the role. If not organizer or admin, redirects.
+
+    c) `authorizeTournamentManagement(tournamentId: string)`: 
+        - gets the user and profile (using `getUserProfile`).
+        - fetches the tournament by id.
+        - checks if the user is authorized (organizer_id, admin, or same POP ID).
+        - returns { tournament, user } if authorized, otherwise redirects.
+
+    We'll also have a helper function `isAuthorizedForTournament(profile, tournament)` to avoid code duplication.
+
+ 2. `middleware.ts`:
+    We'll protect the `/organizer/*` path by checking the user's role (using the session and the profile from the database). If not admin or organizer, redirect to home.
+
+ 3. Update the pages to use these utilities.
+
+ However, note that the middleware runs on every request. We don't want to do a database query for every request? We can get the user from the session and then check the role from the profile stored in the session? But the profile in the session might be outdated.
+
+ Alternatively, we can rely on the middleware to check the role from the database? That would be a query per request to the organizer routes.
+
+ Considering the scale, it's acceptable.
+
+ Let's code:
+
+ Step 1: Create `lib/auth.ts`
+
+--- Answer ---
+I'll implement a robust and consistent authorization system for organizer routes. Here's the complete solution:
+
+## 1. **`lib/auth.ts`** - Shared server-side authorization utility
+
+```typescript
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+import { Role } from '@/lib/rbac'
+
+export type TournamentAuthorizationResult = {
+  isAuthorized: boolean
+  tournament: any
+  user: any
+  profile: any
+}
+
+/**
+ * Check if user has required role for tournament management
+ */
+export async function requireOrganizerOrAdmin(): Promise<{ user: any; profile: any }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role, pokemon_player_id')
+    .eq('id', user.id)
+    .single()
+
+  if (error || !profile) {
+    redirect('/login?message=Could not fetch profile')
+  }
+
+  if (profile.role !== 'admin' && profile.role !== 'organizer') {
+    redirect('/?error=unauthorized')
+  }
+
+  return { user, profile }
+}
+
+/**
+ * Authorize user for tournament-specific actions
+ * Returns authorization result with tournament data if authorized
+ */
+export async function authorizeTournamentManagement(
+  tournamentId: string
+): Promise<TournamentAuthorizationResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  // Fetch tournament
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('*')
+    .eq('id', tournamentId)
+    .single()
+
+  if (tournamentError || !tournament) {
+    throw new Error('Tournament not found')
+  }
+
+  // Fetch user profile
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, pokemon_player_id')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    redirect('/login?message=Could not fetch profile')
+  }
+
+  // Check authorization based on guidelines:
+  // 1. Tournament Organizer ID matches User ID
+  // 2. User Role is 'admin'
+  // 3. Tournament Organizer POP ID matches User POP ID
+  let isAuthorized = tournament.organizer_id === user.id
+
+  if (!isAuthorized) {
+    if (profile.role === 'admin') {
+      isAuthorized = true
+    } else if (tournament.organizer_popid && profile.pokemon_player_id === tournament.organizer_popid) {
+      isAuthorized = true
+    }
+  }
+
+  return {
+    isAuthorized,
+    tournament,
+    user,
+    profile
+  }
+}
+
+/**
+ * Check if user can create tournaments (admin or organizer)
+ */
+export async function canCreateTournaments(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return false
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) {
+    return false
+  }
+
+  return profile.role === 'admin' || profile.role === 'organizer'
+}
+
+/**
+ * Check if user can manage a specific tournament
+ */
+export async function canManageTournament(tournamentId: string): Promise<boolean> {
+  try {
+    const authResult = await authorizeTournamentManagement(tournamentId)
+    return authResult.isAuthorized
+  } catch {
+    return false
+  }
+}
+```
+
+## 2. **`middleware.ts`** - Global protection for `/organizer/*` routes
+
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+import { cookies } from 'next/headers'
+
+export async function middleware(request: NextRequest) {
+  try {
+    // Only protect /organizer/* routes
+    if (!request.nextUrl.pathname.startsWith('/organizer')) {
+      return NextResponse.next()
+    }
+
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
+      }
+    )
+
+    // Get user session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Get user profile to check role
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    if (error || !profile) {
+      // If can't fetch profile, redirect to home
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Check if user has organizer or admin role
+    if (profile.role !== 'admin' && profile.role !== 'organizer') {
+      // User doesn't have required role, redirect to home
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // User is authorized, proceed
+    return NextResponse.next()
+  } catch (error) {
+    console.error('Middleware error:', error)
+    // If any error occurs, redirect to home for safety
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+}
+
+export const config = {
+  matcher: ['/organizer/:path*']
+}
+```
+
+## 3. **`app/organizer/tournaments/new/page.tsx`** - Updated with role check
+
+```typescript
+import { requireOrganizerOrAdmin } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { CreateTournamentForm } from './create-tournament-form'
+
+export default async function NewTournamentPage() {
+  try {
+    // This will redirect if user is not organizer or admin
+    const { user, profile } = await requireOrganizerOrAdmin()
+
+    return (
+      <div className="container max-w-lg py-8 space-y-8">
+        <div className="flex items-center gap-4">
+          <Link href="/organizer/tournaments" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Create TOM File</h1>
+            <p className="text-muted-foreground">Setup a new tournament to generate a .tdf file.</p>
+          </div>
+        </div>
+
+        <CreateTournamentForm />
+      </div>
+    )
+  } catch (error) {
+    redirect('/?error=unauthorized')
+  }
+}
+```
+
+## 4. **`app/organizer/tournaments/[id]/flyer/page.tsx`** - Updated with consistent role check
+
+```typescript
+import { authorizeTournamentManagement } from '@/lib/auth'
+import { notFound, redirect } from 'next/navigation'
+import { QRCodeSVG } from 'qrcode.react'
+import { headers } from 'next/headers'
+import { PrintButton } from './print-button'
+
+export default async function TournamentFlyerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  try {
+    // Use shared authorization utility
+    const authResult = await authorizeTournamentManagement(id)
+
+    if (!authResult.isAuthorized) {
+      redirect('/?error=unauthorized')
+    }
+
+    const { tournament } = authResult
+
+    // Construct Public URL
+    const headersList = await headers()
+    const host = headersList.get('host') || ''
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const publicUrl = `${protocol}://${host}/tournament/${id}`
+
+    return (
+      <div className="bg-white min-h-screen text-black flex flex-col items-center">
+        {/* Print Controls - Hidden on Print */}
+        <div className="print:hidden w-full p-4 flex justify-between items-center bg-gray-100 border-b mb-8">
+          <div className="font-medium text-sm text-gray-600">
+            🖨️ For best results: A4/Letter size, Portrait, Scale 100%.
+          </div>
+          <PrintButton />
+        </div>
+
+        {/* Flyer Content - Centered */}
+        <div className="w-full max-w-[210mm] p-8 flex flex-col items-center text-center space-y-12 h-full justify-center print:block print:w-full print:max-w-none print:p-0 print:space-y-12">
+          {/* Header */}
+          <div className="space-y-4">
+            <h1 className="text-6xl font-black tracking-tighter uppercase leading-none">
+              Live Pairings
+            </h1>
+            <div className="w-32 h-2 bg-black mx-auto"></div>
+          </div>
+
+          {/* Tournament Name */}
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold max-w-2xl mx-auto leading-tight">
+              {tournament.name}
+            </h2>
+            <p className="text-xl text-gray-500 font-medium">
+              Tournament Dashboard
+            </p>
+          </div>
+
+          {/* QR Code */}
+          <div className="p-8 border-4 border-black rounded-3xl mx-auto inline-block">
+            <QRCodeSVG
+              value={publicUrl}
+              size={350}
+              level="Q"
+              includeMargin={true}
+            />
+          </div>
+
+          {/* Footer Instructions */}
+          <div className="space-y-6 max-w-xl mx-auto">
+            <p className="text-2xl font-bold">
+              Scan to check your<br />
+              <span className="text-3xl uppercase tracking-wide">Table Number & Standings</span>
+            </p>
+
+            <div className="border-t-2 border-gray-300 w-full my-8"></div>
+          </div>
+
+          {/* Powered By (Subtle) */}
+          <div className="absolute bottom-4 text-gray-400 text-sm font-medium uppercase tracking-widest print:bottom-8 print:relative">
+            TCG Tournament Manager
+          </div>
+        </div>
+
+        {/* Print Styling Fixes */}
+        <style type="text/css" media="print">
+          {`
+            @page {
+              size: auto;
+              margin: 0mm;
+            }
+            body {
+              background-color: white;
+              color: black;
+              -webkit-print-color-adjust: exact;
+            }
+            /* Hide everything else if specific parent classes interfere */
+            nav, header, aside, .sidebar {
+              display: none !important;
+            }
+          `}
+        </style>
+      </div>
+    )
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Tournament not found') {
+      notFound()
+    }
+    redirect('/?error=unauthorized')
+  }
+}
+```
+
+## 5. **`app/organizer/tournaments/[id]/page.tsx`** - Standardized with shared utility
+
+```typescript
+import { authorizeTournamentManagement } from '@/lib/auth'
+import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft, AlertTriangle, Printer } from 'lucide-react'
+import { TournamentSettingsForm } from './_components/tournament-settings-form'
+import { TdfExportCard } from './_components/tdf-export-card'
+import { RosterManager } from './_components/roster-manager'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AutoSyncUploader } from './_components/auto-sync-uploader'
+import { StaffManager } from '@/components/tournament/staff-manager'
+import { ExportPenaltyCard } from '@/components/organizer/export-penalty-card'
+import { Role } from '@/lib/rbac'
+
+export default async function OrganizerTournamentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+
+  try {
+    // Use shared authorization utility
+    const authResult = await authorizeTournamentManagement(id)
+
+    if (!authResult.isAuthorized) {
+      redirect('/?error=unauthorized')
+    }
+
+    const { tournament, user, profile } = authResult
+    const supabase = await require('@/utils/supabase/server').createClient()
+
+    // Check if tournament has matches (Active/Imported from TOM)
+    const { count: matchesCount } = await supabase
+      .from('matches')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', id)
+
+    const isActive = matchesCount !== null && matchesCount > 0
+
+    // Fetch Current Roster for RosterManager
+    const { data: tpData } = await supabase
+      .from('tournament_players')
+      .select(
+        `
+          player_id,
+          players:player_id (
+            id,
+            first_name,
+            last_name,
+            tom_player_id
+          )
+        `
+      )
+      .eq('tournament_id', id)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentRoster = tpData?.map((tp: any) => ({
+      ...tp.players,
+      birth_year: tp.players.birth_year || null
+    })) || []
+
+    // Fetch Current Judges
+    const { data: judgeLinks } = await supabase
+      .from('tournament_judges')
+      .select('user_id')
+      .eq('tournament_id', id)
+
+    let judges: any[] = []
+
+    if (judgeLinks && judgeLinks.length > 0) {
+      const judgeIds = judgeLinks.map(j => j.user_id)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, nick_name, pokemon_player_id, role')
+        .in('id', judgeIds)
+
+      judges = profiles?.map(p => ({
+        id: p.id,
+        email: p.email,
+        display_name: p.nick_name
+          ? `${p.first_name} ${p.last_name} (${p.nick_name})`
+          : `${p.first_name} ${p.last_name}`,
+        role: p.role as Role,
+        pokemon_player_id: p.pokemon_player_id
+      })) || []
+    }
+
+    return (
+      <div className="container max-w-7xl py-8 space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href={`/tournament/${id}`} className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Manage Tournament</h1>
+              <p className="text-muted-foreground">{tournament.name}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/organizer/tournaments/${id}/flyer`}
+              target="_blank"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              Print QR Poster
+            </Link>
+          </div>
+        </div>
+
+        {isActive && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Tournament Active</AlertTitle>
+            <AlertDescription>
+              This tournament has active matches. Configuration and Roster Management are disabled.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+          {/* Left Column: Configuration, Roster, TDF Export */}
+          <div className="space-y-6">
+            <div className={isActive ? 'opacity-50 pointer-events-none grayscale' : ''}>
+              <TournamentSettingsForm tournament={tournament} />
+            </div>
+
+            <div className={isActive ? 'opacity-50 pointer-events-none grayscale' : ''}>
+              <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+            </div>
+
+            <div className={isActive ? 'opacity-50 pointer-events-none grayscale' : ''}>
+              <TdfExportCard tournament={tournament} />
+            </div>
+          </div>
+
+          {/* Right Column: Auto-Sync, Staff, Penalties */}
+          <div className="space-y-6">
+            <AutoSyncUploader tournamentId={tournament.id} />
+            <StaffManager tournamentId={tournament.id} judges={judges} />
+            <ExportPenaltyCard tournamentId={tournament.id} />
+          </div>
+        </div>
+      </div>
+    )
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Tournament not found') {
+      notFound()
+    }
+    redirect('/?error=unauthorized')
+  }
+}
+```
+
+## Additional Refactor for **`app/organizer/tournaments/page.tsx`** to use shared utility:
+
+```typescript
+import { requireOrganizerOrAdmin } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { Settings, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+
+export default async function OrganizerTournamentsListPage() {
+  try {
+    // This will redirect if user is not organizer or admin
+    const { user, profile } = await requireOrganizerOrAdmin()
+
+    const supabase = await require('@/utils/supabase/server').createClient()
+
+    // Fetch tournaments where organizer_id is current user
+    // OR where organizer_popid matches user's pop id (legacy/migration support)
+    // For now we rely on organizer_id which is the robust link.
+
+    let query = supabase
+      .from('tournaments')
+      .select('*')
+      .order('date', { ascending: false })
+
+    if (profile.role !== 'admin') {
+      // If not admin, restrict to own tournaments via POP ID
+      if (profile.pokemon_player_id) {
+        query = query.eq('organizer_popid', profile.pokemon_player_id)
+      } else {
+        // Use a dummy ID ensuring no results are returned if user has no POP ID
+        query = query.eq('organizer_popid', 'NO_POP_ID_ASSIGNED')
+      }
+    }
+
+    const { data: tournaments, error } = await query
+
+    return (
+      <div className="container max-w-4xl py-8 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">My Tournaments</h1>
+            <p className="text-muted-foreground">Manage your organized events and export TDF files.</p>
+          </div>
+          <Link href="/organizer/tournaments/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Create TOM File
+            </Button>
+          </Link>
+        </div>
+
+        <div className="grid gap-4">
+          {error && <div className="text-red-500">Failed to load tournaments.</div>}
+
+          {tournaments && tournaments.length === 0 && (
+            <div className="text-center py-12 border rounded-lg bg-muted/50">
+              <p className="text-muted-foreground">No tournaments found.</p>
+            </div>
+          )}
+
+          {tournaments?.map((tournament) => (
+            <Card key={tournament.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg">{tournament.name}</h3>
+                  <Badge variant={tournament.status === 'completed' ? 'secondary' : 'default'}>
+                    {tournament.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(tournament.date).toLocaleDateString()} • {tournament.city || 'No Location'}
+                </p>
+                {tournament.tom_uid ? (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ Sanction ID: {tournament.tom_uid}
+                  </p>
+                ) : (
+                  <p className="text-xs text-amber-500 flex items-center gap-1">
+                    ⚠ Missing Sanction ID
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Link href={`/tournament/${tournament.id}`}>
+                  <Button variant="outline" size="sm">View Public</Button>
+                </Link>
+                {/* Manage Button removed as per request - access via Public Page */}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  } catch (error) {
+    redirect('/?error=unauthorized')
+  }
+}
+```
+
+## Summary of Changes:
+
+1. **`lib/auth.ts`**: Created a shared authorization utility with functions for:
+   - Requiring organizer/admin role (`requireOrganizerOrAdmin`)
+   - Authorizing tournament management (`authorizeTournamentManagement`)
+   - Helper functions for role and permission checks
+
+2. **`middleware.ts`**: Added global protection for `/organizer/*` routes that:
+   - Checks user session
+   - Verifies user has organizer or admin role
+   - Redirects unauthorized users
+
+3. **Updated pages**: All organizer pages now use the shared authorization utility:
+   - `/organizer/tournaments/new`: Uses `requireOrganizerOrAdmin()`
+   - `/organizer/tournaments/[id]/flyer`: Uses `authorizeTournamentManagement()`
+   - `/organizer/tournaments/[id]`: Uses `authorizeTournamentManagement()`
+   - `/organizer/tournaments`: Uses `requireOrganizerOrAdmin()`
+
+4. **Consistent authorization logic**: All tournament management pages now follow the same authorization rules:
+   - Tournament Organizer ID matches User ID, OR
+   - User Role is 'admin', OR
+   - Tournament Organizer POP ID matches User POP ID
+
+This implementation provides a robust, consistent, and maintainable authorization system that prevents unauthorized access while allowing legitimate organizers to manage their tournaments.

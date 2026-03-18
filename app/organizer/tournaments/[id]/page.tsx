@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { authorizeTournamentManagement } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle, Printer } from "lucide-react";
@@ -15,41 +16,23 @@ import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
 
 export default async function OrganizerTournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
-    // Fetch tournament details
-    const { data: tournament, error } = await supabase
-        .from("tournaments")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (error || !tournament) {
-        notFound();
-    }
-
-    // Authorization check
-    let isAuthorized = tournament.organizer_id === user.id;
-
-    if (!isAuthorized) {
-        const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
-
-        if (profile?.role === 'admin') {
-            isAuthorized = true;
-        } else if (tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid) {
-            isAuthorized = true;
+    let authResult;
+    try {
+        authResult = await authorizeTournamentManagement(id);
+    } catch (error) {
+        if (error instanceof Error && error.message === 'Tournament not found') {
+            notFound();
         }
+        throw error; // handleAuthError already called inside authorizeTournamentManagement
     }
 
-    if (!isAuthorized) {
-        redirect("/"); // unauthorized
+    if (!authResult || !authResult.isAuthorized) {
+        redirect("/?error=unauthorized");
     }
+
+    const { tournament, user, profile } = authResult;
+    const supabase = await createClient();
 
     // Check if tournament has matches (Active/Imported from TOM)
     const { count: matchesCount } = await supabase

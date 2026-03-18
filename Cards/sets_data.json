@@ -1,0 +1,1202 @@
+[
+    {
+        "Set Name": "Ascended Heroes",
+        "Set Code": "ASC",
+        "Release Date": "30 Jan 26",
+        "Number of cards": "295",
+        "Era": "Mega",
+        "Link": "https://limitlesstcg.com/cards/ASC"
+    },
+    {
+        "Set Name": "Phantasmal Flames",
+        "Set Code": "PFL",
+        "Release Date": "14 Nov 25",
+        "Number of cards": "130",
+        "Era": "Mega",
+        "Link": "https://limitlesstcg.com/cards/PFL"
+    },
+    {
+        "Set Name": "Mega Evolution",
+        "Set Code": "MEG",
+        "Release Date": "26 Sep 25",
+        "Number of cards": "188",
+        "Era": "Mega",
+        "Link": "https://limitlesstcg.com/cards/MEG"
+    },
+    {
+        "Set Name": "Mega Evolution Energy",
+        "Set Code": "MEE",
+        "Release Date": "25 Sep 25",
+        "Number of cards": "8",
+        "Era": "Mega",
+        "Link": "https://limitlesstcg.com/cards/MEE"
+    },
+    {
+        "Set Name": "Mega Promos",
+        "Set Code": "MEP",
+        "Release Date": "",
+        "Number of cards": "28",
+        "Era": "Mega",
+        "Link": "https://limitlesstcg.com/cards/MEP"
+    },
+    {
+        "Set Name": "Black Bolt",
+        "Set Code": "BLK",
+        "Release Date": "18 Jul 25",
+        "Number of cards": "172",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/BLK"
+    },
+    {
+        "Set Name": "White Flare",
+        "Set Code": "WHT",
+        "Release Date": "18 Jul 25",
+        "Number of cards": "173",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/WHT"
+    },
+    {
+        "Set Name": "Destined Rivals",
+        "Set Code": "DRI",
+        "Release Date": "30 May 25",
+        "Number of cards": "244",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/DRI"
+    },
+    {
+        "Set Name": "Journey Together",
+        "Set Code": "JTG",
+        "Release Date": "28 Mar 25",
+        "Number of cards": "190",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/JTG"
+    },
+    {
+        "Set Name": "Prismatic Evolutions",
+        "Set Code": "PRE",
+        "Release Date": "17 Jan 25",
+        "Number of cards": "180",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/PRE"
+    },
+    {
+        "Set Name": "Surging Sparks",
+        "Set Code": "SSP",
+        "Release Date": "08 Nov 24",
+        "Number of cards": "252",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SSP"
+    },
+    {
+        "Set Name": "Stellar Crown",
+        "Set Code": "SCR",
+        "Release Date": "13 Sep 24",
+        "Number of cards": "175",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SCR"
+    },
+    {
+        "Set Name": "Shrouded Fable",
+        "Set Code": "SFA",
+        "Release Date": "02 Aug 24",
+        "Number of cards": "99",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SFA"
+    },
+    {
+        "Set Name": "Twilight Masquerade",
+        "Set Code": "TWM",
+        "Release Date": "24 May 24",
+        "Number of cards": "226",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/TWM"
+    },
+    {
+        "Set Name": "Temporal Forces",
+        "Set Code": "TEF",
+        "Release Date": "22 Mar 24",
+        "Number of cards": "218",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/TEF"
+    },
+    {
+        "Set Name": "Paldean Fates",
+        "Set Code": "PAF",
+        "Release Date": "26 Jan 24",
+        "Number of cards": "245",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/PAF"
+    },
+    {
+        "Set Name": "Paradox Rift",
+        "Set Code": "PAR",
+        "Release Date": "03 Nov 23",
+        "Number of cards": "266",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/PAR"
+    },
+    {
+        "Set Name": "Pok\u00e9mon 151",
+        "Set Code": "MEW",
+        "Release Date": "22 Sep 23",
+        "Number of cards": "207",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/MEW"
+    },
+    {
+        "Set Name": "Obsidian Flames",
+        "Set Code": "OBF",
+        "Release Date": "11 Aug 23",
+        "Number of cards": "230",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/OBF"
+    },
+    {
+        "Set Name": "Paldea Evolved",
+        "Set Code": "PAL",
+        "Release Date": "09 Jun 23",
+        "Number of cards": "279",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/PAL"
+    },
+    {
+        "Set Name": "Scarlet & Violet",
+        "Set Code": "SVI",
+        "Release Date": "31 Mar 23",
+        "Number of cards": "258",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SVI"
+    },
+    {
+        "Set Name": "Scarlet & Violet Energy",
+        "Set Code": "SVE",
+        "Release Date": "30 Mar 23",
+        "Number of cards": "24",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SVE"
+    },
+    {
+        "Set Name": "Scarlet & Violet Promos",
+        "Set Code": "SVP",
+        "Release Date": "",
+        "Number of cards": "211",
+        "Era": "Scarlet & Violet",
+        "Link": "https://limitlesstcg.com/cards/SVP"
+    },
+    {
+        "Set Name": "Crown Zenith",
+        "Set Code": "CRZ",
+        "Release Date": "20 Jan 23",
+        "Number of cards": "230",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/CRZ"
+    },
+    {
+        "Set Name": "Silver Tempest",
+        "Set Code": "SIT",
+        "Release Date": "11 Nov 22",
+        "Number of cards": "245",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/SIT"
+    },
+    {
+        "Set Name": "Lost Origin",
+        "Set Code": "LOR",
+        "Release Date": "09 Sep 22",
+        "Number of cards": "247",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/LOR"
+    },
+    {
+        "Set Name": "Pok\u00e9mon GO",
+        "Set Code": "PGO",
+        "Release Date": "01 Jul 22",
+        "Number of cards": "88",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/PGO"
+    },
+    {
+        "Set Name": "Astral Radiance",
+        "Set Code": "ASR",
+        "Release Date": "27 May 22",
+        "Number of cards": "246",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/ASR"
+    },
+    {
+        "Set Name": "Brilliant Stars",
+        "Set Code": "BRS",
+        "Release Date": "25 Feb 22",
+        "Number of cards": "224",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/BRS"
+    },
+    {
+        "Set Name": "Fusion Strike",
+        "Set Code": "FST",
+        "Release Date": "12 Nov 21",
+        "Number of cards": "284",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/FST"
+    },
+    {
+        "Set Name": "Celebrations",
+        "Set Code": "CEL",
+        "Release Date": "08 Oct 21",
+        "Number of cards": "50",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/CEL"
+    },
+    {
+        "Set Name": "Evolving Skies",
+        "Set Code": "EVS",
+        "Release Date": "27 Aug 21",
+        "Number of cards": "237",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/EVS"
+    },
+    {
+        "Set Name": "Chilling Reign",
+        "Set Code": "CRE",
+        "Release Date": "18 Jun 21",
+        "Number of cards": "233",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/CRE"
+    },
+    {
+        "Set Name": "Battle Styles",
+        "Set Code": "BST",
+        "Release Date": "19 Mar 21",
+        "Number of cards": "183",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/BST"
+    },
+    {
+        "Set Name": "Shining Fates",
+        "Set Code": "SHF",
+        "Release Date": "19 Feb 21",
+        "Number of cards": "195",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/SHF"
+    },
+    {
+        "Set Name": "Vivid Voltage",
+        "Set Code": "VIV",
+        "Release Date": "13 Nov 20",
+        "Number of cards": "203",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/VIV"
+    },
+    {
+        "Set Name": "Champion's Path",
+        "Set Code": "CPA",
+        "Release Date": "25 Sep 20",
+        "Number of cards": "80",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/CPA"
+    },
+    {
+        "Set Name": "Darkness Ablaze",
+        "Set Code": "DAA",
+        "Release Date": "14 Aug 20",
+        "Number of cards": "201",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/DAA"
+    },
+    {
+        "Set Name": "Rebel Clash",
+        "Set Code": "RCL",
+        "Release Date": "01 May 20",
+        "Number of cards": "209",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/RCL"
+    },
+    {
+        "Set Name": "Sword & Shield",
+        "Set Code": "SSH",
+        "Release Date": "07 Feb 20",
+        "Number of cards": "224",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/SSH"
+    },
+    {
+        "Set Name": "Sword & Shield Promos",
+        "Set Code": "SP",
+        "Release Date": "",
+        "Number of cards": "292",
+        "Era": "Sword & Shield",
+        "Link": "https://limitlesstcg.com/cards/SP"
+    },
+    {
+        "Set Name": "Cosmic Eclipse",
+        "Set Code": "CEC",
+        "Release Date": "01 Nov 19",
+        "Number of cards": "271",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/CEC"
+    },
+    {
+        "Set Name": "Hidden Fates",
+        "Set Code": "HIF",
+        "Release Date": "23 Aug 19",
+        "Number of cards": "163",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/HIF"
+    },
+    {
+        "Set Name": "Unified Minds",
+        "Set Code": "UNM",
+        "Release Date": "02 Aug 19",
+        "Number of cards": "258",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/UNM"
+    },
+    {
+        "Set Name": "Unbroken Bonds",
+        "Set Code": "UNB",
+        "Release Date": "03 May 19",
+        "Number of cards": "234",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/UNB"
+    },
+    {
+        "Set Name": "Detective Pikachu",
+        "Set Code": "DET",
+        "Release Date": "29 Mar 19",
+        "Number of cards": "18",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/DET"
+    },
+    {
+        "Set Name": "Team Up",
+        "Set Code": "TEU",
+        "Release Date": "01 Feb 19",
+        "Number of cards": "205",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/TEU"
+    },
+    {
+        "Set Name": "Lost Thunder",
+        "Set Code": "LOT",
+        "Release Date": "02 Nov 18",
+        "Number of cards": "236",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/LOT"
+    },
+    {
+        "Set Name": "Dragon Majesty",
+        "Set Code": "DRM",
+        "Release Date": "07 Sep 18",
+        "Number of cards": "78",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/DRM"
+    },
+    {
+        "Set Name": "Celestial Storm",
+        "Set Code": "CES",
+        "Release Date": "03 Aug 18",
+        "Number of cards": "183",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/CES"
+    },
+    {
+        "Set Name": "Forbidden Light",
+        "Set Code": "FLI",
+        "Release Date": "04 May 18",
+        "Number of cards": "146",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/FLI"
+    },
+    {
+        "Set Name": "Ultra Prism",
+        "Set Code": "UPR",
+        "Release Date": "02 Feb 18",
+        "Number of cards": "173",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/UPR"
+    },
+    {
+        "Set Name": "Crimson Invasion",
+        "Set Code": "CIN",
+        "Release Date": "03 Nov 17",
+        "Number of cards": "124",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/CIN"
+    },
+    {
+        "Set Name": "Shining Legends",
+        "Set Code": "SLG",
+        "Release Date": "06 Oct 17",
+        "Number of cards": "78",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/SLG"
+    },
+    {
+        "Set Name": "Burning Shadows",
+        "Set Code": "BUS",
+        "Release Date": "04 Aug 17",
+        "Number of cards": "169",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/BUS"
+    },
+    {
+        "Set Name": "Guardians Rising",
+        "Set Code": "GRI",
+        "Release Date": "05 May 17",
+        "Number of cards": "169",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/GRI"
+    },
+    {
+        "Set Name": "Sun & Moon",
+        "Set Code": "SUM",
+        "Release Date": "03 Feb 17",
+        "Number of cards": "172",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/SUM"
+    },
+    {
+        "Set Name": "Sun & Moon Promos",
+        "Set Code": "SMP",
+        "Release Date": "",
+        "Number of cards": "248",
+        "Era": "Sun & Moon",
+        "Link": "https://limitlesstcg.com/cards/SMP"
+    },
+    {
+        "Set Name": "Evolutions",
+        "Set Code": "EVO",
+        "Release Date": "02 Nov 16",
+        "Number of cards": "113",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/EVO"
+    },
+    {
+        "Set Name": "Steam Siege",
+        "Set Code": "STS",
+        "Release Date": "03 Aug 16",
+        "Number of cards": "116",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/STS"
+    },
+    {
+        "Set Name": "Fates Collide",
+        "Set Code": "FCO",
+        "Release Date": "02 May 16",
+        "Number of cards": "125",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/FCO"
+    },
+    {
+        "Set Name": "Generations",
+        "Set Code": "GEN",
+        "Release Date": "22 Feb 16",
+        "Number of cards": "115",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/GEN"
+    },
+    {
+        "Set Name": "BREAKpoint",
+        "Set Code": "BKP",
+        "Release Date": "03 Feb 16",
+        "Number of cards": "123",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/BKP"
+    },
+    {
+        "Set Name": "BREAKthrough",
+        "Set Code": "BKT",
+        "Release Date": "04 Nov 15",
+        "Number of cards": "164",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/BKT"
+    },
+    {
+        "Set Name": "Ancient Origins",
+        "Set Code": "AOR",
+        "Release Date": "12 Aug 15",
+        "Number of cards": "100",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/AOR"
+    },
+    {
+        "Set Name": "Roaring Skies",
+        "Set Code": "ROS",
+        "Release Date": "06 May 15",
+        "Number of cards": "110",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/ROS"
+    },
+    {
+        "Set Name": "Double Crisis",
+        "Set Code": "DCR",
+        "Release Date": "25 Mar 15",
+        "Number of cards": "34",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/DCR"
+    },
+    {
+        "Set Name": "Primal Clash",
+        "Set Code": "PRC",
+        "Release Date": "04 Feb 15",
+        "Number of cards": "164",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/PRC"
+    },
+    {
+        "Set Name": "Phantom Forces",
+        "Set Code": "PHF",
+        "Release Date": "05 Nov 14",
+        "Number of cards": "122",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/PHF"
+    },
+    {
+        "Set Name": "Furious Fists",
+        "Set Code": "FFI",
+        "Release Date": "13 Aug 14",
+        "Number of cards": "113",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/FFI"
+    },
+    {
+        "Set Name": "Flashfire",
+        "Set Code": "FLF",
+        "Release Date": "07 May 14",
+        "Number of cards": "109",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/FLF"
+    },
+    {
+        "Set Name": "XY",
+        "Set Code": "XY",
+        "Release Date": "05 Feb 14",
+        "Number of cards": "146",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/XY"
+    },
+    {
+        "Set Name": "Kalos Starter Set",
+        "Set Code": "KSS",
+        "Release Date": "08 Nov 13",
+        "Number of cards": "39",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/KSS"
+    },
+    {
+        "Set Name": "XY Promos",
+        "Set Code": "XYP",
+        "Release Date": "",
+        "Number of cards": "211",
+        "Era": "XY",
+        "Link": "https://limitlesstcg.com/cards/XYP"
+    },
+    {
+        "Set Name": "Legendary Treasures",
+        "Set Code": "LTR",
+        "Release Date": "06 Nov 13",
+        "Number of cards": "140",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/LTR"
+    },
+    {
+        "Set Name": "Plasma Blast",
+        "Set Code": "PLB",
+        "Release Date": "14 Aug 13",
+        "Number of cards": "105",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/PLB"
+    },
+    {
+        "Set Name": "Plasma Freeze",
+        "Set Code": "PLF",
+        "Release Date": "08 May 13",
+        "Number of cards": "122",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/PLF"
+    },
+    {
+        "Set Name": "Plasma Storm",
+        "Set Code": "PLS",
+        "Release Date": "06 Feb 13",
+        "Number of cards": "138",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/PLS"
+    },
+    {
+        "Set Name": "Boundaries Crossed",
+        "Set Code": "BCR",
+        "Release Date": "07 Nov 12",
+        "Number of cards": "153",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/BCR"
+    },
+    {
+        "Set Name": "Dragon Vault",
+        "Set Code": "DRV",
+        "Release Date": "05 Oct 12",
+        "Number of cards": "21",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/DRV"
+    },
+    {
+        "Set Name": "Dragons Exalted",
+        "Set Code": "DRX",
+        "Release Date": "15 Aug 12",
+        "Number of cards": "128",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/DRX"
+    },
+    {
+        "Set Name": "Dark Explorers",
+        "Set Code": "DEX",
+        "Release Date": "09 May 12",
+        "Number of cards": "111",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/DEX"
+    },
+    {
+        "Set Name": "Next Destinies",
+        "Set Code": "NXD",
+        "Release Date": "08 Feb 12",
+        "Number of cards": "103",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/NXD"
+    },
+    {
+        "Set Name": "Noble Victories",
+        "Set Code": "NVI",
+        "Release Date": "16 Nov 11",
+        "Number of cards": "102",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/NVI"
+    },
+    {
+        "Set Name": "Emerging Powers",
+        "Set Code": "EPO",
+        "Release Date": "31 Aug 11",
+        "Number of cards": "98",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/EPO"
+    },
+    {
+        "Set Name": "Black & White",
+        "Set Code": "BLW",
+        "Release Date": "25 Apr 11",
+        "Number of cards": "115",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/BLW"
+    },
+    {
+        "Set Name": "Black & White Promos",
+        "Set Code": "BWP",
+        "Release Date": "",
+        "Number of cards": "101",
+        "Era": "Black & White",
+        "Link": "https://limitlesstcg.com/cards/BWP"
+    },
+    {
+        "Set Name": "Call of Legends",
+        "Set Code": "CL",
+        "Release Date": "09 Feb 11",
+        "Number of cards": "106",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/CL"
+    },
+    {
+        "Set Name": "Triumphant",
+        "Set Code": "TM",
+        "Release Date": "03 Nov 10",
+        "Number of cards": "103",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/TM"
+    },
+    {
+        "Set Name": "Undaunted",
+        "Set Code": "UD",
+        "Release Date": "18 Aug 10",
+        "Number of cards": "91",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/UD"
+    },
+    {
+        "Set Name": "Unleashed",
+        "Set Code": "UL",
+        "Release Date": "12 May 10",
+        "Number of cards": "96",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/UL"
+    },
+    {
+        "Set Name": "HeartGold & SoulSilver",
+        "Set Code": "HS",
+        "Release Date": "10 Feb 10",
+        "Number of cards": "124",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/HS"
+    },
+    {
+        "Set Name": "HeartGold & SoulSilver Promos",
+        "Set Code": "HSP",
+        "Release Date": "",
+        "Number of cards": "25",
+        "Era": "HeartGold & SoulSilver",
+        "Link": "https://limitlesstcg.com/cards/HSP"
+    },
+    {
+        "Set Name": "Pok\u00e9mon Rumble",
+        "Set Code": "RM",
+        "Release Date": "02 Dec 09",
+        "Number of cards": "16",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/RM"
+    },
+    {
+        "Set Name": "Arceus",
+        "Set Code": "AR",
+        "Release Date": "04 Nov 09",
+        "Number of cards": "111",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/AR"
+    },
+    {
+        "Set Name": "Supreme Victors",
+        "Set Code": "SV",
+        "Release Date": "19 Aug 09",
+        "Number of cards": "153",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/SV"
+    },
+    {
+        "Set Name": "Rising Rivals",
+        "Set Code": "RR",
+        "Release Date": "20 May 09",
+        "Number of cards": "120",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/RR"
+    },
+    {
+        "Set Name": "POP Series 9",
+        "Set Code": "P9",
+        "Release Date": "01 Mar 09",
+        "Number of cards": "17",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/P9"
+    },
+    {
+        "Set Name": "Platinum",
+        "Set Code": "PL",
+        "Release Date": "11 Feb 09",
+        "Number of cards": "133",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/PL"
+    },
+    {
+        "Set Name": "Stormfront",
+        "Set Code": "SF",
+        "Release Date": "05 Nov 08",
+        "Number of cards": "106",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/SF"
+    },
+    {
+        "Set Name": "POP Series 8",
+        "Set Code": "P8",
+        "Release Date": "01 Sep 08",
+        "Number of cards": "17",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/P8"
+    },
+    {
+        "Set Name": "Legends Awakened",
+        "Set Code": "LA",
+        "Release Date": "20 Aug 08",
+        "Number of cards": "146",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/LA"
+    },
+    {
+        "Set Name": "Majestic Dawn",
+        "Set Code": "MD",
+        "Release Date": "21 May 08",
+        "Number of cards": "100",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/MD"
+    },
+    {
+        "Set Name": "POP Series 7",
+        "Set Code": "P7",
+        "Release Date": "01 Mar 08",
+        "Number of cards": "17",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/P7"
+    },
+    {
+        "Set Name": "Great Encounters",
+        "Set Code": "GE",
+        "Release Date": "13 Feb 08",
+        "Number of cards": "106",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/GE"
+    },
+    {
+        "Set Name": "Secret Wonders",
+        "Set Code": "SW",
+        "Release Date": "07 Nov 07",
+        "Number of cards": "132",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/SW"
+    },
+    {
+        "Set Name": "POP Series 6",
+        "Set Code": "P6",
+        "Release Date": "01 Sep 07",
+        "Number of cards": "17",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/P6"
+    },
+    {
+        "Set Name": "Mysterious Treasures",
+        "Set Code": "MT",
+        "Release Date": "22 Aug 07",
+        "Number of cards": "124",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/MT"
+    },
+    {
+        "Set Name": "Diamond & Pearl",
+        "Set Code": "DP",
+        "Release Date": "23 May 07",
+        "Number of cards": "130",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/DP"
+    },
+    {
+        "Set Name": "Diamond & Pearl Promos",
+        "Set Code": "DPP",
+        "Release Date": "",
+        "Number of cards": "56",
+        "Era": "Diamond & Pearl / Platinum",
+        "Link": "https://limitlesstcg.com/cards/DPP"
+    },
+    {
+        "Set Name": "POP Series 5",
+        "Set Code": "P5",
+        "Release Date": "01 Mar 07",
+        "Number of cards": "17",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/P5"
+    },
+    {
+        "Set Name": "Power Keepers",
+        "Set Code": "PK",
+        "Release Date": "14 Feb 07",
+        "Number of cards": "108",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/PK"
+    },
+    {
+        "Set Name": "Dragon Frontiers",
+        "Set Code": "DF",
+        "Release Date": "08 Nov 06",
+        "Number of cards": "101",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/DF"
+    },
+    {
+        "Set Name": "Crystal Guardians",
+        "Set Code": "CG",
+        "Release Date": "30 Aug 06",
+        "Number of cards": "100",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/CG"
+    },
+    {
+        "Set Name": "POP Series 4",
+        "Set Code": "P4",
+        "Release Date": "01 Aug 06",
+        "Number of cards": "17",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/P4"
+    },
+    {
+        "Set Name": "Holon Phantoms",
+        "Set Code": "HP",
+        "Release Date": "03 May 06",
+        "Number of cards": "111",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/HP"
+    },
+    {
+        "Set Name": "POP Series 3",
+        "Set Code": "P3",
+        "Release Date": "01 Apr 06",
+        "Number of cards": "17",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/P3"
+    },
+    {
+        "Set Name": "Legend Maker",
+        "Set Code": "LM",
+        "Release Date": "13 Feb 06",
+        "Number of cards": "93",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/LM"
+    },
+    {
+        "Set Name": "Delta Species",
+        "Set Code": "DS",
+        "Release Date": "31 Oct 05",
+        "Number of cards": "114",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/DS"
+    },
+    {
+        "Set Name": "Unseen Forces",
+        "Set Code": "UF",
+        "Release Date": "22 Aug 05",
+        "Number of cards": "143",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/UF"
+    },
+    {
+        "Set Name": "POP Series 2",
+        "Set Code": "P2",
+        "Release Date": "01 Aug 05",
+        "Number of cards": "17",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/P2"
+    },
+    {
+        "Set Name": "Emerald",
+        "Set Code": "EM",
+        "Release Date": "09 May 05",
+        "Number of cards": "107",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/EM"
+    },
+    {
+        "Set Name": "Deoxys",
+        "Set Code": "DX",
+        "Release Date": "14 Feb 05",
+        "Number of cards": "108",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/DX"
+    },
+    {
+        "Set Name": "Team Rocket Returns",
+        "Set Code": "TRR",
+        "Release Date": "08 Nov 04",
+        "Number of cards": "111",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/TRR"
+    },
+    {
+        "Set Name": "POP Series 1",
+        "Set Code": "P1",
+        "Release Date": "01 Sep 04",
+        "Number of cards": "17",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/P1"
+    },
+    {
+        "Set Name": "FireRed & LeafGreen",
+        "Set Code": "RG",
+        "Release Date": "30 Aug 04",
+        "Number of cards": "116",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/RG"
+    },
+    {
+        "Set Name": "Hidden Legends",
+        "Set Code": "HL",
+        "Release Date": "14 Jun 04",
+        "Number of cards": "102",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/HL"
+    },
+    {
+        "Set Name": "Team Magma vs Team Aqua",
+        "Set Code": "MA",
+        "Release Date": "15 Mar 04",
+        "Number of cards": "97",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/MA"
+    },
+    {
+        "Set Name": "Dragon",
+        "Set Code": "DR",
+        "Release Date": "24 Nov 03",
+        "Number of cards": "100",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/DR"
+    },
+    {
+        "Set Name": "Sandstorm",
+        "Set Code": "SS",
+        "Release Date": "18 Sep 03",
+        "Number of cards": "100",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/SS"
+    },
+    {
+        "Set Name": "Ruby & Sapphire",
+        "Set Code": "RS",
+        "Release Date": "18 Jun 03",
+        "Number of cards": "109",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/RS"
+    },
+    {
+        "Set Name": "Nintendo Promos",
+        "Set Code": "NP",
+        "Release Date": "",
+        "Number of cards": "40",
+        "Era": "EX",
+        "Link": "https://limitlesstcg.com/cards/NP"
+    },
+    {
+        "Set Name": "Skyridge",
+        "Set Code": "E3",
+        "Release Date": "12 May 03",
+        "Number of cards": "182",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/E3"
+    },
+    {
+        "Set Name": "Aquapolis",
+        "Set Code": "E2",
+        "Release Date": "15 Jan 03",
+        "Number of cards": "182",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/E2"
+    },
+    {
+        "Set Name": "Best of Game",
+        "Set Code": "BG",
+        "Release Date": "01 Dec 02",
+        "Number of cards": "9",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/BG"
+    },
+    {
+        "Set Name": "Expedition",
+        "Set Code": "E1",
+        "Release Date": "15 Sep 02",
+        "Number of cards": "165",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/E1"
+    },
+    {
+        "Set Name": "Legendary Collection",
+        "Set Code": "LC",
+        "Release Date": "24 May 02",
+        "Number of cards": "110",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/LC"
+    },
+    {
+        "Set Name": "Neo Destiny",
+        "Set Code": "N4",
+        "Release Date": "28 Feb 02",
+        "Number of cards": "113",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/N4"
+    },
+    {
+        "Set Name": "Neo Revelation",
+        "Set Code": "N3",
+        "Release Date": "21 Sep 01",
+        "Number of cards": "66",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/N3"
+    },
+    {
+        "Set Name": "Southern Islands",
+        "Set Code": "SI",
+        "Release Date": "31 Jul 01",
+        "Number of cards": "18",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/SI"
+    },
+    {
+        "Set Name": "Neo Discovery",
+        "Set Code": "N2",
+        "Release Date": "01 Jun 01",
+        "Number of cards": "75",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/N2"
+    },
+    {
+        "Set Name": "Neo Genesis",
+        "Set Code": "N1",
+        "Release Date": "16 Dec 00",
+        "Number of cards": "111",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/N1"
+    },
+    {
+        "Set Name": "Gym Challenge",
+        "Set Code": "G2",
+        "Release Date": "16 Oct 00",
+        "Number of cards": "132",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/G2"
+    },
+    {
+        "Set Name": "Gym Heroes",
+        "Set Code": "G1",
+        "Release Date": "14 Aug 00",
+        "Number of cards": "132",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/G1"
+    },
+    {
+        "Set Name": "Team Rocket",
+        "Set Code": "TR",
+        "Release Date": "24 Apr 00",
+        "Number of cards": "83",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/TR"
+    },
+    {
+        "Set Name": "Base Set 2",
+        "Set Code": "BS2",
+        "Release Date": "24 Feb 00",
+        "Number of cards": "130",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/BS2"
+    },
+    {
+        "Set Name": "Fossil",
+        "Set Code": "FO",
+        "Release Date": "10 Oct 99",
+        "Number of cards": "62",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/FO"
+    },
+    {
+        "Set Name": "Jungle",
+        "Set Code": "JU",
+        "Release Date": "16 Jun 99",
+        "Number of cards": "64",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/JU"
+    },
+    {
+        "Set Name": "Base Set",
+        "Set Code": "BS",
+        "Release Date": "09 Jan 99",
+        "Number of cards": "102",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/BS"
+    },
+    {
+        "Set Name": "WotC Promos",
+        "Set Code": "WP",
+        "Release Date": "",
+        "Number of cards": "53",
+        "Era": "WotC Era",
+        "Link": "https://limitlesstcg.com/cards/WP"
+    }
+]

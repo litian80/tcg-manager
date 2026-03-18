@@ -9,18 +9,57 @@ export async function createTournament(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        throw new Error("Unauthorized");
+        return { error: "Unauthorized" };
     }
 
     const name = formData.get("name") as string;
     const date = formData.get("date") as string;
+    const startTime = formData.get("start_time") as string || "09:00";
     const city = formData.get("city") as string;
     const country = formData.get("country") as string || "New Zealand";
     const tom_uid = formData.get("tom_uid") as string;
+    
+    const requires_deck_list = formData.get("requires_deck_list") === "true" || formData.get("requires_deck_list") === "on";
+    const deck_submission_cutoff_hours = parseInt((formData.get("deck_submission_cutoff_hours") as string) || "1", 10);
+
+    const registration_open = formData.get("registration_open") === "true" || formData.get("registration_open") === "on";
+    const publish_roster = formData.get("publish_roster") === "true" || formData.get("publish_roster") === "on";
+    const capacity_juniors = parseInt((formData.get("capacity_juniors") as string) || "0", 10);
+    const capacity_seniors = parseInt((formData.get("capacity_seniors") as string) || "0", 10);
+    const capacity_masters = parseInt((formData.get("capacity_masters") as string) || "0", 10);
+    
+    // Convert empty string to null for optional integer birth year constraints
+    const jr_max_raw = formData.get("juniors_birth_year_max") as string;
+    const sr_max_raw = formData.get("seniors_birth_year_max") as string;
+    
+    const juniors_birth_year_max = jr_max_raw ? parseInt(jr_max_raw, 10) : null;
+    const seniors_birth_year_max = sr_max_raw ? parseInt(sr_max_raw, 10) : null;
+    // Masters birth year is no longer an input - derived from seniors threshold in registration logic
 
     // Basic Validation
     if (!name || !date || !city) {
-        throw new Error("Name, Date, and City are required.");
+        return { error: "Name, Date, and City are required." };
+    }
+
+    // Validate deck submission cutoff
+    if (deck_submission_cutoff_hours < 0 || deck_submission_cutoff_hours > 48) {
+        return { error: "Deck submission cutoff must be between 0 and 48 hours." };
+    }
+
+
+    // Combine date and time to create start_time
+    const startDateTimeStr = `${date}T${startTime}`;
+    const startTimeDate = new Date(startDateTimeStr);
+    
+    if (isNaN(startTimeDate.getTime())) {
+        return { error: "Invalid date or time format." };
+    }
+
+    // Calculate deck list submission deadline
+    let deck_list_submission_deadline = null;
+    if (deck_submission_cutoff_hours > 0) {
+        const deadlineDate = new Date(startTimeDate.getTime() - (deck_submission_cutoff_hours * 60 * 60 * 1000));
+        deck_list_submission_deadline = deadlineDate.toISOString();
     }
 
     // Sanction ID Validation (Optional but recommended if provided)
@@ -28,7 +67,7 @@ export async function createTournament(formData: FormData) {
     if (tom_uid) {
         const tomRegex = /^\d{2}-\d{2}-\d{6}$/;
         if (!tomRegex.test(tom_uid)) {
-            throw new Error("Invalid Sanction ID format. Expected format: XX-XX-XXXXXX (e.g. 25-01-000001)");
+            return { error: "Invalid Sanction ID format. Expected format: XX-XX-XXXXXX (e.g. 25-01-000001)" };
         }
 
         // Uniqueness Check
@@ -39,7 +78,7 @@ export async function createTournament(formData: FormData) {
             .single();
 
         if (existing) {
-            throw new Error("Sanction ID (TOM UID) is already in use by another tournament.");
+            return { error: "Sanction ID (TOM UID) is already in use by another tournament." };
         }
     }
 
@@ -69,7 +108,20 @@ export async function createTournament(formData: FormData) {
             organizer_popid: popId || null, // Mandatory insertion
             status: 'running',
             total_rounds: 0,
-            is_published: false
+            is_published: false,
+            registration_open,
+            publish_roster,
+            capacity_juniors,
+            capacity_seniors,
+            capacity_masters,
+            juniors_birth_year_max,
+            seniors_birth_year_max,
+            start_time: startTimeDate.toISOString(),
+            deck_submission_cutoff_hours,
+            deck_list_submission_deadline,
+            requires_deck_list,
+            deck_size: 60,
+            sideboard_size: 0
         })
         .select('id')
         .single();
@@ -77,9 +129,9 @@ export async function createTournament(formData: FormData) {
     if (error) {
         console.error("Create Tournament Error:", error);
         if (error.code === '23505') { // Unique constraint code
-            throw new Error("Sanction ID or other unique field already exists.");
+            return { error: "Sanction ID or other unique field already exists." };
         }
-        throw new Error(`Failed to create tournament: ${error.message} (Code: ${error.code})`);
+        return { error: `Failed to create tournament: ${error.message} (Code: ${error.code})` };
     }
 
     revalidatePath('/organizer/tournaments');

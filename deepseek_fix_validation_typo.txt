@@ -1,0 +1,554 @@
+--- Reasoning ---
+We are going to update the `validateDeckListAction` function to also verify Trainer and Energy cards.
+ Steps:
+ 1. We will separate the parsed cards by category (Pokémon, Trainer, Energy) and handle them differently.
+ 2. For Pokémon, we already have the set and number, so we look up by set and number.
+ 3. For Trainer and Energy, we don't necessarily have set and number, so we will look up by name.
+ 4. We must also handle the fact that for basic energy, we might not have a set/number and they are often listed by type.
+
+ However, note: in the deck list, Energy cards (especially basic) might be listed as "4 Basic {G} Energy" or just "4 Grass Energy".
+ Our parse function already formats the energy names (e.g., "Grass Energy").
+
+ We will change the logic:
+
+ - For Pokémon: keep the existing set/number lookup.
+ - For Trainer and Energy (non-basic): we will do a name lookup in the database. We'll check that the name exists and that the primary_category matches (Trainer or Energy).
+ - For basic energy: we might not have a set, and the database might have multiple entries. We'll just check that there is at least one card with that name and the primary_category 'Energy'.
+
+ However, note: the database might have multiple prints of the same trainer. We are only concerned with the name.
+
+ Implementation:
+
+ 1. We will split the parsed cards into:
+    - pokemonCards: require set and number.
+    - trainerCards: require name only.
+    - energyCards: require name only, but note that basic energy might be listed without set.
+
+ 2. For trainerCards and energyCards, we will collect the unique names and do a database lookup by name (and primary_category).
+
+ 3. We must adjust the rule enforcement (4-of, Radiant, ACE SPEC) to also consider these cards.
+
+ 4. We must also adjust the cardDetails collection for these cards.
+
+ Let's restructure:
+
+ Steps in the validation:
+
+ Step 1: Parse the deck list.
+
+ Step 2: Separate the cards by category.
+
+ Step 3: For Pokémon cards, we do the set/number lookup as before.
+
+ Step 4: For Trainer and Energy cards, we do a name lookup.
+
+ Step 5: Combine the results and then do the rule enforcement (4-of, Radiant, ACE SPEC) and cardDetails.
+
+ We must be cautious: the same name might appear in multiple categories (e.g., a card named "Double Colorless Energy" is an Energy, but if someone writes it in the Trainer section by mistake, we should catch that).
+
+ We are going to change the flow:
+
+ After parsing, we have three arrays: Pokemon, Trainer, Energy.
+
+ We will process each array separately and then combine the results for rule enforcement.
+
+ Let's break down:
+
+ A. Pokémon: as before.
+
+ B. Trainer: 
+    - We don't have set/number, so we will look up by name and primary_category = 'Trainer'.
+    - We will query the database for each unique name (case-insensitive? We'll use ilike for now) and then match.
+
+ C. Energy:
+    - We have two types: basic and special.
+    - Basic Energy: We might have multiple entries in the database (e.g., Grass Energy from different sets). We are only concerned with the name and category.
+    - Special Energy: Similarly, we look up by name and category.
+
+ We will create a function to look up cards by name and category.
+
+ However, note: the parse function already formats energy names. So "Basic {G} Energy" becomes "Grass Energy".
+
+ We'll do:
+
+   For Trainer and Energy (including basic energy) we will do a name lookup.
+
+   We'll collect all unique names from Trainer and Energy arrays.
+
+   Then, we query the database for cards with those names and the appropriate category.
+
+   For Trainer: primary_category = 'Trainer'
+   For Energy: primary_category = 'Energy'
+
+   But note: some cards might have the same name but different categories? We'll enforce the category.
+
+   We'll split the query by category.
+
+   We'll do two queries: one for Trainer names and one for Energy names.
+
+   We can do:
+
+   const trainerNames = trainerCards.map(c => c.name);
+   const energyNames = energyCards.map(c => c.name);
+
+   Then, for trainerNames, we query the database for cards with name in trainerNames and primary_category = 'Trainer'.
+   For energyNames, we query for cards with name in energyNames and primary_category = 'Energy'.
+
+   Then, we map the results back to the parsed cards.
+
+   If a parsed trainer card does not have a match in the trainer query, then it's invalid.
+
+   Similarly for energy.
+
+   We must also handle the case where the name is found but the category is wrong? But we are querying by category, so that's safe.
+
+   However, note: the parse function might mis-categorize a card? For example, a Trainer card that has "Energy" in its name? 
+   But the parse function uses the presence of the word "Energy" to categorize. We might need to adjust the parse function, but that's a separate issue.
+
+   We are only fixing the validation to check the database for Trainers and Energies.
+
+   We are going to change the code in `validateDeckListAction`:
+
+   We are going to remove the assumption that Trainer and Energy are valid by parsing. We will now check them against the database.
+
+   We must also adjust the cardDetails for these cards. For Trainer and Energy, we don't have set/number, so we will pick one of the matching cards (if multiple) for the card_id? 
+   But note: the same trainer card might be available in multiple sets. We don't care which set, we just need one card_id for the submission.
+
+   We can choose the first matching card.
+
+   However, for the 4-of rule, we must group by the same card (or equivalent groups). We already have equivalency_members for Pokémon, but for Trainer/Energy we don't have set/number. 
+   We will group by name (or by the equivalency group if available). We'll use the same logic as for Pokémon: if there's an equivalency group, use that, otherwise use the name.
+
+   Steps:
+
+   1. Parse the deck list.
+
+   2. Separate the cards into Pokémon, Trainer, Energy.
+
+   3. For Pokémon: do the set/number lookup as before.
+
+   4. For Trainer: 
+        a. Get unique names.
+        b. Query the database for cards with those names and primary_category = 'Trainer'.
+        c. For each parsed trainer card, find a matching database entry (by name). If found, use that card's id and equivalency group (if any). If not found, error.
+
+   5. For Energy:
+        a. Get unique names.
+        b. Query the database for cards with those names and primary_category = 'Energy'.
+        c. For each parsed energy card, find a matching database entry (by name). If found, use that card's id and equivalency group (if any). If not found, error.
+
+   6. Then, combine all cards (Pokémon, Trainer, Energy) and do the rule enforcement (4-of, Radiant, ACE SPEC) and build the cardDetails.
+
+   We must adjust the 4-of rule logic to work for Trainer and Energy as well.
+
+   We are going to restructure the code to handle these three categories separately and then combine.
+
+   Let's write the code accordingly.
+
+   We are going to change the code after the parsing and basic validation.
+
+   We are going to create three separate processing steps and then merge the results.
+
+   We are going to change the following:
+
+   - We will have three arrays for the resolved cards (with dbCard info) and three arrays for errors.
+
+   We are going to change the code after the parsing and before the rule enforcement.
+
+   Let's outline:
+
+   Step 1: Parse the deck list.
+
+   Step 2: Do the basic validation (deck size, etc.)
+
+   Step 3: Process Pokémon cards (set/number lookup).
+
+   Step 4: Process Trainer cards (name lookup).
+
+   Step 5: Process Energy cards (name lookup).
+
+   Step 6: Combine all processed cards and then do the rule enforcement.
+
+   We are going to change the code structure significantly.
+
+   Let's write the code step by step.
+
+   Note: We must also handle the case where a card is found in the database but the category doesn't match? We are querying by category, so it's safe.
+
+   We are going to create a function to look up cards by name and category. We'll do two separate queries for Trainer and Energy.
+
+   We'll also need to handle the set/number lookup for Pokémon.
+
+   We are going to change the code in `validateDeckListAction` accordingly.
+
+   We are going to return the updated code for `deck-validation.ts`.
+
+   Let's write the code.
+
+--- Answer ---
+Here's the updated `deck-validation.ts` with fixes to validate Trainer and Energy card names against the database:
+
+```typescript
+"use server";
+
+import { createClient } from "@/utils/supabase/server";
+import { parseDeckList, DeckParseResult } from "@/utils/deck-validator";
+
+export interface ValidationResult {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    isPartial?: boolean;
+    parsedDeck?: DeckParseResult;
+    cardDetails: {
+        card_id: string;
+        quantity: number;
+        name: string;
+        set: string;
+        number: string;
+    }[];
+}
+
+export async function validateDeckListAction(deckText: string, tournamentId?: string): Promise<ValidationResult> {
+    const supabase = await createClient();
+    const result: ValidationResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        cardDetails: [],
+    };
+
+    try {
+        const parsed = parseDeckList(deckText);
+        result.parsedDeck = parsed;
+
+        if (parsed.Errors.length > 0) {
+            result.isValid = false;
+            result.errors.push(...parsed.Errors.map(e => `Malformed List: ${e.message} at "${e.line}"`));
+            return result;
+        }
+
+        const allParsedCards = [...parsed.Pokemon, ...parsed.Trainer, ...parsed.Energy];
+        
+        // Hardcoded to Pokemon TCG standard format (60-card deck)
+        const expectedDeckSize = 60;
+
+        if (parsed.TotalCards !== expectedDeckSize) {
+            result.isValid = false;
+            if (parsed.TotalCards < expectedDeckSize) {
+                result.isPartial = true;
+                result.errors.push(`Partial Deck: Only ${parsed.TotalCards}/${expectedDeckSize} cards found.`);
+            } else {
+                result.errors.push(`Invalid Deck: ${parsed.TotalCards} cards found (limit is ${expectedDeckSize}).`);
+            }
+        }
+
+        if (allParsedCards.length === 0) {
+            result.isValid = false;
+            result.errors.push("Deck list is empty.");
+            return result;
+        }
+
+        // Separate cards by category for different validation approaches
+        const pokemonCards = allParsedCards.filter(c => c.category === 'pokemon');
+        const trainerCards = allParsedCards.filter(c => c.category === 'trainer');
+        const energyCards = allParsedCards.filter(c => c.category === 'energy');
+
+        // Arrays to collect validation results
+        const validatedCards: Array<{
+            parsed: ParsedCard;
+            dbCard: any;
+            setId?: string;
+            setCode?: string;
+        }> = [];
+
+        const validationErrors: string[] = [];
+
+        // Step 1: Validate Pokémon cards (by set/number)
+        const pokemonCardsToValidate = pokemonCards.filter(c => {
+            const hasValidSet = c.set && /^[A-Za-z0-9]+$/.test(c.set);
+            const hasValidNumber = c.number && /^[A-Za-z0-9]+$/.test(c.number);
+            if (!hasValidSet || !hasValidNumber) {
+                validationErrors.push(`Unrecognised Pokémon card reference: "${c.name}" (set: ${c.set || "missing"}, number: ${c.number || "missing"})`);
+                return false;
+            }
+            return true;
+        });
+
+        if (pokemonCardsToValidate.length > 0) {
+            // Resolve set codes to IDs for Pokémon
+            const uniqueSetCodes = Array.from(new Set(pokemonCardsToValidate.map(c => c.set)));
+            const { data: setData, error: setError } = await supabase
+                .from('sets')
+                .select('id, code')
+                .in('code', uniqueSetCodes);
+
+            if (setError) {
+                console.error("Set Lookup Error:", setError);
+                validationErrors.push("Failed to verify tournament sets in our database (Server Error).");
+            } else {
+                const setMap = new Map<string, string>();
+                const idToCodeMap = new Map<string, string>();
+                setData?.forEach(s => {
+                    setMap.set(s.code, s.id);
+                    idToCodeMap.set(s.id, s.code);
+                });
+
+                // Check for missing sets
+                const missingSets = uniqueSetCodes.filter(code => !setMap.has(code));
+                missingSets.forEach(code => {
+                    validationErrors.push(`Set code "${code}" not found in our database.`);
+                });
+
+                // Batch lookup valid cards
+                const validPokemonCards = pokemonCardsToValidate.filter(c => setMap.has(c.set));
+                const dbFilters: string[] = [];
+
+                for (const card of validPokemonCards) {
+                    const setId = setMap.get(card.set)!;
+                    const numericValue = parseInt(card.number, 10);
+                    
+                    if (isNaN(numericValue)) {
+                        validationErrors.push(`Non-numeric card number "${card.number}" for "${card.name}" is not supported.`);
+                        continue;
+                    }
+                    dbFilters.push(`and(set_id.eq.${setId},card_number.eq.${numericValue})`);
+                }
+
+                if (dbFilters.length > 0) {
+                    const { data: dbCards, error: cardError } = await supabase
+                        .from('cards')
+                        .select(`
+                            id, 
+                            name, 
+                            card_number,
+                            set_id,
+                            primary_category,
+                            equivalency_members(group_id)
+                        `)
+                        .or(dbFilters.join(','));
+
+                    if (cardError) {
+                        console.error("Card Lookup Error:", cardError);
+                        validationErrors.push("Failed to verify Pokémon cards against database.");
+                    } else {
+                        // Map results back to parsed cards
+                        const cardMap = new Map<string, any>();
+                        for (const dbCard of dbCards || []) {
+                            const code = idToCodeMap.get(dbCard.set_id) || 'unknown';
+                            const key = `${code}-${dbCard.card_number}`;
+                            cardMap.set(key, dbCard);
+                        }
+
+                        for (const parsedCard of validPokemonCards) {
+                            const key = `${parsedCard.set}-${parsedCard.number}`;
+                            const dbCard = cardMap.get(key);
+
+                            if (!dbCard) {
+                                validationErrors.push(`Card not found: ${parsedCard.name} (${parsedCard.set} ${parsedCard.number})`);
+                                continue;
+                            }
+
+                            validatedCards.push({
+                                parsed: parsedCard,
+                                dbCard,
+                                setId: dbCard.set_id,
+                                setCode: parsedCard.set
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 2: Validate Trainer cards (by name only)
+        if (trainerCards.length > 0) {
+            const uniqueTrainerNames = Array.from(new Set(trainerCards.map(c => c.name)));
+
+            const { data: trainerDbCards, error: trainerError } = await supabase
+                .from('cards')
+                .select(`
+                    id, 
+                    name, 
+                    primary_category,
+                    equivalency_members(group_id)
+                `)
+                .in('name', uniqueTrainerNames)
+                .eq('primary_category', 'Trainer');
+
+            if (trainerError) {
+                console.error("Trainer Lookup Error:", trainerError);
+                validationErrors.push("Failed to verify Trainer cards against database.");
+            } else {
+                const trainerMap = new Map<string, any>();
+                for (const dbCard of trainerDbCards || []) {
+                    // Use lowercase for case-insensitive matching
+                    trainerMap.set(dbCard.name.toLowerCase(), dbCard);
+                }
+
+                for (const parsedCard of trainerCards) {
+                    const dbCard = trainerMap.get(parsedCard.name.toLowerCase());
+
+                    if (!dbCard) {
+                        validationErrors.push(`Trainer card not found: "${parsedCard.name}"`);
+                        continue;
+                    }
+
+                    validatedCards.push({
+                        parsed: parsedCard,
+                        dbCard,
+                        setCode: "N/A" // Trainers don't have set info in PTCG Live exports
+                    });
+                }
+            }
+        }
+
+        // Step 3: Validate Energy cards (by name only)
+        if (energyCards.length > 0) {
+            const uniqueEnergyNames = Array.from(new Set(energyCards.map(c => c.name)));
+
+            const { data: energyDbCards, error: energyError } = await supabase
+                .from('cards')
+                .select(`
+                    id, 
+                    name, 
+                    primary_category,
+                    equivalency_members(group_id)
+                `)
+                .in('name', uniqueEnergyNames)
+                .eq('primary_category', 'Energy');
+
+            if (energyError) {
+                console.error("Energy Lookup Error:", energyError);
+                validationErrors.push("Failed to verify Energy cards against database.");
+            } else {
+                const energyMap = new Map<string, any>();
+                for (const dbCard of energyDbCards || []) {
+                    // Use lowercase for case-insensitive matching
+                    energyMap.set(dbCard.name.toLowerCase(), dbCard);
+                }
+
+                for (const parsedCard of energyCards) {
+                    const dbCard = energyMap.get(parsedCard.name.toLowerCase());
+
+                    if (!dbCard) {
+                        validationErrors.push(`Energy card not found: "${parsedCard.name}"`);
+                        continue;
+                    }
+
+                    validatedCards.push({
+                        parsed: parsedCard,
+                        dbCard,
+                        setCode: "N/A" // Basic energies don't have set info in PTCG Live exports
+                    });
+                }
+            }
+        }
+
+        // Update validation result with any errors
+        if (validationErrors.length > 0) {
+            result.isValid = false;
+            result.errors.push(...validationErrors);
+        }
+
+        // If no cards validated successfully, return early
+        if (validatedCards.length === 0 && allParsedCards.length > 0) {
+            result.isValid = false;
+            result.errors.push("No valid cards found in database.");
+            return result;
+        }
+
+        // Build cardDetails for submission
+        const groupCounts = new Map<string, number>();
+        let radiantCount = 0;
+        let aceSpecCount = 0;
+
+        for (const validated of validatedCards) {
+            const { parsed, dbCard, setCode } = validated;
+            const isBasicEnergy = parsed.isBasicEnergy || false;
+
+            // Populate cardDetails
+            result.cardDetails.push({
+                card_id: dbCard.id,
+                quantity: parsed.qty,
+                name: dbCard.name,
+                set: setCode || 'unknown',
+                number: dbCard.card_number || '0'
+            });
+
+            // Rule logic
+            const lowName = dbCard.name.toLowerCase();
+
+            // Radiant detection
+            if (lowName.startsWith("radiant ")) {
+                radiantCount += parsed.qty;
+            }
+
+            // ACE SPEC detection
+            if (lowName.includes("ace spec") || 
+                ["prime catcher", "master ball", "computer search", "dowsing machine", 
+                 "maximum belt", "life dew", "gold potion"].some(name => lowName.includes(name))) {
+                aceSpecCount += parsed.qty;
+            }
+
+            // 4-of rule logic (skip for basic energy)
+            if (!isBasicEnergy) {
+                const groupId = dbCard.equivalency_members?.[0]?.group_id;
+                const countKey = groupId ? `group:${groupId}` : `name:${lowName}`;
+                
+                const currentCount = groupCounts.get(countKey) || 0;
+                groupCounts.set(countKey, currentCount + parsed.qty);
+            }
+        }
+
+        // Rule Enforcements
+        if (radiantCount > 1) {
+            result.errors.push(`Deck can only contain 1 Radiant Pokémon (found ${radiantCount}).`);
+            result.isValid = false;
+        }
+        if (aceSpecCount > 1) {
+            result.errors.push(`Deck can only contain 1 ACE SPEC card (found ${aceSpecCount}).`);
+            result.isValid = false;
+        }
+
+        for (const [key, count] of groupCounts.entries()) {
+            if (count > 4) {
+                const identifier = key.startsWith('group:') ? "Equivalent set of cards" : `Card "${key.split(':')[1]}"`;
+                result.errors.push(`${identifier} exceeds the 4-copy limit (found ${count}).`);
+                result.isValid = false;
+            }
+        }
+
+        return result;
+
+    } catch (e: any) {
+        console.error("Validation Action Error:", e);
+        result.isValid = false;
+        result.errors.push("An unexpected error occurred during validation.");
+        return result;
+    }
+}
+```
+
+## Key Changes Made:
+
+1. **Separate Validation Paths**: Cards are now separated by category and validated differently:
+   - **Pokémon**: Validated by set + number (existing logic)
+   - **Trainer**: Validated by name only, checking against `primary_category = 'Trainer'`
+   - **Energy**: Validated by name only, checking against `primary_category = 'Energy'`
+
+2. **Name-Based Lookup**: For Trainer and Energy cards, we perform a case-insensitive lookup by name:
+   ```typescript
+   .in('name', uniqueTrainerNames)
+   .eq('primary_category', 'Trainer')
+   ```
+
+3. **Spelling Error Detection**: Misspellings like "Aurven" will now fail validation because:
+   - The card name lookup will fail
+   - An error will be added: `Trainer card not found: "Aurven"`
+
+4. **Multiple Prints Handling**: If a Trainer/Energy card has multiple prints across different sets, the validation will still pass as long as at least one card with that name exists in the database.
+
+5. **Card Details Generation**: For Trainer/Energy cards, we still populate `cardDetails` but with placeholder values for set/number since PTCG Live exports don't include this information for non-Pokémon cards.
+
+The fix ensures that all card types are validated against the database, preventing invalid card names from being accepted regardless of category.

@@ -1,0 +1,249 @@
+export interface ParsedCard {
+    qty: number;
+    name: string;
+    set: string;
+    number: string;
+    raw: string;
+    isBasicEnergy?: boolean;
+    category?: 'pokemon' | 'trainer' | 'energy';
+}
+
+export interface ParsedDeckCategories {
+    Pokemon?: ParsedCard[];
+    Trainer?: ParsedCard[];
+    Energy?: ParsedCard[];
+}
+
+export interface DeckParseResult {
+    Pokemon: ParsedCard[];
+    Trainer: ParsedCard[];
+    Energy: ParsedCard[];
+    TotalCards: number;
+    Errors: { line: string; message: string }[];
+}
+
+// Energy type code to full name mapping
+const ENERGY_TYPE_MAP: Record<string, string> = {
+    'G': 'Grass',
+    'R': 'Fire',
+    'W': 'Water',
+    'L': 'Lightning',
+    'P': 'Psychic',
+    'F': 'Fighting',
+    'D': 'Darkness',
+    'M': 'Metal',
+    'Y': 'Fairy',
+    'N': 'Dragon',
+    'C': 'Colorless',
+};
+
+function formatEnergyName(rawName: string): string {
+    // Convert "Basic {G} Energy" → "Grass Energy"
+    return rawName.replace(/Basic\s+\{([A-Z])\}\s+Energy/i, (_match, code: string) => {
+        const typeName = ENERGY_TYPE_MAP[code.toUpperCase()] || code;
+        return `${typeName} Energy`;
+    });
+}
+
+export function parseDeckList(deckText: string): DeckParseResult {
+    // Normalize UTF-8 characters and common mis-encodings
+    const normalizedText = deckText
+        .replace(/PokÃ©mon/g, 'Pokémon')
+        .replace(/Pokemon/g, 'Pokémon')
+        .replace(/Pok\u00e9mon/g, 'Pokémon');
+
+    const lines = normalizedText.trim().split('\n');
+    
+    const result: DeckParseResult = {
+        Pokemon: [],
+        Trainer: [],
+        Energy: [],
+        TotalCards: 0,
+        Errors: []
+    };
+    
+    // More flexible category detection
+    const categoryPatterns = {
+        pokemon: /^(?:Pokémon|PokÃ©mon|Pokemon):?\s*(\d+)?$/i,
+        trainer: /^(?:Trainer|Trainer Cards|Trainers):?\s*(\d+)?$/i,
+        energy: /^(?:Energy|Energies):?\s*(\d+)?$/i
+    };
+
+    let currentCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'> = "Pokemon";
+    
+    // Standard line pattern: "2 Entei V BRS 22" or "2 Entei V (BRS) 22"
+    const standardPattern = /^(\d+)[x\s]+(.+?)\s+\(?([A-Z0-9-]{2,7})\)?\s+(\d+)\s*$/i;
+    
+    // Basic Energy pattern: 11 Basic {R} Energy SVE 2
+    const basicEnergyPattern = /^(\d+)[x\s]+(Basic\s+{[^}]+}\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
+
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+            
+        // Check for category headers
+        if (categoryPatterns.pokemon.test(line)) {
+            currentCategory = "Pokemon";
+            continue;
+        } else if (categoryPatterns.trainer.test(line)) {
+            currentCategory = "Trainer";
+            continue;
+        } else if (categoryPatterns.energy.test(line)) {
+            currentCategory = "Energy";
+            continue;
+        }
+        
+        // Try energy patterns (Basic Energy)
+        // Try basic energy pattern: "11 Basic {R} Energy SVE 2"
+        const energyMatch = line.match(basicEnergyPattern);
+        if (energyMatch) {
+            const qty = parseInt(energyMatch[1], 10);
+            const rawName = energyMatch[2].trim();
+            const name = formatEnergyName(rawName);
+            const setCode = energyMatch[3]?.trim().toUpperCase() || "ENERGY";
+            const cardNumber = energyMatch[4]?.trim() || "0";
+            
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: setCode,
+                number: cardNumber,
+                raw: line,
+                isBasicEnergy: true,
+                category: 'energy'
+            };
+            result["Energy"].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+
+        // Try simple energy pattern (fallback for name + energy suffix + set/number)
+        const simpleEnergyPattern = /^(\d+)[x\s]+(.+?\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
+        const simpleMatch = line.match(simpleEnergyPattern);
+        if (simpleMatch) {
+            const qty = parseInt(simpleMatch[1], 10);
+            const rawName = simpleMatch[2].trim();
+            const name = formatEnergyName(rawName);
+            const lowName = name.toLowerCase();
+            
+            const isBasicEnergy = !lowName.includes("special") && !lowName.includes("double");
+
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: simpleMatch[3]?.trim().toUpperCase() || "ENERGY",
+                number: simpleMatch[4]?.trim() || "0",
+                raw: line,
+                isBasicEnergy: isBasicEnergy,
+                category: 'energy'
+            };
+            result["Energy"].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+
+        // Try standard pattern (for Pokemon/Trainer cards, or non-energy lines)
+        // Matches: "2 Entei V BRS 22" or "2 Entei V (BRS) 22"
+        const standardMatch = line.match(standardPattern);
+        if (standardMatch) {
+            const qty = parseInt(standardMatch[1], 10);
+            const name = standardMatch[2].trim();
+            const lowName = name.toLowerCase();
+            const setCode = standardMatch[3].trim().toUpperCase();
+            const cardNumber = standardMatch[4].trim();
+            
+            // Auto-detect category for Energy if name ends with 'Energy'
+            let detectedCategory = currentCategory.toLowerCase() as ParsedCard['category'];
+            let resultCategory = currentCategory;
+            
+            if (lowName.endsWith('energy')) {
+                detectedCategory = 'energy';
+                resultCategory = 'Energy';
+            }
+
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: setCode,
+                number: cardNumber,
+                raw: line,
+                category: detectedCategory
+            };
+            
+            result[resultCategory].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+
+        // Try parenthesized format: "3 Munkidori (TWM-95)"
+        // Cards with set/number in parens are always Pokémon
+        const parenPattern = /^(\d+)[x\s]+(.+?)\s+\(([A-Z0-9]+)-(\d+)\)\s*$/i;
+        const parenMatch = line.match(parenPattern);
+        if (parenMatch) {
+            const qty = parseInt(parenMatch[1], 10);
+            const name = parenMatch[2].trim();
+            const setCode = parenMatch[3].trim().toUpperCase();
+            const cardNumber = parenMatch[4].trim();
+
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: setCode,
+                number: cardNumber,
+                raw: line,
+                category: 'pokemon'
+            };
+
+            result["Pokemon"].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+
+        // Name-only fallback: "4 Arven" or "7 Darkness Energy"
+        // Auto-detect category: Energy if name contains 'Energy', otherwise Trainer
+        const nameOnlyPattern = /^(\d+)[x\s]+(.+?)\s*$/i;
+        const nameOnlyMatch = line.match(nameOnlyPattern);
+        if (nameOnlyMatch) {
+            const qty = parseInt(nameOnlyMatch[1], 10);
+            const rawName = nameOnlyMatch[2].trim();
+            const name = formatEnergyName(rawName);
+
+            const lowName = name.toLowerCase();
+            const isEnergy = lowName.endsWith('energy');
+            const isBasicEnergy = isEnergy && !lowName.includes("special") && !lowName.includes("double");
+
+            // Auto-detect category for headerless lists
+            let detectedCategory: 'pokemon' | 'trainer' | 'energy';
+            let resultCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'>;
+            if (isEnergy) {
+                detectedCategory = 'energy';
+                resultCategory = 'Energy';
+            } else {
+                detectedCategory = 'trainer';
+                resultCategory = 'Trainer';
+            }
+
+            const cardObj: ParsedCard = {
+                qty,
+                name,
+                set: "",
+                number: "",
+                raw: line,
+                isBasicEnergy: isBasicEnergy,
+                category: detectedCategory
+            };
+
+            result[resultCategory].push(cardObj);
+            result.TotalCards += qty;
+            continue;
+        }
+            
+        // If no match, log error
+        result.Errors.push({
+            line: line,
+            message: "Failed to parse line format."
+        });
+    }
+
+    return result;
+}

@@ -32,6 +32,7 @@ export async function exportTournamentTDF(tournamentId: string) {
         .from('tournament_players')
         .select(`
             player_id,
+            registration_status,
             players:player_id (
                 id,
                 first_name,
@@ -46,8 +47,24 @@ export async function exportTournamentTDF(tournamentId: string) {
     let players: any[] = [];
 
     if (tpData) {
+        // We only want to export actual participants.
+        // We exclude 'waitlisted', 'withdrawn', and 'cancelled'.
+        const activeTpData = tpData.filter((tp: any) => 
+            tp.registration_status === 'registered' || tp.registration_status === 'checked_in'
+        );
+
+        // If 'checked_in' feature is being used (at least one player is checked in),
+        // we strictly enforce that ONLY checked_in players are exported.
+        // If NO ONE is checked in, we assume it's a legacy or basic event and export all 'registered'.
+        const isUsingCheckIn = activeTpData.some((tp: any) => tp.registration_status === 'checked_in');
+        
+        let finalRoster = activeTpData;
+        if (isUsingCheckIn) {
+            finalRoster = activeTpData.filter((tp: any) => tp.registration_status === 'checked_in');
+        }
+
         // Extract TOM IDs to fetch birth years from profiles
-        const tomIds = tpData
+        const tomIds = finalRoster
             .map((tp: any) => tp.players?.tom_player_id)
             .filter((id): id is string => !!id);
 
@@ -65,7 +82,7 @@ export async function exportTournamentTDF(tournamentId: string) {
             }
         });
 
-        players = tpData.map((tp: any) => {
+        players = finalRoster.map((tp: any) => {
             const tomId = tp.players?.tom_player_id;
             const realBirthYear = tomId ? birthYearMap.get(tomId) : undefined;
 

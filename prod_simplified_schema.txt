@@ -12,6 +12,28 @@ This is a Primary Key.<pk/>
   - country: string (text) 
   - organizer_popid: string (text) 
   - is_published: boolean (boolean) 
+  - registration_open: boolean (boolean) 
+  - registration_opens_at: string (timestamp with time zone) 
+  - registration_closes_at: string (timestamp with time zone) 
+  - capacity_juniors: integer (integer) 
+  - capacity_seniors: integer (integer) 
+  - capacity_masters: integer (integer) 
+  - fee_juniors: string (text) 
+  - fee_seniors: string (text) 
+  - fee_masters: string (text) 
+  - juniors_birth_year_max: integer (integer) 
+  - seniors_birth_year_max: integer (integer) 
+  - masters_birth_year_min: integer (integer) 
+  - use_payment_processor: boolean (boolean) 
+  - publish_roster: boolean (boolean) 
+  - pokemon_url: string (text) 
+  - details: string (text) 
+  - requires_deck_list: boolean (boolean) 
+  - deck_list_submission_deadline: string (timestamp with time zone) 
+  - deck_size: integer (integer) 
+  - sideboard_size: integer (integer) 
+  - start_time: string (timestamp with time zone) 
+  - deck_submission_cutoff_hours: integer (integer) 
 
 Table: deck_checks
   - id: string (uuid) Note:
@@ -23,6 +45,25 @@ This is a Foreign Key to `tournaments.id`.<fk table='tournaments' column='id'/>
   - round_number: integer (integer) 
   - check_time: string (timestamp with time zone) 
   - note: string (text) 
+
+Table: equivalency_members
+  - group_id: integer (bigint) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `equivalency_groups.id`.<fk table='equivalency_groups' column='id'/>
+  - card_id: string (uuid) Note:
+This is a Primary Key.<pk/>
+This is a Foreign Key to `cards.id`.<fk table='cards' column='id'/>
+  - confidence: integer (smallint) 
+
+Table: deck_lists
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - tournament_id: string (uuid) 
+  - player_id: string (text) 
+  - raw_text: string (text) 
+  - validation_status: string (text) 
+  - validation_errors: undefined (jsonb) 
+  - submitted_at: string (timestamp with time zone) 
 
 Table: profiles
   - id: string (uuid) Note:
@@ -37,6 +78,17 @@ This is a Primary Key.<pk/>
   - pokemon_player_id: string (text) 
   - birth_year: integer (integer) 
   - updated_at: string (timestamp with time zone) 
+
+Table: sets
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - name: string (text) 
+  - code: string (text) 
+  - release_date: string (text) 
+  - card_count: integer (integer) 
+  - era: string (text) 
+  - link: string (text) 
+  - created_at: string (timestamp with time zone) 
 
 Table: player_penalties
   - id: string (uuid) Note:
@@ -72,12 +124,44 @@ This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom
   - p2_display_record: string (text) 
   - time_extension_minutes: integer (integer) 
 
+Table: cards
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - set_id: string (uuid) Note:
+This is a Foreign Key to `sets.id`.<fk table='sets' column='id'/>
+  - card_number: integer (integer) 
+  - name: string (text) 
+  - primary_category: string (text) 
+  - regulation_mark: string (text) 
+  - image_url: string (text) 
+  - image_status: integer (integer) 
+  - link: string (text) 
+  - created_at: string (timestamp with time zone) 
+
 Table: players
   - id: string (uuid) Note:
 This is a Primary Key.<pk/>
   - tom_player_id: string (text) 
   - first_name: string (text) 
   - last_name: string (text) 
+
+Table: deck_list_cards
+  - id: string (uuid) Note:
+This is a Primary Key.<pk/>
+  - deck_list_id: string (uuid) Note:
+This is a Foreign Key to `deck_lists.id`.<fk table='deck_lists' column='id'/>
+  - card_id: string (uuid) Note:
+This is a Foreign Key to `cards.id`.<fk table='cards' column='id'/>
+  - quantity: integer (integer) 
+  - category: string (text) 
+
+Table: equivalency_groups
+  - id: integer (bigint) Note:
+This is a Primary Key.<pk/>
+  - name: string (text) 
+  - notes: string (text) 
+  - source: string (text) 
+  - created_at: string (timestamp with time zone) 
 
 Table: tournament_players
   - tournament_id: string (uuid) Note:
@@ -92,6 +176,7 @@ This is a Foreign Key to `players.tom_player_id`.<fk table='players' column='tom
   - losses: integer (integer) 
   - ties: integer (integer) 
   - points: integer (integer) 
+  - registration_status: string (text) 
 
 Table: tournament_judges
   - tournament_id: string (uuid) Note:
