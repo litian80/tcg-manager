@@ -51,3 +51,4 @@ school_emails.json
 __pycache__/
 check_rls.js
 test_update_penalty.js
+/tmp/
