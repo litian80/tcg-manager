@@ -236,13 +236,6 @@ export function TournamentSettingsForm({ tournament }: TournamentSettingsFormPro
                             </p>
                         </div>
 
-                        <div className="space-y-2 p-4 bg-muted/50 rounded-md">
-                            <p className="text-sm font-medium">Deck Configuration</p>
-                            <p className="text-sm text-muted-foreground">
-                                Pokemon TCG standard format uses a 60-card deck with no sideboard.
-                                This cannot be changed.
-                            </p>
-                        </div>
                     </div>
 
                     {/* Registration Settings Section */}

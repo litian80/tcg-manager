@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, FileText, History, Gavel, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import { AlertCircle, FileText, History as HistoryIcon, Gavel, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
 import { getPlayerJudgeDetails, addPenalty, addDeckCheck, updatePenalty, deletePenalty } from "@/actions/judge";
+import { DeckDisplay } from "@/components/tournament/DeckDisplay";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -241,8 +242,9 @@ export function JudgePlayerDetailModal({
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
                     <div className="px-6 pt-2">
-                        <TabsList className="w-full grid grid-cols-2">
+                        <TabsList className="w-full grid grid-cols-3">
                             <TabsTrigger value="actions">Actions</TabsTrigger>
+                            <TabsTrigger value="deck">Deck</TabsTrigger>
                             <TabsTrigger value="history">
                                 History
                                 {(history.penalties.length + history.deckChecks.length) > 0 && (
@@ -412,12 +414,16 @@ export function JudgePlayerDetailModal({
 
                         </TabsContent>
 
+                        <TabsContent value="deck" className="mt-0">
+                            <DeckDisplay tournamentId={tournamentId} playerId={player.id} />
+                        </TabsContent>
+
                         <TabsContent value="history" className="mt-0">
                             {isLoading ? (
                                 <div className="text-center py-8 text-muted-foreground">Loading history...</div>
                             ) : (history.penalties.length === 0 && history.deckChecks.length === 0) ? (
                                 <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-2">
-                                    <History className="w-8 h-8 opacity-20" />
+                                    <HistoryIcon className="w-8 h-8 opacity-20" />
                                     <p>No history found for this tournament.</p>
                                 </div>
                             ) : (

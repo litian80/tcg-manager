@@ -8,6 +8,7 @@ import { Loader2, Search, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { searchRosterCandidates, addPlayerToRoster, removePlayerFromRoster, RosterCandidate } from "@/actions/roster-management";
 import { useRouter } from "next/navigation";
+import { OrganizerDeckModal } from "@/components/organizer/OrganizerDeckModal";
 
 interface Player {
     id: string; // The UUID in `players` table (or tom_player_id if used as ID? No, UUID likely)
@@ -28,6 +29,8 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
     const [isSearching, setIsSearching] = useState(false);
     const [addingId, setAddingId] = useState<string | null>(null);
     const [removingId, setRemovingId] = useState<string | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string } | null>(null);
+    const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
     const router = useRouter();
 
     // Simple search handler
@@ -160,8 +163,19 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                         ) : (
                             currentRoster.map((player) => (
                                 <div key={player.id} className="flex items-center justify-between p-3 text-sm">
-                                    <div>
-                                        <p className="font-medium">{player.first_name} {player.last_name}</p>
+                                    <div className="flex-1">
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedPlayer({
+                                                    id: player.tom_player_id || player.id,
+                                                    name: `${player.first_name} ${player.last_name}`
+                                                });
+                                                setIsDeckModalOpen(true);
+                                            }}
+                                            className="text-left font-medium hover:text-blue-600 transition-colors"
+                                        >
+                                            {player.first_name} {player.last_name}
+                                        </button>
                                         <p className="text-xs text-muted-foreground">
                                             ID: {player.tom_player_id || "N/A"}
                                             {player.birth_year ? ` • Born: ${player.birth_year}` : ""}
@@ -182,6 +196,13 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                     </div>
                 </div>
             </CardContent>
+
+            <OrganizerDeckModal 
+                isOpen={isDeckModalOpen}
+                onClose={() => setIsDeckModalOpen(false)}
+                tournamentId={tournamentId}
+                player={selectedPlayer}
+            />
         </Card>
     );
 }

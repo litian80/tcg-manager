@@ -260,3 +260,32 @@ export async function updateMatchTimeExtension(matchId: string, minutes: number)
 
     return { success: true };
 }
+
+export async function getPlayerDeckList(tournamentId: string, playerId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    // Auth Check
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+    if (!isAuthorized) {
+        return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+    }
+
+    const { data: deckList, error } = await supabase
+        .from("deck_lists")
+        .select("id, raw_text, validation_status, submitted_at, validation_errors")
+        .eq("tournament_id", tournamentId)
+        .eq("player_id", playerId)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error fetching deck list:", error);
+        return { error: "Failed to fetch deck list" };
+    }
+
+    return { deckList };
+}
