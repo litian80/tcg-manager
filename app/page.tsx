@@ -43,7 +43,7 @@ export default async function Home() {
                 <Card className="h-full hover:border-primary transition-colors cursor-pointer group">
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className="line-clamp-1 text-xl group-hover:text-primary transition-colors">
+                      <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
                         {tournament.name}
                       </CardTitle>
                       <Badge variant={tournament.status === 'running' ? "default" : "secondary"} className={tournament.status === 'running' ? "bg-green-600 hover:bg-green-700" : ""}>

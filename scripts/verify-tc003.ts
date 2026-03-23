@@ -1,7 +1,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { parseDeckList } from "../utils/deck-validator";
+import { parseDeckList, normalizeCardName } from "../utils/deck-validator";
 
 dotenv.config({ path: ".env.local" });
 
@@ -65,7 +65,7 @@ async function validateDeckStandalone(deckText: string) {
     const setNumberCards = remainingCards.filter(c => c.set && c.number && c.set !== "ENERGY");
     const nameOnlyCards = remainingCards.filter(c => !c.set || !c.number || c.set === "ENERGY");
 
-    const uniqueNames = Array.from(new Set(nameOnlyCards.map(c => c.name)));
+    const uniqueNames = Array.from(new Set(nameOnlyCards.map(c => normalizeCardName(c.name))));
     const { data: dbCards, error: dbError } = await supabase
         .from('cards')
         .select(`
@@ -79,10 +79,10 @@ async function validateDeckStandalone(deckText: string) {
     if (dbError) throw dbError;
 
     const cardLookupMap = new Map();
-    dbCards?.forEach((c: any) => cardLookupMap.set(c.name.toLowerCase(), c));
+    dbCards?.forEach((c: any) => cardLookupMap.set(normalizeCardName(c.name).toLowerCase(), c));
 
     for (const pc of remainingCards) {
-        const dbCard = cardLookupMap.get(pc.name.toLowerCase());
+        const dbCard = cardLookupMap.get(normalizeCardName(pc.name).toLowerCase());
         if (dbCard) {
             validatedCards.push({
                 parsed: {

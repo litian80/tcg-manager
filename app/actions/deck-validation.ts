@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { parseDeckList, DeckParseResult } from "@/utils/deck-validator";
+import { parseDeckList, DeckParseResult, normalizeCardName } from "@/utils/deck-validator";
 
 export interface ValidationResult {
     isValid: boolean;
@@ -173,7 +173,7 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
         // Step 2 & 3: Validate name-only cards (Trainers and Energy)
         const nameOnlyCards = [...trainerCards, ...energyCards];
         if (nameOnlyCards.length > 0) {
-            const uniqueNames = Array.from(new Set(nameOnlyCards.map(c => c.name)));
+            const uniqueNames = Array.from(new Set(nameOnlyCards.map(c => normalizeCardName(c.name))));
 
             const { data: dbCards, error: dbError } = await supabase
                 .from('cards')
@@ -191,14 +191,12 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
             } else {
                 const cardLookupMap = new Map<string, any>();
                 for (const dbCard of dbCards || []) {
-                    // Use lowercase for case-insensitive matching
-                    // Prefer the first one found or handle duplicates if necessary
-                    // (Superior Energy Retrieval has 2 entries, usually they are identical for validation)
-                    cardLookupMap.set(dbCard.name.toLowerCase(), dbCard);
+                    // Normalize DB names for lookup map just in case there are variations in the DB
+                    cardLookupMap.set(normalizeCardName(dbCard.name).toLowerCase(), dbCard);
                 }
 
                 for (const parsedCard of nameOnlyCards) {
-                    const dbCard = cardLookupMap.get(parsedCard.name.toLowerCase());
+                    const dbCard = cardLookupMap.get(normalizeCardName(parsedCard.name).toLowerCase());
 
                     if (!dbCard) {
                         validationErrors.push(`Card not found: "${parsedCard.name}"`);

@@ -43,12 +43,17 @@ next-env.d.ts
 # generated reports
 /tools/output/
 
-credentials.json
-token.json
-school_emails.json
-*.py
-*.pyc
-__pycache__/
-check_rls.js
-test_update_penalty.js
+# sensitive and large data (DeepSeek Audit Recommendation)
+/.agent/
+/archive/
+/TOMfiles/
+/Cards/
+
+
+# local dev scripts and artifacts
+*.log
 /tmp/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

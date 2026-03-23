@@ -46,6 +46,16 @@ const testDecks = [
         name: "Case-insensitive Energy",
         list: "4 jet energy",
         expectedCategory: "energy"
+    },
+    {
+        name: "Curly Apostrophe Trainer",
+        list: "4 Professor Turo’s Scenario",
+        expectedCategory: "trainer"
+    },
+    {
+        name: "Smart Quote Trainer",
+        list: '1 "Cyrus" Plan',
+        expectedCategory: "trainer"
     }
 ];
 

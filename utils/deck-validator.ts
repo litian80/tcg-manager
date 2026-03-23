@@ -37,6 +37,15 @@ const ENERGY_TYPE_MAP: Record<string, string> = {
     'C': 'Colorless',
 };
 
+export function normalizeCardName(name: string): string {
+    return name
+        .replace(/[\u2018\u2019\u00b4\u0060]/g, "'") // Curly apostrophes and backticks
+        .replace(/[\u201c\u201d]/g, '"') // Curly quotes
+        .replace(/[\u2013\u2014]/g, '-') // En/Em dashes
+        .trim()
+        .replace(/\s+/g, ' '); // Collapse spaces
+}
+
 function formatEnergyName(rawName: string): string {
     // Convert "Basic {G} Energy" → "Grass Energy"
     return rawName.replace(/Basic\s+\{([A-Z])\}\s+Energy/i, (_match, code: string) => {
@@ -99,7 +108,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         if (energyMatch) {
             const qty = parseInt(energyMatch[1], 10);
             const rawName = energyMatch[2].trim();
-            const name = formatEnergyName(rawName);
+            const name = normalizeCardName(formatEnergyName(rawName));
             const setCode = energyMatch[3]?.trim().toUpperCase() || "ENERGY";
             const cardNumber = energyMatch[4]?.trim() || "0";
             
@@ -123,7 +132,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         if (simpleMatch) {
             const qty = parseInt(simpleMatch[1], 10);
             const rawName = simpleMatch[2].trim();
-            const name = formatEnergyName(rawName);
+            const name = normalizeCardName(formatEnergyName(rawName));
             const lowName = name.toLowerCase();
             
             const isBasicEnergy = !lowName.includes("special") && !lowName.includes("double");
@@ -147,7 +156,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         const standardMatch = line.match(standardPattern);
         if (standardMatch) {
             const qty = parseInt(standardMatch[1], 10);
-            const name = standardMatch[2].trim();
+            const name = normalizeCardName(standardMatch[2]);
             const lowName = name.toLowerCase();
             const setCode = standardMatch[3].trim().toUpperCase();
             const cardNumber = standardMatch[4].trim();
@@ -181,7 +190,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         const parenMatch = line.match(parenPattern);
         if (parenMatch) {
             const qty = parseInt(parenMatch[1], 10);
-            const name = parenMatch[2].trim();
+            const name = normalizeCardName(parenMatch[2]);
             const setCode = parenMatch[3].trim().toUpperCase();
             const cardNumber = parenMatch[4].trim();
 
@@ -206,7 +215,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         if (nameOnlyMatch) {
             const qty = parseInt(nameOnlyMatch[1], 10);
             const rawName = nameOnlyMatch[2].trim();
-            const name = formatEnergyName(rawName);
+            const name = normalizeCardName(formatEnergyName(rawName));
 
             const lowName = name.toLowerCase();
             const isEnergy = lowName.endsWith('energy');

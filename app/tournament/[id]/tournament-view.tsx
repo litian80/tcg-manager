@@ -254,7 +254,7 @@ export default function TournamentView({
                                 <ArrowLeft className="h-5 w-5" />
                             </Link>
                             <div className="flex flex-col min-w-0">
-                                <h1 className="text-xl font-bold truncate leading-tight">{tournament.name}</h1>
+                                <h1 className="text-xl font-bold break-words text-balance leading-tight">{tournament.name}</h1>
                                 {!hasMatches ? (
                                     <p className="text-xs text-muted-foreground font-medium truncate">
                                         Pre-Tournament Roster
