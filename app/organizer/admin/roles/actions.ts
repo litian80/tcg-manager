@@ -3,16 +3,30 @@
 import { createClient } from "@/utils/supabase/server";
 import { Role } from "@/lib/rbac";
 import { revalidatePath } from "next/cache";
+import { sanitizeSearchQuery } from "@/lib/utils";
 
 export async function searchUsers(query: string) {
   const supabase = await createClient();
 
+  // Auth Check: only admins can search users for role management
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: adminProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (adminProfile?.role !== "admin") {
+    throw new Error("Only admins can search users for role management");
+  }
+
   // Basic search across multiple fields
-  // In a real app, you might use a more advanced search or a RPC
   const { data: users, error } = await supabase
     .from("profiles")
     .select("id, email, first_name, last_name, pokemon_player_id, role")
-    .or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%,pokemon_player_id.ilike.%${query}%`)
+    .or(`email.ilike.%${sanitizeSearchQuery(query)}%,first_name.ilike.%${sanitizeSearchQuery(query)}%,last_name.ilike.%${sanitizeSearchQuery(query)}%,pokemon_player_id.ilike.%${sanitizeSearchQuery(query)}%`)
     .limit(20);
 
   if (error) {

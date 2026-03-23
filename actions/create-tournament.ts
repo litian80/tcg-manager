@@ -12,6 +12,17 @@ export async function createTournament(formData: FormData) {
         return { error: "Unauthorized" };
     }
 
+    // Role check: only organizers and admins can create tournaments
+    const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (creatorProfile?.role !== 'admin' && creatorProfile?.role !== 'organizer') {
+        return { error: "Only organizers and admins can create tournaments." };
+    }
+
     const name = formData.get("name") as string;
     const date = formData.get("date") as string;
     const startTime = formData.get("start_time") as string || "09:00";

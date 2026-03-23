@@ -131,6 +131,17 @@ export async function addDeckCheck(formData: FormData) {
 export async function getPlayerJudgeDetails(tournamentId: string, playerId: string) {
     const supabase = await createClient();
 
+    // Auth Check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { penalties: [], deckChecks: [], error: "Unauthorized" };
+    }
+
+    const isAuthorized = await checkTournamentAuth(supabase, user.id, tournamentId);
+    if (!isAuthorized) {
+        return { penalties: [], deckChecks: [], error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
+    }
+
     // Fetch penalties
     const { data: penalties, error: penaltiesError } = await supabase
         .from('player_penalties')

@@ -5,15 +5,34 @@ import { createClient } from "@/utils/supabase/server";
 export async function generatePenaltyCSV(tournamentId: string) {
     const supabase = await createClient();
 
+    // Auth Check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('Unauthorized');
+    }
+
     // 1. Fetch Tournament Details
     const { data: tournament, error: tournamentError } = await supabase
         .from("tournaments")
-        .select("name, id, tom_uid")
+        .select("name, id, tom_uid, organizer_popid")
         .eq("id", tournamentId)
         .single();
 
     if (tournamentError || !tournament) {
         throw new Error("Tournament not found");
+    }
+
+    // Authorization: must be admin or matching organizer
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, pokemon_player_id')
+        .eq('id', user.id)
+        .single();
+
+    const isAdmin = profile?.role === 'admin';
+    const isOrgMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
+    if (!isAdmin && !isOrgMatch) {
+        throw new Error('Unauthorized: You must be an Organizer or Admin to export reports.');
     }
 
     // 2. Fetch Penalties

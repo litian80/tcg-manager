@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { Role } from "@/lib/rbac";
+import { sanitizeSearchQuery } from "@/lib/utils";
 
 export type UserResult = {
     id: string;
@@ -60,7 +61,8 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
     // Strategy 2: Search by Name or Email
     console.log('Executing Supabase Query (Strategy 2 - Text Match)...');
     // Corrected filter string without 'display_name'
-    const filterString = `email.ilike.%${sanitizedQuery}%,pokemon_player_id.ilike.%${sanitizedQuery}%,first_name.ilike.%${sanitizedQuery}%,last_name.ilike.%${sanitizedQuery}%,nick_name.ilike.%${sanitizedQuery}%`;
+    const safeQuery = sanitizeSearchQuery(sanitizedQuery);
+    const filterString = `email.ilike.%${safeQuery}%,pokemon_player_id.ilike.%${safeQuery}%,first_name.ilike.%${safeQuery}%,last_name.ilike.%${safeQuery}%,nick_name.ilike.%${safeQuery}%`;
     console.log('Filter String:', filterString);
     console.log(`[DEBUG SQL INTENT] SELECT ... FROM profiles WHERE ${filterString.replace(/,/g, ' OR ')} LIMIT 5`);
 

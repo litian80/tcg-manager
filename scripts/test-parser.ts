@@ -56,6 +56,11 @@ const testDecks = [
         name: "Smart Quote Trainer",
         list: '1 "Cyrus" Plan',
         expectedCategory: "trainer"
+    },
+    {
+        name: "TCG Live Total Cards line is ignored",
+        list: "Pokémon: 1\n1 Pikachu ex SVP 95\n\nTotal Cards: 60",
+        expectedCategory: "pokemon",
     }
 ];
 

@@ -89,6 +89,9 @@ export function parseDeckList(deckText: string): DeckParseResult {
     for (let line of lines) {
         line = line.trim();
         if (!line) continue;
+
+        // Skip informational lines from Pokemon TCG Live (e.g. "Total Cards: 60")
+        if (/^Total Cards:\s*\d+$/i.test(line)) continue;
             
         // Check for category headers
         if (categoryPatterns.pokemon.test(line)) {

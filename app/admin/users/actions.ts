@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { sanitizeSearchQuery } from '@/lib/utils'
 
 export async function searchUsers(query: string) {
     const supabase = await createClient()
@@ -34,10 +35,11 @@ export async function searchUsers(query: string) {
         return data
     }
 
+    const sanitized = sanitizeSearchQuery(query)
     const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%,pokemon_player_id.ilike.%${query}%`)
+        .or(`email.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%,pokemon_player_id.ilike.%${sanitized}%`)
         .limit(20)
 
     if (error) {

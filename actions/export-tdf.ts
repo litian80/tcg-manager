@@ -5,6 +5,12 @@ import { createClient } from "@/utils/supabase/server";
 export async function exportTournamentTDF(tournamentId: string) {
     const supabase = await createClient();
 
+    // Auth Check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('Unauthorized');
+    }
+
     // 1. Fetch Tournament Data
     const { data: tournament, error: tError } = await supabase
         .from('tournaments')
@@ -14,6 +20,19 @@ export async function exportTournamentTDF(tournamentId: string) {
 
     if (tError || !tournament) {
         throw new Error('Tournament not found');
+    }
+
+    // Authorization: must be admin or matching organizer
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, pokemon_player_id')
+        .eq('id', user.id)
+        .single();
+
+    const isAdmin = profile?.role === 'admin';
+    const isOrgMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
+    if (!isAdmin && !isOrgMatch) {
+        throw new Error('Unauthorized: You must be an Organizer or Admin to export TDF.');
     }
 
     if (!tournament.tom_uid) {

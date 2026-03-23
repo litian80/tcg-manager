@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { Database } from "@/utils/supabase/database.types";
+import { sanitizeSearchQuery } from "@/lib/utils";
 
 type Tournament = Database['public']['Tables']['tournaments']['Row'];
 
@@ -29,7 +30,7 @@ export async function getTournaments({
             .range(offset, offset + limit - 1);
 
         if (searchQuery) {
-            query = query.ilike('name', `%${searchQuery}%`);
+            query = query.ilike('name', `%${sanitizeSearchQuery(searchQuery)}%`);
         }
 
         const { data, error } = await query;
@@ -60,7 +61,7 @@ export async function getTournaments({
     });
 
     if (searchQuery) {
-        query = query.ilike('name', `%${searchQuery}%`);
+        query = query.ilike('name', `%${sanitizeSearchQuery(searchQuery)}%`);
     }
 
     // Order and Pagination

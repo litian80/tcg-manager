@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sanitizeSearchQuery } from "@/lib/utils";
 
 export interface RosterCandidate {
     id: string;
@@ -13,8 +14,23 @@ export interface RosterCandidate {
 
 export async function searchRosterCandidates(query: string): Promise<RosterCandidate[]> {
     if (!query || query.length < 2) return [];
+    const sanitized = sanitizeSearchQuery(query);
 
     const supabase = await createClient();
+
+    // Auth Check: only organizers and admins should search profiles for roster management
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role !== 'admin' && profile?.role !== 'organizer') {
+        return [];
+    }
 
     // Search profiles
     // We want to match first_name OR last_name OR pokemon_player_id
@@ -28,7 +44,7 @@ export async function searchRosterCandidates(query: string): Promise<RosterCandi
         .not('last_name', 'is', null)
         .not('pokemon_player_id', 'is', null)
         .not('birth_year', 'is', null)
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,pokemon_player_id.ilike.%${query}%`)
+        .or(`first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%,pokemon_player_id.ilike.%${sanitized}%`)
         .limit(20);
 
     if (error) {
@@ -222,6 +238,12 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
 }
 
 export async function updateRegistrationStatus(tournamentId: string, playerId: string, status: string) {
+    // Validate status against allowlist
+    const validStatuses = ['registered', 'checked_in', 'waitlisted', 'withdrawn', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+        return { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` };
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
