@@ -1,13 +1,13 @@
 # DeepSeek Deployment Hygiene
 # Exclude sensitive and large data (also ignored by Git)
-.agent/
-archive/
-TOMfiles/
-Cards/
+/.agent/
+/archive/
+/TOMfiles/
+/Cards/
 
 # Exclude local dev tooling and documentation (tracked by Git, but irrelevant for Vercel build)
-docs/
-tools/
-scripts/
-db/
-supabase/
+/docs/
+/tools/
+/scripts/
+/db/
+/supabase/
