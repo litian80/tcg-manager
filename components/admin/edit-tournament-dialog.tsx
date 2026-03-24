@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Pencil } from 'lucide-react'
-import { updateTournamentStatus } from '@/app/actions/admin-tournaments'
+import { updateTournamentStatus } from '@/actions/admin/tournaments'
 import { Database } from '@/utils/supabase/database.types'
 
 type Tournament = Database['public']['Tables']['tournaments']['Row']

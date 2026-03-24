@@ -66,5 +66,5 @@ export async function updateUserRole(targetUserId: string, newRole: Role) {
   }
 
   // 3. Revalidate path to ensure UI updates
-  revalidatePath("/organizer/admin/roles");
+  revalidatePath("/admin/users");
 }

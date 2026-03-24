@@ -1,4 +1,4 @@
-import { getAllTournaments } from '@/app/actions/admin-tournaments'
+import { getAllTournaments } from '@/actions/admin/tournaments'
 import { DataTable } from './data-table'
 import { columns } from './columns'
 import { redirect } from 'next/navigation'

@@ -7,8 +7,10 @@ import { cookies } from 'next/headers'
 const profileCache = new Map<string, { role: string; expires: number }>()
 
 export async function middleware(request: NextRequest) {
-  // Only protect /organizer/* routes
-  if (!request.nextUrl.pathname.startsWith('/organizer')) {
+  const path = request.nextUrl.pathname;
+
+  // Only protect /organizer/* and /admin/* routes
+  if (!path.startsWith('/organizer') && !path.startsWith('/admin')) {
     return NextResponse.next()
   }
 
@@ -45,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
     const userId = user.id
 
-    const isAdminPath = request.nextUrl.pathname.startsWith('/organizer/admin')
+    const isAdminPath = path.startsWith('/admin') || path.startsWith('/organizer/admin')
 
     // Check cache first
     const cached = profileCache.get(userId)
@@ -94,5 +96,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/organizer/:path*']
+  matcher: ['/organizer/:path*', '/admin/:path*']
 }

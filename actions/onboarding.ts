@@ -52,9 +52,11 @@ export async function completeOnboarding(prevState: any, formData: FormData): Pr
     const { first_name, last_name, pokemon_player_id, birth_year } = validatedFields.data;
 
     // Validate Birth Year Range
-    if (birth_year < 1950 || birth_year > 2020) {
+    const currentYear = new Date().getFullYear();
+    const maxBirthYear = currentYear - 3; // Must be at least 3 years old
+    if (birth_year < 1950 || birth_year > maxBirthYear) {
         return {
-            errors: { birth_year: ['Birth year must be between 1950 and 2020'] },
+            errors: { birth_year: [`Birth year must be between 1950 and ${maxBirthYear}`] },
             message: 'Invalid Birth Year',
         }
     }

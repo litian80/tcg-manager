@@ -1,6 +1,6 @@
 "use client";
 
-import { UserResult } from "@/app/tournament/actions";
+import { UserResult } from "@/actions/tournament/staff";
 import { useState, useEffect, useMemo } from "react";
 import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";

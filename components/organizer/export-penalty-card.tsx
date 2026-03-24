@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, FileSpreadsheet } from "lucide-react";
-import { generatePenaltyCSV } from "@/app/actions/reports";
+import { generatePenaltyCSV } from "@/actions/tournament/reports";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";

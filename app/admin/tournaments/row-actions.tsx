@@ -16,7 +16,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { deleteTournament } from '@/app/actions/admin-tournaments'
+import { deleteTournament } from '@/actions/admin/tournaments'
 import { toast } from 'sonner'
 import { EditTournamentDialog } from '@/components/admin/edit-tournament-dialog'
 import { Database } from '@/utils/supabase/database.types'

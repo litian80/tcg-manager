@@ -1,4 +1,4 @@
-import { getTournaments } from "@/app/actions/get-tournaments";
+import { getTournaments } from "@/actions/tournament/queries";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";

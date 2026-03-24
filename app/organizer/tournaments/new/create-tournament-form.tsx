@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { createTournament } from "@/actions/create-tournament";
+import { createTournament } from "@/actions/tournament/create";
 import { Loader2 } from "lucide-react";
 
 // Define the expected return type of the server action

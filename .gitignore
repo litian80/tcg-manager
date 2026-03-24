@@ -40,20 +40,23 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python
+__pycache__/
+*.pyc
+
 # generated reports
 /tools/output/
 
-# sensitive and large data (DeepSeek Audit Recommendation)
+# sensitive and large data
 /.agent/
 /archive/
 /TOMfiles/
 /Cards/
 
+# schema dumps (use db/schema/ as source of truth)
+/schema.json
+/prod_simplified_schema.txt
 
 # local dev scripts and artifacts
 *.log
 /tmp/
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts

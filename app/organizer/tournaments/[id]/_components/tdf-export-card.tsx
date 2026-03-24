@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { FileDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { exportTournamentTDF } from "@/actions/export-tdf";
+import { exportTournamentTDF } from "@/actions/tournament/export-tdf";
 
 interface TdfExportCardProps {
     tournament: {

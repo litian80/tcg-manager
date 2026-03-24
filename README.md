@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TCG Manager
+
+A modern tournament management companion app for Pokémon TCG events. Built with **Next.js 16**, **Supabase**, and **Tailwind CSS 4**, deployed on **Vercel**.
+
+## What It Does
+
+TCG Manager serves as a **live visibility layer** and **roster management tool** that works alongside the official Tournament Operations Manager (TOM) software:
+
+- **Pre-Tournament**: Player registration, roster building, deck list submission, TDF file generation
+- **During Tournament**: Live pairings, standings (auto-synced from TOM), penalty tracking, deck checks
+- **Post-Tournament**: Penalty export, tournament history
+
+## Roles
+
+| Role | Capabilities |
+|---|---|
+| **Admin** | Full access — user/tournament management, all organiser + judge capabilities |
+| **Organiser** | TOM file upload, judge panel, match result editing (own tournaments) |
+| **Judge** | Judge panel access, penalty/deck check management (assigned tournaments) |
+| **Player** | View tournaments, register, submit deck lists |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 20+
+- A Supabase project with the schema from `db/schema/`
+- Google OAuth configured in Supabase
 
+### Development
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
+Copy `.env.local.example` to `.env.local` and configure:
+- `NEXT_PUBLIC_SUPABASE_URL` — Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Your Supabase anon key
+- `DEEPSEEK_API_KEY` — (Optional) DeepSeek Reasoner API key for agent consulting
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Deployment
+```bash
+# Uses /deploy workflow: git add, commit, push → Vercel auto-deploys
+git add . && git commit -m "description" && git push
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/            → Next.js App Router pages & route-level components
+actions/        → Server Actions (grouped by domain)
+components/     → React components (grouped by feature)
+  ├── ui/       → Shared shadcn/ui primitives
+  ├── tournament/
+  ├── judge/
+  ├── admin/
+  └── ...
+lib/            → Auth, RBAC, types, utilities
+hooks/          → Custom React hooks
+utils/supabase/ → Supabase client factories & types
+db/             → SQL (schema, fixes, features, security)
+docs/           → User manual, decisions, specs, UAT plan
+scripts/        → Verification & debug scripts
+tools/          → TDF analysis, data scanners
+Cards/          → Local card database (gitignored)
+TOMfiles/       → Sample TDF files (gitignored)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Documentation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Decision Log](docs/DECISIONS.md) — Product & architecture decisions
+- [Backlog](docs/BACKLOG.md) — Prioritised work items & UX improvements
+- [User Manual](docs/USER_MANUAL.md) — End-user guide for organisers and players
+- [UAT Plan](docs/UAT_PLAN.md) — Acceptance test cases
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Framework**: Next.js 16 (App Router)
+- **Database**: Supabase (PostgreSQL + Auth + RLS)
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Deployment**: Vercel
+- **File Sync**: TOM ↔ Web via `.tdf` files

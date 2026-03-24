@@ -28,7 +28,9 @@ export default function OnboardingPage() {
         }
     }, [state]);
 
-    const years = Array.from({ length: 2020 - 1950 + 1 }, (_, i) => 2020 - i);
+    const currentYear = new Date().getFullYear();
+    const maxBirthYear = currentYear - 3; // Must be at least 3 years old
+    const years = Array.from({ length: maxBirthYear - 1950 + 1 }, (_, i) => maxBirthYear - i);
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">

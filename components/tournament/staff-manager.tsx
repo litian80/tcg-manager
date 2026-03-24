@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserResult, searchUsers, addJudge, removeJudge } from "@/app/tournament/actions";
+import { UserResult, searchUsers, addJudge, removeJudge } from "@/actions/tournament/staff";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

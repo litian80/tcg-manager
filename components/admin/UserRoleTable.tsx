@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { Role } from "@/lib/rbac";
 import { toast } from "sonner";
-import { searchUsers, updateUserRole } from "@/app/organizer/admin/roles/actions";
+import { searchUsers, updateUserRole } from "@/actions/admin/users";
 
 interface UserProfile {
   id: string;

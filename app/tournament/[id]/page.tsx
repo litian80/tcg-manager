@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import TournamentView, { Match, Tournament, RosterPlayer } from "./tournament-view";
 import { Role } from "@/lib/rbac";
-import { UserResult } from "@/app/tournament/actions";
+import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
 
 interface Profile {

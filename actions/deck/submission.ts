@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { validateDeckListAction, ValidationResult } from "./deck-validation";
+import { validateDeckListAction, ValidationResult } from "./validation";
 import { revalidatePath } from "next/cache";
 
 export async function submitDeckAction(tournamentId: string, deckText: string): Promise<ValidationResult> {
