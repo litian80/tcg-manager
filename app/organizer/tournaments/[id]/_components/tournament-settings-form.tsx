@@ -25,6 +25,7 @@ interface Tournament {
     deck_submission_cutoff_hours?: number;
     requires_deck_list?: boolean;
     deck_list_submission_deadline?: string | null;
+    tournament_mode?: string;
 }
 
 interface TournamentSettingsFormProps {
@@ -33,6 +34,7 @@ interface TournamentSettingsFormProps {
 }
 
 export function TournamentSettingsForm({ tournament, isAdmin = false }: TournamentSettingsFormProps) {
+    const [tournamentMode, setTournamentMode] = useState(tournament.tournament_mode || "LEAGUECHALLENGE");
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
     const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
     const [registrationOpen, setRegistrationOpen] = useState(tournament.registration_open || false);
@@ -122,6 +124,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
         const { error } = await supabase
             .from("tournaments")
             .update({ 
+                tournament_mode: tournamentMode,
                 tom_uid: tomUid || null,
                 ...(isAdmin ? { organizer_popid: organizerPopid || null } : {}),
                 registration_open: registrationOpen,
@@ -161,6 +164,21 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-6">
+                    {/* Tournament Type Section */}
+                    <div className="space-y-2">
+                        <Label htmlFor="tournament_mode">Tournament Type</Label>
+                        <select
+                            id="tournament_mode"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            value={tournamentMode}
+                            onChange={(e) => setTournamentMode(e.target.value)}
+                        >
+                            <option value="LEAGUECHALLENGE">League Challenge</option>
+                            <option value="TCG1DAY">League Cup</option>
+                            <option value="PRERELEASE">Prerelease / Draft</option>
+                        </select>
+                    </div>
+
                     {/* Tournament Timing Section */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-medium">Tournament Timing</h3>

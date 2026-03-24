@@ -120,16 +120,8 @@ export async function exportTournamentTDF(tournamentId: string) {
     // Header
     const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>`;
 
-    // Tournament Tag
-    /*
-      Attributes:
-       type="2" (Fixed)
-       stage="1" (Default)
-       version="1.80" (Fixed)
-       gametype="TRADING_CARD_GAME" (Fixed)
-       mode="LEAGUECHALLENGE" (Default? Or derive from tournament params? User didn't specify dynamic mode, used "LEAGUECHALLENGE" in sample)
-       Let's stick to LEAGUECHALLENGE for now or generic. User sample had it.
-    */
+    // Tournament mode from DB (LEAGUECHALLENGE, TCG1DAY, or PRERELEASE)
+    const tdfMode = tournament.tournament_mode || "LEAGUECHALLENGE";
 
     const tData = `
     <data>
@@ -148,7 +140,6 @@ export async function exportTournamentTDF(tournamentId: string) {
     </data>`;
 
     // Players Tag
-    // <player userid="6"><firstname>...</firstname><lastname>...</lastname><birthdate>02/27/2014</birthdate>...</player>
     const playersMap = players.map(p => {
         const bYear = p.birth_year || 2012;
         const bDate = `02/27/${bYear}`;
@@ -168,7 +159,7 @@ export async function exportTournamentTDF(tournamentId: string) {
     }).join('');
 
     const xml = `${xmlHeader}
-<tournament type="2" stage="1" version="1.80" gametype="TRADING_CARD_GAME" mode="LEAGUECHALLENGE">
+<tournament type="2" stage="1" version="1.80" gametype="TRADING_CARD_GAME" mode="${tdfMode}">
     ${tData}
     <timeelapsed>0</timeelapsed>
     <players>${playersMap}

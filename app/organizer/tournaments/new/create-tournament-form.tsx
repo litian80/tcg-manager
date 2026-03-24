@@ -46,6 +46,21 @@ export function CreateTournamentForm({ userRole, userPopId }: CreateTournamentFo
                 
                 <form action={formAction} className="space-y-4">
                     <div className="space-y-2">
+                        <Label htmlFor="tournament_mode">Tournament Type</Label>
+                        <select
+                            id="tournament_mode"
+                            name="tournament_mode"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            disabled={isPending}
+                            defaultValue="LEAGUECHALLENGE"
+                        >
+                            <option value="LEAGUECHALLENGE">League Challenge</option>
+                            <option value="TCG1DAY">League Cup</option>
+                            <option value="PRERELEASE">Prerelease / Draft</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="name">Tournament Name</Label>
                         <Input id="name" name="name" placeholder="e.g. Monthly League Challenge" required disabled={isPending} />
                     </div>

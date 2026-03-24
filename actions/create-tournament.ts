@@ -29,6 +29,13 @@ export async function createTournament(formData: FormData) {
     const city = formData.get("city") as string;
     const country = formData.get("country") as string || "New Zealand";
     const tom_uid = formData.get("tom_uid") as string;
+    const tournament_mode = formData.get("tournament_mode") as string || "LEAGUECHALLENGE";
+
+    // Validate tournament mode
+    const validModes = ["LEAGUECHALLENGE", "TCG1DAY", "PRERELEASE"];
+    if (!validModes.includes(tournament_mode)) {
+        return { error: "Invalid tournament type selected." };
+    }
     
     const requires_deck_list = formData.get("requires_deck_list") === "true" || formData.get("requires_deck_list") === "on";
     const deck_submission_cutoff_hours = parseInt((formData.get("deck_submission_cutoff_hours") as string) || "1", 10);
@@ -138,7 +145,8 @@ export async function createTournament(formData: FormData) {
             deck_list_submission_deadline,
             requires_deck_list,
             deck_size: 60,
-            sideboard_size: 0
+            sideboard_size: 0,
+            tournament_mode
         })
         .select('id')
         .single();
