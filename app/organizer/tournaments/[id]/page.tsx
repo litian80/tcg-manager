@@ -126,7 +126,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                 {/* Left Column: Configuration, Roster, TDF Export */}
                 <div className="space-y-6">
                     <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
-                        <TournamentSettingsForm tournament={tournament} />
+                        <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} />
                     </div>
 
                     <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>

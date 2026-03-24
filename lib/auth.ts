@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { Role } from '@/lib/rbac'
 
@@ -109,8 +109,9 @@ export async function authorizeTournamentManagement(
       redirect('/login?message=Could not fetch profile')
     }
 
-    // 2. Get tournament
-    const { data: tournament, error: tournamentError } = await supabase
+    // 2. Get tournament using admin client to bypass RLS
+    const adminSupabase = await createAdminClient()
+    const { data: tournament, error: tournamentError } = await adminSupabase
       .from('tournaments')
       .select('*')
       .eq('id', tournamentId)

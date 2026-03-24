@@ -56,8 +56,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tournamentRecord = tournamentData as any;
     const isOrganizer = user && userRole !== 'admin' && (
-        tournamentRecord.organizer_id === user.id ||
-        (tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid)
+        tournamentRecord.organizer_popid && profile?.pokemon_player_id === tournamentRecord.organizer_popid
     );
 
     const canManageStaff = userRole === 'admin' || !!isOrganizer;

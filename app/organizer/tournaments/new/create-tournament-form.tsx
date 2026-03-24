@@ -12,12 +12,18 @@ import { Loader2 } from "lucide-react";
 // Define the expected return type of the server action
 type FormState = { error: string } | undefined;
 
+interface CreateTournamentFormProps {
+    userRole: string;
+    userPopId: string;
+}
+
 // Wrapper function to pass to useActionState
 async function submitTournament(prevState: FormState, formData: FormData) {
     return await createTournament(formData);
 }
 
-export function CreateTournamentForm() {
+export function CreateTournamentForm({ userRole, userPopId }: CreateTournamentFormProps) {
+    const isAdmin = userRole === 'admin';
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
 
     // Set default time to 09:00
@@ -77,6 +83,21 @@ export function CreateTournamentForm() {
                         <Label htmlFor="tom_uid">Sanction ID (TOM UID)</Label>
                         <Input id="tom_uid" name="tom_uid" placeholder="XX-XX-XXXXXX" disabled={isPending} />
                         <p className="text-xs text-muted-foreground">Optional. Format: 25-01-000001</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="organizer_popid">Organiser Player ID</Label>
+                        <Input 
+                            id="organizer_popid" 
+                            name="organizer_popid" 
+                            placeholder="e.g. 1234567" 
+                            defaultValue={userPopId}
+                            disabled={isPending || !isAdmin}
+                            className={!isAdmin ? "bg-muted cursor-not-allowed" : ""}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {isAdmin ? "Set the Player ID of the tournament organiser." : "Your Player ID will be used as the tournament organiser."}
+                        </p>
                     </div>
 
                     <div className="space-y-4 pt-4 border-t">

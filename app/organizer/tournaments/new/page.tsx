@@ -5,7 +5,7 @@ import { CreateTournamentForm } from "./create-tournament-form";
 
 export default async function NewTournamentPage() {
     // Page-level auth - will redirect if not organizer/admin
-    await requireOrganizerOrAdmin();
+    const { profile } = await requireOrganizerOrAdmin();
 
     return (
         <div className="container max-w-lg py-8 space-y-8">
@@ -19,7 +19,10 @@ export default async function NewTournamentPage() {
                 </div>
             </div>
 
-            <CreateTournamentForm />
+            <CreateTournamentForm 
+                userRole={profile.role} 
+                userPopId={profile.pokemon_player_id || ""} 
+            />
         </div>
     );
 }

@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 interface Tournament {
     id: string;
     tom_uid: string | null;
+    organizer_popid: string | null;
     registration_open?: boolean;
     capacity_juniors?: number;
     capacity_seniors?: number;
@@ -28,10 +29,12 @@ interface Tournament {
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;
+    isAdmin?: boolean;
 }
 
-export function TournamentSettingsForm({ tournament }: TournamentSettingsFormProps) {
+export function TournamentSettingsForm({ tournament, isAdmin = false }: TournamentSettingsFormProps) {
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
+    const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
     const [registrationOpen, setRegistrationOpen] = useState(tournament.registration_open || false);
     const [publishRoster, setPublishRoster] = useState(tournament.publish_roster ?? true);
     const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
@@ -120,6 +123,7 @@ export function TournamentSettingsForm({ tournament }: TournamentSettingsFormPro
             .from("tournaments")
             .update({ 
                 tom_uid: tomUid || null,
+                ...(isAdmin ? { organizer_popid: organizerPopid || null } : {}),
                 registration_open: registrationOpen,
                 publish_roster: publishRoster,
                 requires_deck_list: requiresDeckList,
@@ -198,6 +202,22 @@ export function TournamentSettingsForm({ tournament }: TournamentSettingsFormPro
                         />
                         <p className="text-xs text-muted-foreground">
                             Format: YY-MM-XXXXXX (e.g. 26-01-123456)
+                        </p>
+                    </div>
+
+                    {/* Organiser Player ID Section */}
+                    <div className="space-y-2">
+                        <Label htmlFor="organizer_popid">Organiser Player ID</Label>
+                        <Input
+                            id="organizer_popid"
+                            placeholder="e.g. 1234567"
+                            value={organizerPopid}
+                            onChange={(e) => setOrganizerPopid(e.target.value)}
+                            disabled={!isAdmin}
+                            className={!isAdmin ? "bg-muted cursor-not-allowed" : ""}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            {isAdmin ? "Set the Player ID of the tournament organiser." : "The Player ID of the tournament organiser."}
                         </p>
                     </div>
 

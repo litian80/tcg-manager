@@ -96,12 +96,18 @@ export async function createTournament(formData: FormData) {
     // Fetch Profile for POP ID
     const { data: profile } = await supabase
         .from('profiles')
-        .select('pokemon_player_id')
+        .select('pokemon_player_id, role')
         .eq('id', user.id)
         .single();
 
+    // Determine organizer POP ID:
+    // - Admins can set a custom organizer_popid via form
+    // - Organizers always use their own POP ID
+    const formPopId = formData.get("organizer_popid") as string;
+    const isAdmin = profile?.role === 'admin';
+    const popId = isAdmin && formPopId ? formPopId : (profile?.pokemon_player_id || null);
+
     // Mandatory field check
-    const popId = profile?.pokemon_player_id;
     if (!popId) {
         // Organizer POP ID is mandatory in profile for attribution.
     }

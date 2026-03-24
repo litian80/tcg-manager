@@ -64,8 +64,9 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
         return { error: "Unauthorized" };
     }
 
-    // 2. Fetch Tournament and current profile
-    const { data: tournament, error: tError } = await supabase
+    // 2. Fetch Tournament using admin client to bypass RLS
+    const adminSupabase = await createAdminClient();
+    const { data: tournament, error: tError } = await adminSupabase
         .from('tournaments')
         .select('organizer_popid')
         .eq('id', tournamentId)
@@ -251,9 +252,12 @@ export async function updateRegistrationStatus(tournamentId: string, playerId: s
         return { error: "Unauthorized" };
     }
 
-    const { data: tournament, error: tError } = await supabase
+    // Use admin client for tournament lookup to bypass RLS
+    const adminSupabase = await createAdminClient();
+
+    const { data: tournament, error: tError } = await adminSupabase
         .from('tournaments')
-        .select('organizer_id, organizer_popid')
+        .select('organizer_popid')
         .eq('id', tournamentId)
         .single();
 
@@ -261,9 +265,9 @@ export async function updateRegistrationStatus(tournamentId: string, playerId: s
         return { error: "Tournament not found" };
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
+    const { data: profile } = await adminSupabase.from('profiles').select('role, pokemon_player_id').eq('id', user.id).single();
 
-    const isOrganizer = tournament.organizer_id === user.id || tournament.organizer_popid === profile?.pokemon_player_id;
+    const isOrganizer = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
     const isAdmin = profile?.role === 'admin';
     const isJudge = profile?.role === 'judge'; // If judges can check in, allow them
 
@@ -271,7 +275,8 @@ export async function updateRegistrationStatus(tournamentId: string, playerId: s
         return { error: "Unauthorized" };
     }
 
-    const { error } = await supabase
+    // Use admin client for update since user is already manually authorized above
+    const { error } = await adminSupabase
         .from('tournament_players')
         .update({ registration_status: status })
         .eq('tournament_id', tournamentId)
