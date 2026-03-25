@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Info } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { getPlayerDeckList } from "@/actions/judge";
 import { parseDeckList } from "@/utils/deck-validator";
+import { CategorySection, PreviewCard } from "@/components/tournament/DeckSubmissionModal";
 
 interface DeckDisplayProps {
     tournamentId: string;
@@ -86,32 +87,37 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                 )}
             </div>
 
-            <Tabs defaultValue="structured" className="w-full">
+            <Tabs defaultValue="structured" className="w-full h-full flex flex-col">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="structured">Structured</TabsTrigger>
                     <TabsTrigger value="raw">Raw Text</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="structured" className="mt-4 space-y-4">
-                    <div className="space-y-4 text-sm">
-                        {(['Pokemon', 'Trainer', 'Energy'] as const).map(category => (
-                            parsed[category].length > 0 && (
-                                <div key={category} className="space-y-1">
-                                    <h5 className="font-bold border-b pb-1 text-xs uppercase tracking-wider text-muted-foreground">{category} ({parsed[category].length})</h5>
-                                    {parsed[category].map((card, i) => (
-                                        <div key={i} className="flex justify-between py-1 border-b border-muted last:border-0 hover:bg-muted/30 px-1 rounded transition-colors">
-                                            <span className="font-medium mr-2">{card.qty}x {card.name}</span>
-                                            {category === 'Pokemon' && (
-                                                <span className="text-muted-foreground text-xs font-mono">{card.set} {card.number}</span>
-                                            )}
+                <TabsContent value="structured" className="mt-4 flex-1">
+                    <div className="h-[55vh] min-h-[400px]">
+                        {/* Parsed List */}
+                        <PreviewCard className="border-none shadow-none bg-muted/30 overflow-hidden h-full">
+                            <ScrollArea className="h-full p-4">
+                                {parsed ? (
+                                    <div className="space-y-6 pb-6">
+                                        <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                                            <span className="font-semibold">Total Cards</span>
+                                            <Badge variant="default" className="text-sm px-3 shadow-sm">
+                                                {parsed.TotalCards} / 60
+                                            </Badge>
                                         </div>
-                                    ))}
-                                </div>
-                            )
-                        ))}
-                        <div className="pt-2 text-right font-bold text-sm">
-                            Total Cards: {parsed.TotalCards}
-                        </div>
+                                        <CategorySection title="Pokémon" cards={parsed.Pokemon || []} color="border-l-[4px] border-l-green-500" />
+                                        <CategorySection title="Trainer" cards={parsed.Trainer || []} color="border-l-[4px] border-l-blue-500" />
+                                        <CategorySection title="Energy" cards={parsed.Energy || []} color="border-l-[4px] border-l-amber-500" />
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">
+                                        <Info className="h-8 w-8" />
+                                        <p>No parsed results.</p>
+                                    </div>
+                                )}
+                            </ScrollArea>
+                        </PreviewCard>
                     </div>
                 </TabsContent>
 
