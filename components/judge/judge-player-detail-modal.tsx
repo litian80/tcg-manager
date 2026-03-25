@@ -259,7 +259,7 @@ export function JudgePlayerDetailModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 gap-0">
+            <DialogContent className="max-w-md max-h-[90vh] max-sm:max-w-none max-sm:max-h-none max-sm:h-[100dvh] max-sm:w-[100vw] max-sm:rounded-none flex flex-col p-0 gap-0">
                 {/* Header */}
                 <div className="p-6 pb-4 border-b bg-muted/20">
                     <DialogHeader>
