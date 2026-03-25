@@ -80,6 +80,36 @@ export async function requireOrganizerOrAdmin() {
     return handleAuthError(error)
   }
 }
+/**
+ * Require judge assignment or admin role for route access.
+ * Checks the tournament_judges table for any assignments (assignment-based, not role-based).
+ * Used for the /judge dashboard and judge-specific pages.
+ */
+export async function requireJudgeOrAdmin() {
+  try {
+    const { user, profile } = await getAuthenticatedUser()
+
+    // Admins always have access
+    if (profile.role === 'admin') {
+      return { user, profile }
+    }
+
+    // Check for any judge assignments in tournament_judges
+    const supabase = await createClient()
+    const { count } = await supabase
+      .from('tournament_judges')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    if (!count || count === 0) {
+      redirect('/?error=unauthorized')
+    }
+
+    return { user, profile }
+  } catch (error) {
+    return handleAuthError(error)
+  }
+}
 
 /**
  * Authorize tournament management with three-tier access control:

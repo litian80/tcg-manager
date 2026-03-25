@@ -8,9 +8,10 @@ import { Breadcrumbs } from './breadcrumbs'
 
 interface SecondaryNavProps {
   role: Role
+  hasJudgeAssignments?: boolean
 }
 
-export function SecondaryNav({ role }: SecondaryNavProps) {
+export function SecondaryNav({ role, hasJudgeAssignments = false }: SecondaryNavProps) {
   const pathname = usePathname()
 
   const links: { href: string; label: string }[] = []
@@ -27,6 +28,11 @@ export function SecondaryNav({ role }: SecondaryNavProps) {
     links.push({
       href: '/admin/upload',
       label: 'Upload TOM'
+    })
+  } else if (hasJudgeAssignments) {
+    links.push({
+      href: '/judge',
+      label: 'My Events'
     })
   }
 

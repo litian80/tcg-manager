@@ -269,7 +269,14 @@ export async function updateRegistrationStatus(tournamentId: string, playerId: s
 
     const isOrganizer = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
     const isAdmin = profile?.role === 'admin';
-    const isJudge = profile?.role === 'judge'; // If judges can check in, allow them
+
+    // Check if user is an assigned judge for this tournament (assignment-based)
+    const { count: judgeCount } = await adminSupabase
+        .from('tournament_judges')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', user.id);
+    const isJudge = (judgeCount ?? 0) > 0;
 
     if (!isOrganizer && !isAdmin && !isJudge) {
         return { error: "Unauthorized" };

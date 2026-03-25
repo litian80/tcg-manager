@@ -102,6 +102,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     }
     }
 
+    // Check if user is an assigned judge for this tournament (assignment-based, not role-based)
+    let isAssignedJudge = false;
+    if (user) {
+        const { count } = await supabase
+            .from('tournament_judges')
+            .select('*', { count: 'exact', head: true })
+            .eq('tournament_id', id)
+            .eq('user_id', user.id);
+        isAssignedJudge = (count ?? 0) > 0;
+    }
+
     const [matchesPromise, penaltiesPromise] = await Promise.all([
         supabase
             .from("matches")
@@ -121,7 +132,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 p2:players!player2_tom_id(first_name, last_name)
             `)
             .eq("tournament_id", id),
-        (userRole === 'judge' || canManageStaff) ? 
+        (isAssignedJudge || canManageStaff) ? 
             supabase
                 .from('player_penalties')
                 .select('player_id')

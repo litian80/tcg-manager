@@ -33,6 +33,7 @@ export default async function RootLayout({
   } = await supabase.auth.getUser()
 
   let role: Role = 'user'
+  let hasJudgeAssignments = false
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -42,6 +43,13 @@ export default async function RootLayout({
     if (profile?.role) {
       role = profile.role as Role
     }
+
+    // Check for judge assignments (any role can be assigned as judge)
+    const { count } = await supabase
+      .from('tournament_judges')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    hasJudgeAssignments = (count ?? 0) > 0
   }
 
   return (
@@ -50,7 +58,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header initialUser={user} />
-        <SecondaryNav role={role} />
+        <SecondaryNav role={role} hasJudgeAssignments={hasJudgeAssignments} />
         <main>
           {children}
         </main>

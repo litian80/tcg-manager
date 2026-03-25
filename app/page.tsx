@@ -4,7 +4,7 @@ import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, AlertCircle } from "lucide-react";
+import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, AlertCircle, Gavel } from "lucide-react";
 import { Tournament } from "@/types";
 
 function TournamentGrid({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, children }: { tournaments: Tournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, children?: React.ReactNode }) {
@@ -83,14 +83,77 @@ export default async function Home() {
           </div>
         </header>
 
-        {userRole === 'organizer' && <OrganizerView />}
-        {userRole === 'judge' && <JudgeView />}
-        {userRole === 'admin' && <AdminView />}
+        {/* Admin gets exclusive system view */}
+        {userRole === 'admin' ? (
+          <AdminView />
+        ) : (
+          <>
+            {/* Staff banners — shown contextually based on actual data */}
+            {userRole === 'organizer' && <OrganizerStaffBanner />}
+            {userRole !== 'admin' && <JudgeStaffBanner />}
 
-        <PlayerOrUnauthView isAuth={!!userRole} />
+            {/* All non-admin users see the public tournament hub */}
+            <PlayerOrUnauthView isAuth={!!user} />
+          </>
+        )}
 
       </div>
     </main>
+  );
+}
+
+async function JudgeStaffBanner() {
+  const res = await getJudgeAssignedTournaments();
+  const tournaments: Tournament[] = ('success' in res ? res.success : undefined) ?? [];
+
+  if (tournaments.length === 0) return null;
+
+  const todayDateOnly = new Date().toISOString().split('T')[0];
+  const upcomingCount = tournaments.filter(t => t.date >= todayDateOnly).length;
+
+  return (
+    <Link href="/judge" className="block">
+      <Card className="border-primary/30 bg-primary/5 hover:border-primary transition-colors cursor-pointer group">
+        <CardContent className="py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Gavel className="h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">
+              You have <span className="font-bold text-primary">{upcomingCount} upcoming</span> judge assignment{upcomingCount !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-primary font-medium">
+            View Judge Dashboard
+            <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+async function OrganizerStaffBanner() {
+  const res = await getOrganizerTournaments();
+  const tournaments: Tournament[] = ('success' in res ? res.success : undefined) ?? [];
+
+  if (tournaments.length === 0) return null;
+
+  return (
+    <Link href="/organizer/tournaments" className="block">
+      <Card className="border-primary/30 bg-primary/5 hover:border-primary transition-colors cursor-pointer group">
+        <CardContent className="py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">
+              You have <span className="font-bold text-primary">{tournaments.length}</span> tournament{tournaments.length !== 1 ? 's' : ''} to manage
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-primary font-medium">
+            Manage Tournaments
+            <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 
@@ -138,48 +201,6 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
           emptyIcon={Trophy} 
         />
       </section>
-    </div>
-  );
-}
-
-async function OrganizerView() {
-  const res = await getOrganizerTournaments();
-  const tournaments = 'success' in res ? res.success : [];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <ShieldAlert className="h-6 w-6 text-primary" /> My Tournaments
-        </h2>
-      </div>
-      <TournamentGrid 
-        tournaments={tournaments as any[]} 
-        emptyTitle="No tournaments yet" 
-        emptyDesc="Create your first tournament to get started." 
-        emptyIcon={Trophy} 
-      />
-    </div>
-  );
-}
-
-async function JudgeView() {
-  const res = await getJudgeAssignedTournaments();
-  const tournaments = 'success' in res ? res.success : [];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <AlertCircle className="h-6 w-6 text-primary" /> My Assigned Events
-        </h2>
-      </div>
-      <TournamentGrid 
-        tournaments={tournaments as any[]} 
-        emptyTitle="No assigned events" 
-        emptyDesc="You have not been assigned to judge any upcoming tournaments." 
-        emptyIcon={Calendar} 
-      />
     </div>
   );
 }

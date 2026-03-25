@@ -1,6 +1,6 @@
 # TCG Manager - Project Backlog
 
-> Last updated: March 25, 2026
+> Last updated: March 26, 2026
 
 ---
 
@@ -10,21 +10,20 @@ Work top-down. Items within each tier are ordered by priority.
 
 ### Tier 1 — 🟡 Quick Wins & Foundation (High Priority)
 
-- [ ] **[UX-001] Role-aware homepage** (L)
-  - Player: Upcoming + past tournaments. Organiser: Their tournaments. Judge: Assigned events. Unauth: Public tournaments + sign-in prompt.
+(All Tier 1 tasks complete)
+
 
 ### Tier 2 — 🟡 Core UX Improvements
 
-- [ ] **[UX-010] Registration capacity & waitlist visibility** (M)
-  - Show "12 / 32 Masters spots filled" and waitlist position to players.
-
-- [ ] **[UX-002] Judge event discovery** (M, depends on UX-001)
-  - "My Assigned Events" section or dedicated `/judge` dashboard.
+(All Tier 2 tasks complete)
 
 ### Tier 3 — 🔵 Large System Features
 
 - [ ] **[UX-006] Organiser dashboard progressive disclosure** (L)
   - Tabbed/phased layout: Pre-Tournament, During, Post-Tournament.
+
+- [ ] **[UX-Q5] Admin panel URL consolidation** (S)
+  - Move `/organizer/admin/roles` → `/admin/roles`. Consolidate all admin pages under `/admin/*`.
 
 ### Tier 4 — 🟢 Polish & Extras
 
@@ -36,25 +35,15 @@ Work top-down. Items within each tier are ordered by priority.
 
 ### Tier 5 — ⚪ Future Enhancements (Not Yet Scoped)
 
-- [ ] **Email Notification System** (L) → [Spec 003](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/003-email-notifications.md)
-- [ ] **Advanced TDF Configuration** (M) → [Spec 004](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/004-advanced-tdf-config.md)
-- [ ] **Staff Scoping**: Refine judge permissions for assigned tournaments only. (M)
-- [ ] **Roster Virtualisation**: Virtualization for large player lists. (M)
 - [ ] **Manual Result Entry**: Judge interface for match results. (M)
+- [ ] **Roster Virtualisation**: Virtualization for large player lists. (M)
+- [ ] **Advanced TDF Configuration** (M) → [Spec 004](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/004-advanced-tdf-config.md)
+- [ ] **Email Notification System** (L) → [Spec 003](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/003-email-notifications.md)
 
 ### Deferred — ⏸️ Conditional
 
 - [ ] **[MW-03] Add KV/Redis role cache with TTL** (M)
   - Only needed if MW-02 causes measurable latency. Requires Vercel KV or Upstash Redis. Monitor before implementing.
-
----
-
-## 💬 Needs Further Discussion
-
-### [UX-Q5] Admin Panel URL Consolidation
-- **Context**: Admin pages split across `/admin/*` and `/organizer/admin/roles`. Role management page at `/organizer/admin/roles` is under organiser namespace but is admin-only.
-- **Proposed Plan**: Move `/organizer/admin/roles` → `/admin/roles`. Consolidate all admin pages under `/admin/*`.
-- **Status**: Awaiting approval of proposed structure.
 
 ---
 
@@ -73,7 +62,7 @@ Work top-down. Items within each tier are ordered by priority.
 ## ✅ Completed & Verified
 
 <details>
-<summary>Expand completed items (28 items)</summary>
+<summary>Expand completed items (32 items)</summary>
 
 ### Infrastructure & Stability
 - [x] **[MW-01]** Remove in-memory `profileCache` from middleware ✅ (March 25, 2026)
@@ -85,8 +74,11 @@ Work top-down. Items within each tier are ordered by priority.
 - [x] **[TYPE-01]** Create `@/types` directory and barrel file ✅ (March 25, 2026)
 - [x] **[TYPE-02]** Move deck types to `@/types/deck.ts` ✅ (March 25, 2026)
 - [x] **[TYPE-03]** Audit and extract remaining inline types ✅ (March 25, 2026)
+- [x] **Staff Scoping** — Judge access refactored to assignment-based model ✅ (March 26, 2026)
 
 ### UX Fixes
+- [x] **[UX-001]** Role-aware homepage ✅ (March 26, 2026)
+- [x] **[UX-002]** Judge event discovery ✅ (March 26, 2026)
 - [x] **[UX-004]** Navigation architecture ✅ (March 25, 2026)
 - [x] **[UX-008]** Deck list submission improvements ✅ (March 25, 2026)
 - [x] **[UX-014]** Admin tournament table responsive view ✅ (March 25, 2026)
@@ -99,6 +91,7 @@ Work top-down. Items within each tier are ordered by priority.
 - [x] **[UX-009]** Profile locked fields — add "Request Change" ✅ (March 25, 2026)
 - [x] **[UX-015]** Visual component consistency pass ✅ (March 25, 2026)
 - [x] **[UX-007]** Confirmations & guard rails ✅ (March 25, 2026)
+- [x] **[UX-019]** Global 404 "Stay In Your Lane" page ✅ (March 25, 2026)
 
 ### Testing
 - [x] **[TC-001]** Deck Submission Flow — PASSED (March 18, 2026)
@@ -110,6 +103,7 @@ Work top-down. Items within each tier are ordered by priority.
 - [x] **[SPEC-001]** Role Management UI
 - [x] **[BUG-002]** Deck Validation Logic Fix
 - [x] **[BUG-001]** Unauthorized Access to Tournament Creation
+- [x] **[BUG-003]** Deck parser support for alternative list formats ✅ (March 25, 2026)
 
 </details>
 
@@ -117,3 +111,4 @@ Work top-down. Items within each tier are ordered by priority.
 
 - **[UX-Q3]** Post-Tournament CP/Results Summary — CP info available on official Pokémon site.
 - **[UX-Q4]** Rename "Create TOM File" to "Create Tournament" — Kept as-is; correctly reflects TDF handover stage.
+- **[UX-010]** Registration capacity display — Removed; waitlist position still shown. Capacity box added unnecessary clutter.
