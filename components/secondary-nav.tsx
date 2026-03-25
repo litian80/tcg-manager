@@ -63,7 +63,7 @@ export function SecondaryNav({ role, hasJudgeAssignments = false }: SecondaryNav
         </div>
         
         {links.length > 0 && (
-          <nav className="flex items-center gap-6 text-sm font-medium">
+          <nav className="hidden sm:flex items-center gap-6 text-sm font-medium">
             {links.map((link) => {
               // Mark active if current path starts with it (except for root if there was one, but these are all paths like /admin/*)
               // We need to be careful with /admin/tournaments vs /admin/users vs /admin/upload
