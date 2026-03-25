@@ -42,6 +42,14 @@ const CATEGORIES = [
 
 const SEVERITIES = ["Minor", "Major", "Severe"];
 
+const getValidSeverities = (cat: string) => {
+    if (!cat) return [];
+    if (cat === "Cheating") return ["Severe"];
+    if (cat === "Pace of Play") return ["Minor", "Severe"];
+    return ["Minor", "Major", "Severe"];
+};
+
+
 const PENALTIES = [
     "Caution",
     "Warning",
@@ -69,6 +77,13 @@ export function PenaltyModal({
     // Smart Pre-population Logic
     useEffect(() => {
         if (!category) return;
+
+        const validSeverities = getValidSeverities(category);
+        if (severity && !validSeverities.includes(severity)) {
+            setSeverity("");
+            setPenalty("");
+            return;
+        }
 
         let suggestedPenalty = "";
 
@@ -177,12 +192,12 @@ export function PenaltyModal({
                         <Label htmlFor="severity" className="text-right">
                             Severity
                         </Label>
-                        <Select value={severity} onValueChange={setSeverity}>
+                        <Select value={severity} onValueChange={setSeverity} disabled={!category}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Select Severity" />
                             </SelectTrigger>
                             <SelectContent>
-                                {SEVERITIES.map((s) => (
+                                {getValidSeverities(category).map((s) => (
                                     <SelectItem key={s} value={s}>
                                         {s}
                                     </SelectItem>
@@ -195,7 +210,7 @@ export function PenaltyModal({
                         <Label htmlFor="penalty" className="text-right">
                             Penalty
                         </Label>
-                        <Select value={penalty} onValueChange={setPenalty}>
+                        <Select value={penalty} onValueChange={setPenalty} disabled={!category}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Select Penalty" />
                             </SelectTrigger>

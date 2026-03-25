@@ -21,7 +21,7 @@ import { toast } from 'sonner'
 import { EditTournamentDialog } from '@/components/admin/edit-tournament-dialog'
 import { Database } from '@/utils/supabase/database.types'
 
-type Tournament = Database['public']['Tables']['tournaments']['Row']
+import { Tournament } from '@/types'
 
 interface DataTableRowActionsProps<TData> {
     row: Row<TData>

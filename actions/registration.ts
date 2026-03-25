@@ -61,6 +61,44 @@ export async function checkDivisionCapacity(
   return { available, currentCount, capacity };
 }
 
+export async function getWaitlistPosition(
+  tournamentId: string,
+  division: Division,
+  playerId: string
+): Promise<number | null> {
+  const supabase = await createClient();
+
+  // Get the player's registration record
+  const { data: playerReg, error } = await supabase
+    .from("tournament_players")
+    .select("created_at")
+    .eq("tournament_id", tournamentId)
+    .eq("player_id", playerId)
+    .eq("registration_status", "waitlisted")
+    .maybeSingle();
+
+  if (error || !playerReg || !playerReg.created_at) {
+    return null;
+  }
+
+  // Count how many waitlisted players in the same division registered explicitly before this player
+  const { count, error: countError } = await supabase
+    .from("tournament_players")
+    .select("*", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+    .eq("division", division)
+    .eq("registration_status", "waitlisted")
+    .lt("created_at", playerReg.created_at);
+
+  if (countError) {
+    console.error("Error fetching waitlist position:", countError);
+    return null;
+  }
+
+  // Position is count of people before them + 1
+  return (count || 0) + 1;
+}
+
 export async function registerPlayer(tournamentId: string) {
   try {
     const supabase = await createClient();
@@ -188,6 +226,13 @@ export async function registerPlayer(tournamentId: string) {
     }
 
     revalidatePath(`/tournaments/${tournamentId}`);
+    
+    // If they got waitlisted, calculate what position they are
+    if (status === "waitlisted") {
+      const waitlistPosition = await getWaitlistPosition(tournamentId, division, profile.pokemon_player_id);
+      return { success: true, status, waitlistPosition };
+    }
+    
     return { success: true, status };
 
   } catch (error: any) {

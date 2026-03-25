@@ -21,6 +21,7 @@ import {
 interface RegisterButtonProps {
     tournamentId: string;
     status?: string | null;
+    waitlistPosition?: number | null;
     registrationOpen: boolean;
     opensAt?: string | null;
     closesAt?: string | null;
@@ -29,6 +30,7 @@ interface RegisterButtonProps {
 export function RegisterButton({ 
     tournamentId, 
     status, 
+    waitlistPosition,
     registrationOpen, 
     opensAt, 
     closesAt 
@@ -112,8 +114,11 @@ export function RegisterButton({
     if (status === 'waitlisted') {
         return (
             <div className="flex flex-col gap-2 w-full">
-                <Button disabled variant="secondary" className="w-full opacity-100 font-semibold border-secondary">
-                    On Waitlist
+                <Button disabled variant="secondary" className="w-full opacity-100 font-semibold border-secondary flex flex-col items-center h-auto py-2">
+                    <span>On Waitlist</span>
+                    {waitlistPosition !== undefined && waitlistPosition !== null && (
+                        <span className="text-xs font-normal opacity-80">Position: #{waitlistPosition}</span>
+                    )}
                 </Button>
                 <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
                     <AlertDialogTrigger asChild>

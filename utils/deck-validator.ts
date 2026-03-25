@@ -1,26 +1,4 @@
-export interface ParsedCard {
-    qty: number;
-    name: string;
-    set: string;
-    number: string;
-    raw: string;
-    isBasicEnergy?: boolean;
-    category?: 'pokemon' | 'trainer' | 'energy';
-}
-
-export interface ParsedDeckCategories {
-    Pokemon?: ParsedCard[];
-    Trainer?: ParsedCard[];
-    Energy?: ParsedCard[];
-}
-
-export interface DeckParseResult {
-    Pokemon: ParsedCard[];
-    Trainer: ParsedCard[];
-    Energy: ParsedCard[];
-    TotalCards: number;
-    Errors: { line: string; message: string }[];
-}
+import type { ParsedCard, DeckParseResult } from "@/types/deck";
 
 // Energy type code to full name mapping
 const ENERGY_TYPE_MAP: Record<string, string> = {
@@ -73,9 +51,9 @@ export function parseDeckList(deckText: string): DeckParseResult {
     
     // More flexible category detection
     const categoryPatterns = {
-        pokemon: /^(?:Pokémon|PokÃ©mon|Pokemon):?\s*(\d+)?$/i,
-        trainer: /^(?:Trainer|Trainer Cards|Trainers):?\s*(\d+)?$/i,
-        energy: /^(?:Energy|Energies):?\s*(\d+)?$/i
+        pokemon: /^(?:Pokémon|PokÃ©mon|Pokemon):?\s*(?:\(?\d+\)?)?$/i,
+        trainer: /^(?:Trainer|Trainer Cards|Trainers):?\s*(?:\(?\d+\)?)?$/i,
+        energy: /^(?:Energy|Energies):?\s*(?:\(?\d+\)?)?$/i
     };
 
     let currentCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'> = "Pokemon";
@@ -165,7 +143,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
             const cardNumber = standardMatch[4].trim();
             
             // Auto-detect category for Energy if name ends with 'Energy'
-            let detectedCategory = currentCategory.toLowerCase() as ParsedCard['category'];
+            let detectedCategory = currentCategory.toLowerCase() as 'pokemon' | 'trainer' | 'energy';
             let resultCategory = currentCategory;
             
             if (lowName.endsWith('energy')) {
@@ -188,14 +166,22 @@ export function parseDeckList(deckText: string): DeckParseResult {
         }
 
         // Try parenthesized format: "3 Munkidori (TWM-95)"
-        // Cards with set/number in parens are always Pokémon
         const parenPattern = /^(\d+)[x\s]+(.+?)\s+\(([A-Z0-9]+)-(\d+)\)\s*$/i;
         const parenMatch = line.match(parenPattern);
         if (parenMatch) {
             const qty = parseInt(parenMatch[1], 10);
             const name = normalizeCardName(parenMatch[2]);
+            const lowName = name.toLowerCase();
             const setCode = parenMatch[3].trim().toUpperCase();
             const cardNumber = parenMatch[4].trim();
+
+            // Respect currentCategory; auto-detect energy by name
+            let detectedCategory = currentCategory.toLowerCase() as 'pokemon' | 'trainer' | 'energy';
+            let resultCategory = currentCategory;
+            if (lowName.endsWith('energy')) {
+                detectedCategory = 'energy';
+                resultCategory = 'Energy';
+            }
 
             const cardObj: ParsedCard = {
                 qty,
@@ -203,16 +189,16 @@ export function parseDeckList(deckText: string): DeckParseResult {
                 set: setCode,
                 number: cardNumber,
                 raw: line,
-                category: 'pokemon'
+                category: detectedCategory
             };
 
-            result["Pokemon"].push(cardObj);
+            result[resultCategory].push(cardObj);
             result.TotalCards += qty;
             continue;
         }
 
         // Name-only fallback: "4 Arven" or "7 Darkness Energy"
-        // Auto-detect category: Energy if name contains 'Energy', otherwise Trainer
+        // Auto-detect energy by name; otherwise respect currentCategory
         const nameOnlyPattern = /^(\d+)[x\s]+(.+?)\s*$/i;
         const nameOnlyMatch = line.match(nameOnlyPattern);
         if (nameOnlyMatch) {
@@ -224,15 +210,15 @@ export function parseDeckList(deckText: string): DeckParseResult {
             const isEnergy = lowName.endsWith('energy');
             const isBasicEnergy = isEnergy && !lowName.includes("special") && !lowName.includes("double");
 
-            // Auto-detect category for headerless lists
+            // Auto-detect energy by name; otherwise respect current section header
             let detectedCategory: 'pokemon' | 'trainer' | 'energy';
             let resultCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'>;
             if (isEnergy) {
                 detectedCategory = 'energy';
                 resultCategory = 'Energy';
             } else {
-                detectedCategory = 'trainer';
-                resultCategory = 'Trainer';
+                detectedCategory = currentCategory.toLowerCase() as 'pokemon' | 'trainer' | 'energy';
+                resultCategory = currentCategory;
             }
 
             const cardObj: ParsedCard = {

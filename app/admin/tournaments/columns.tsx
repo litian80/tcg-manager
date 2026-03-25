@@ -10,7 +10,7 @@ import { EditTournamentDialog } from '@/components/admin/edit-tournament-dialog'
 import { formatDate, getTournamentStatusConfig } from '@/lib/utils'
 import { toast } from 'sonner'
 
-export type Tournament = Database['public']['Tables']['tournaments']['Row']
+import { Tournament } from '@/types'
 
 export const columns: ColumnDef<Tournament>[] = [
     {

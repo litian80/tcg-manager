@@ -1,6 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { FileDown, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -55,14 +66,31 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
                 </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-                <Button
-                    onClick={handleExport}
-                    disabled={!tournament.tom_uid || isExporting}
-                    className="w-full sm:w-auto"
-                >
-                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-                    Download .tdf File
-                </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            disabled={!tournament.tom_uid || isExporting}
+                            className="w-full sm:w-auto"
+                        >
+                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                            Download .tdf File
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm TDF Export</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to export the TDF file? Ensure all players are registered and the Sanction ID is set before exporting. This file is used to import your tournament into TOM.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleExport}>
+                                Export
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </CardFooter>
         </Card>
     );

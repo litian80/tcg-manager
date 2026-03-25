@@ -10,50 +10,29 @@ Work top-down. Items within each tier are ordered by priority.
 
 ### Tier 1 — 🟡 Quick Wins & Foundation (High Priority)
 
-- [ ] **[TYPE-01] Create `@/types` directory and barrel file** (XS)
-  - Create `types/index.ts` barrel export file.
-
-- [ ] **[TYPE-02] Move deck types to `@/types/deck.ts`** (S)
-  - Move `ParsedCard`, `ParsedDeckCategories`, `DeckParseResult` from `utils/deck-validator.ts` → `types/deck.ts`. Update imports.
-
-- [ ] **[UX-014] Admin tournament table responsive view** (M)
-  - Add card-based mobile layout — currently entire table is `hidden` on mobile.
-
-- [ ] **[UX-007] Confirmations & guard rails** (M)
-  - TDF export preview/confirmation, auto-sync status indicator, penalty form category constraints, AlertDialog for delete penalty.
+- [ ] **[UX-001] Role-aware homepage** (L)
+  - Player: Upcoming + past tournaments. Organiser: Their tournaments. Judge: Assigned events. Unauth: Public tournaments + sign-in prompt.
 
 ### Tier 2 — 🟡 Core UX Improvements
-
-- [ ] **[UX-004] Navigation architecture** (M)
-  - Role-aware secondary nav or sidebar. Persistent "My Tournaments" link for Organisers/Judges. Breadcrumbs.
-
-- [ ] **[UX-008] Deck list submission improvements** (M)
-  - 24h/6h deadline warning thresholds + formatted deck preview before submission.
 
 - [ ] **[UX-010] Registration capacity & waitlist visibility** (M)
   - Show "12 / 32 Masters spots filled" and waitlist position to players.
 
-- [ ] **[TYPE-03] Audit and extract remaining inline types** (S)
-  - Scan for shared interfaces/types defined inline in components or actions. Move to `@/types/`.
-
-### Tier 3 — 🔵 Large System Features
-
-- [ ] **[UX-001] Role-aware homepage** (L)
-  - Player: Upcoming + past tournaments. Organiser: Their tournaments. Judge: Assigned events. Unauth: Public tournaments + sign-in prompt.
-
 - [ ] **[UX-002] Judge event discovery** (M, depends on UX-001)
   - "My Assigned Events" section or dedicated `/judge` dashboard.
+
+### Tier 3 — 🔵 Large System Features
 
 - [ ] **[UX-006] Organiser dashboard progressive disclosure** (L)
   - Tabbed/phased layout: Pre-Tournament, During, Post-Tournament.
 
 ### Tier 4 — 🟢 Polish & Extras
 
-- [ ] **[UX-012] Help system expansion** (M)
-  - Add player help and judge help. Make help discoverable from all roles.
-
 - [ ] **[UX-016] Dark mode polish** (M)
   - Add toggle UI + fix hardcoded light-mode colours.
+
+- [ ] **[UX-012] Help system expansion** (M)
+  - Add player help and judge help. Make help discoverable from all roles.
 
 ### Tier 5 — ⚪ Future Enhancements (Not Yet Scoped)
 
@@ -79,13 +58,13 @@ Work top-down. Items within each tier are ordered by priority.
 
 ---
 
-## 🧪 UAT Testing Phases (To Do)
+## 🧪 UAT Testing Phases
 
-### Phase 1: User Registration & Tournament Flow
+### Phase 1: User Registration & Tournament Flow ✅ PASSED (March 25, 2026)
 - **Scope**: End-to-end user journey from registration to tournament entry.
 - **Includes**: Profile validation, discovery, and deadline verification.
 
-### Phase 2: Deck Management & Validation
+### Phase 2: Deck Management & Validation ✅ PASSED (March 25, 2026)
 - **Scope**: Core functionality for submitting and validating tournament decks.
 - **Includes**: Deck list editing, parsing, and validation rules.
 
@@ -94,7 +73,7 @@ Work top-down. Items within each tier are ordered by priority.
 ## ✅ Completed & Verified
 
 <details>
-<summary>Expand completed items (18 items)</summary>
+<summary>Expand completed items (28 items)</summary>
 
 ### Infrastructure & Stability
 - [x] **[MW-01]** Remove in-memory `profileCache` from middleware ✅ (March 25, 2026)
@@ -103,8 +82,14 @@ Work top-down. Items within each tier are ordered by priority.
 - [x] **[ERR-02]** Create `app/error.tsx` ✅ (March 25, 2026)
 - [x] **[ERR-03]** Create `safeAction` server action wrapper ✅ (March 25, 2026)
 - [x] **[ERR-04]** Migrate existing server actions to `safeAction` ✅ (March 25, 2026)
+- [x] **[TYPE-01]** Create `@/types` directory and barrel file ✅ (March 25, 2026)
+- [x] **[TYPE-02]** Move deck types to `@/types/deck.ts` ✅ (March 25, 2026)
+- [x] **[TYPE-03]** Audit and extract remaining inline types ✅ (March 25, 2026)
 
 ### UX Fixes
+- [x] **[UX-004]** Navigation architecture ✅ (March 25, 2026)
+- [x] **[UX-008]** Deck list submission improvements ✅ (March 25, 2026)
+- [x] **[UX-014]** Admin tournament table responsive view ✅ (March 25, 2026)
 - [x] **[UX-017]** Tournament status label mapping ✅ (March 25, 2026)
 - [x] **[UX-005]** Fix mobile sticky header fragility ✅ (March 25, 2026)
 - [x] **[UX-018]** Easter Egg (Connect Four) performance ✅ (March 25, 2026)
@@ -113,6 +98,7 @@ Work top-down. Items within each tier are ordered by priority.
 - [x] **[UX-003]** Onboarding Birth Year Bug ✅ (March 25, 2026)
 - [x] **[UX-009]** Profile locked fields — add "Request Change" ✅ (March 25, 2026)
 - [x] **[UX-015]** Visual component consistency pass ✅ (March 25, 2026)
+- [x] **[UX-007]** Confirmations & guard rails ✅ (March 25, 2026)
 
 ### Testing
 - [x] **[TC-001]** Deck Submission Flow — PASSED (March 18, 2026)

@@ -4,60 +4,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
 
-interface TomPlayer {
-    userid?: number | string;
-    firstname?: string;
-    lastname?: string;
-    id?: number | string;
-    place?: number | string;
-}
-
-interface TomMatch {
-    outcome?: number | string;
-    player1?: { userid?: string | number };
-    player2?: { userid?: string | number };
-    player?: { userid?: string | number };
-    tablenumber?: string | number;
-}
-
-interface TomRound {
-    number?: string | number;
-    matches?: {
-        match?: TomMatch | TomMatch[];
-    };
-}
-
-interface TomPod {
-    category?: string | number;
-    type?: string;
-    rounds?: {
-        round?: TomRound | TomRound[];
-    };
-    player?: TomPlayer | TomPlayer[];
-}
-
-interface TomTournament {
-    standings?: {
-        pod?: TomPod | TomPod[];
-    };
-    data?: {
-        name?: string;
-        startdate?: string;
-        city?: string;
-        country?: string;
-        id?: string | number;
-        organizer?: {
-            popid?: string;
-            '@_popid'?: string;
-        };
-    };
-    players?: {
-        player?: TomPlayer | TomPlayer[];
-    };
-    pods?: {
-        pod?: TomPod | TomPod[];
-    };
-}
+import { TomPlayer, TomMatch, TomRound, TomPod, TomTournament } from '@/types';
 
 // Helper to handle single vs array in XML parser
 const asArray = <T>(item: T | T[] | undefined): T[] => {

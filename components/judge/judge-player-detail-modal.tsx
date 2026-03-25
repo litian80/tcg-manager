@@ -8,6 +8,16 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,6 +58,13 @@ const CATEGORIES = [
 
 const SEVERITIES = ["Minor", "Major", "Severe"];
 
+const getValidSeverities = (cat: string) => {
+    if (!cat) return [];
+    if (cat === "Cheating") return ["Severe"];
+    if (cat === "Pace of Play") return ["Minor", "Severe"];
+    return ["Minor", "Major", "Severe"];
+};
+
 const PENALTIES = [
     "Caution",
     "Warning",
@@ -78,6 +95,7 @@ export function JudgePlayerDetailModal({
     const [actionMode, setActionMode] = useState<"none" | "penalty" | "check" | "edit_penalty">("none");
     const [editingPenaltyId, setEditingPenaltyId] = useState<string | null>(null);
     const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+    const [penaltyToDelete, setPenaltyToDelete] = useState<string | null>(null);
 
     // Penalty Form State
     const [pCategory, setCategory] = useState("");
@@ -110,6 +128,13 @@ export function JudgePlayerDetailModal({
     useEffect(() => {
         // Disable smart defaults while editing to prevent overwriting the existing penalty
         if (actionMode === "edit_penalty" || !pCategory) return;
+
+        const validSeverities = getValidSeverities(pCategory);
+        if (pSeverity && !validSeverities.includes(pSeverity)) {
+            setSeverity("");
+            setPenalty("");
+            return;
+        }
 
         let suggested = "";
         if (pCategory === "Cheating") suggested = "Disqualification";
@@ -192,9 +217,16 @@ export function JudgePlayerDetailModal({
         setActiveTab("actions");
     };
 
-    const handleDeleteClick = async (penaltyId: string) => {
-        if (!confirm("Are you sure you want to delete this penalty?")) return;
-        setIsDeletingId(penaltyId);
+    const handleDeleteClick = (penaltyId: string) => {
+        setPenaltyToDelete(penaltyId);
+    };
+
+    const confirmDeletePenalty = async () => {
+        if (!penaltyToDelete) return;
+        setIsDeletingId(penaltyToDelete);
+        const penaltyId = penaltyToDelete;
+        setPenaltyToDelete(null);
+
         startTransition(async () => {
             const res = await deletePenalty(penaltyId, tournamentId);
             if (res.error) toast.error(res.error);
@@ -367,17 +399,17 @@ export function JudgePlayerDetailModal({
 
                                         <div className="grid gap-2">
                                             <Label>Severity</Label>
-                                            <Select value={pSeverity} onValueChange={setSeverity}>
+                                            <Select value={pSeverity} onValueChange={setSeverity} disabled={!pCategory}>
                                                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                                 <SelectContent>
-                                                    {SEVERITIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                    {getValidSeverities(pCategory).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </div>
 
                                         <div className="grid gap-2">
                                             <Label>Penalty</Label>
-                                            <Select value={pPenalty} onValueChange={setPenalty}>
+                                            <Select value={pPenalty} onValueChange={setPenalty} disabled={!pCategory}>
                                                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                                 <SelectContent>
                                                     {PENALTIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
@@ -482,6 +514,23 @@ export function JudgePlayerDetailModal({
                     </div>
                 </Tabs>
             </DialogContent>
+
+            <AlertDialog open={!!penaltyToDelete} onOpenChange={(open) => !open && setPenaltyToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Penalty</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this penalty? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeletePenalty} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     );
 }

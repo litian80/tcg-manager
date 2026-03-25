@@ -11,24 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface Tournament {
-    id: string;
-    tom_uid: string | null;
-    organizer_popid: string | null;
-    registration_open?: boolean;
-    capacity_juniors?: number;
-    capacity_seniors?: number;
-    capacity_masters?: number;
-    juniors_birth_year_max?: number | null;
-    seniors_birth_year_max?: number | null;
-    publish_roster?: boolean;
-    start_time?: string | null;
-    deck_submission_cutoff_hours?: number;
-    requires_deck_list?: boolean;
-    deck_list_submission_deadline?: string | null;
-    tournament_mode?: string;
-}
+import { ExtendedTournament as Tournament } from "@/types/tournament";
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;

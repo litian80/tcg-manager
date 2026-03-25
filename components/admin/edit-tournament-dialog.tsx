@@ -18,7 +18,7 @@ import { Pencil } from 'lucide-react'
 import { updateTournamentStatus } from '@/actions/admin/tournaments'
 import { Database } from '@/utils/supabase/database.types'
 
-type Tournament = Database['public']['Tables']['tournaments']['Row']
+import { Tournament } from '@/types'
 
 interface EditTournamentDialogProps {
     tournament: Tournament

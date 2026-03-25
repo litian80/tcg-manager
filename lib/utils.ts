@@ -1,6 +1,7 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { format } from "date-fns"
+import { TournamentStatusConfig } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -25,12 +26,6 @@ export function sanitizeSearchQuery(query: string): string {
   // Remove characters that act as PostgREST operators/delimiters
   // This prevents injection of additional filter clauses
   return query.replace(/[,.()"\\]/g, '')
-}
-
-export type TournamentStatusConfig = {
-  label: string
-  variant: 'default' | 'secondary' | 'destructive' | 'outline'
-  className: string
 }
 
 /**

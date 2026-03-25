@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UploadCloud, RefreshCw, StopCircle, FileText, AlertTriangle } from 'lucide-react';
+import { UploadCloud, RefreshCw, StopCircle, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -202,9 +202,13 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
                             </span>
                             <span className="text-sm font-medium text-green-700">Live Syncing</span>
                         </div>
-                        {isSyncing && (
+                        {isSyncing ? (
                             <Badge variant="outline" className="animate-pulse">Uploading...</Badge>
-                        )}
+                        ) : lastSynced ? (
+                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Synced
+                            </Badge>
+                        ) : null}
                     </div>
 
                     <div className="text-sm space-y-1">

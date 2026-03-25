@@ -19,7 +19,7 @@ import { TimeExtensionModal } from "@/components/judge/time-extension-modal";
 import { RegisterButton } from "@/components/registration/RegisterButton";
 import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
 import { toast } from "sonner";
-import type { ParsedCard } from "@/utils/deck-validator";
+import type { ParsedCard } from "@/types/deck";
 
 /** Track the rendered height of an element via ResizeObserver. */
 function useStickyHeight() {
@@ -40,49 +40,7 @@ function useStickyHeight() {
     return { ref, height };
 }
 
-export interface Player {
-    first_name: string;
-    last_name: string;
-}
-
-export interface Match {
-    id: string;
-    round_number: number;
-    table_number: number;
-    player1_tom_id: string;
-    player2_tom_id: string;
-    p1?: Player;
-    p2?: Player;
-    winner_tom_id?: string | null;
-    division?: string | null;
-    is_finished: boolean;
-    outcome?: number;
-    p1_display_record?: string;
-    p2_display_record?: string;
-    time_extension_minutes?: number;
-}
-
-export interface Tournament {
-    id: string;
-    name: string;
-    status: string;
-    total_rounds: number;
-    date: string;
-    registration_open?: boolean;
-    registration_opens_at?: string | null;
-    registration_closes_at?: string | null;
-    publish_roster?: boolean;
-    requires_deck_list?: boolean;
-    deck_list_submission_deadline?: string | null;
-}
-
-export interface RosterPlayer {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-    tom_player_id: string | null;
-    registration_status?: string;
-}
+import { Match, ExtendedTournament as Tournament, RosterPlayer, MatchPlayer as Player } from '@/types'
 
 interface TournamentViewProps {
     tournament: Tournament;
@@ -94,6 +52,7 @@ interface TournamentViewProps {
     rosterPlayers?: RosterPlayer[];
     myPlayerId?: string;
     myRegistrationStatus?: string | null;
+    myWaitlistPosition?: number | null;
     penaltyCounts?: Record<string, number>;
     deckList?: any;
 }
@@ -108,14 +67,16 @@ export default function TournamentView({
     rosterPlayers = [],
     myPlayerId,
     myRegistrationStatus,
+    myWaitlistPosition,
     penaltyCounts = {},
     deckList,
+
 }: TournamentViewProps) {
     const canEditMatch = hasPermission(userRole, 'match.edit_result');
     const [searchQuery, setSearchQuery] = useState("");
     const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
     const [deckListState, setDeckListState] = useState(deckList);
-    const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isClose: boolean; isPast: boolean } | null>(null);
+    const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isWarning: boolean; isCritical: boolean; isPast: boolean } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
 
     // Dynamic sticky offset measurement (UX-005)
@@ -207,7 +168,8 @@ export default function TournamentView({
                         hours: 0,
                         minutes: 0,
                         seconds: 0,
-                        isClose: false,
+                        isWarning: false,
+                        isCritical: false,
                         isPast: true
                     };
                 });
@@ -217,11 +179,13 @@ export default function TournamentView({
             const hours = Math.floor(diff / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            const isClose = hours < 1; // Less than 1 hour remaining
+            const totalHoursFloat = diff / (1000 * 60 * 60);
+            const isCritical = totalHoursFloat < 6; // Less than 6 hours remaining
+            const isWarning = totalHoursFloat >= 6 && totalHoursFloat <= 24; // Between 6 and 24 hours remaining
             
             setTimeLeft(prev => {
                 if (!prev || prev.hours !== hours || prev.minutes !== minutes || prev.seconds !== seconds || prev.isPast) {
-                    return { hours, minutes, seconds, isClose, isPast: false };
+                    return { hours, minutes, seconds, isWarning, isCritical, isPast: false };
                 }
                 return prev;
             });
@@ -334,9 +298,11 @@ export default function TournamentView({
                     {/* Registration Button (Visible if Registration is Enabled or User is Registered) */}
                     {(!hasMatches && (tournament.registration_open || myRegistrationStatus)) && (
                         <div className="pt-2">
+
                             <RegisterButton 
                                 tournamentId={tournament.id}
                                 status={myRegistrationStatus}
+                                waitlistPosition={myWaitlistPosition}
                                 registrationOpen={!!tournament.registration_open}
                                 opensAt={tournament.registration_opens_at}
                                 closesAt={tournament.registration_closes_at}
@@ -353,7 +319,8 @@ export default function TournamentView({
                                 variant={deckListState ? "outline" : "default"}
                                 className={cn(
                                     "w-full justify-start gap-2",
-                                    timeLeft?.isClose && !isDeadlinePassed && "border-amber-500 text-amber-700 hover:bg-amber-50"
+                                    !isDeadlinePassed && timeLeft?.isCritical && !deckListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
+                                    !isDeadlinePassed && timeLeft?.isWarning && !deckListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
                                 )}
                             >
                                 <ScrollText className="h-4 w-4" />
@@ -363,8 +330,11 @@ export default function TournamentView({
                                         Deadline Passed
                                     </span>
                                 )}
-                                {timeLeft?.isClose && !isDeadlinePassed && (
-                                    <span className="ml-auto flex items-center gap-1 text-xs text-amber-600">
+                                {!isDeadlinePassed && !deckListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
+                                    <span className={cn(
+                                        "ml-auto flex items-center gap-1 text-xs",
+                                        timeLeft.isCritical ? "text-destructive" : "text-amber-600"
+                                    )}>
                                         <Clock className="h-3 w-3" />
                                         {timeLeft.hours}h {timeLeft.minutes}m
                                     </span>
@@ -383,9 +353,9 @@ export default function TournamentView({
                                         {timeLeft && !timeLeft.isPast && (
                                             <p className={cn(
                                                 "font-medium",
-                                                timeLeft.isClose ? "text-amber-600" : "text-green-600"
+                                                timeLeft.isCritical ? "text-destructive" : timeLeft.isWarning ? "text-amber-600" : "text-green-600"
                                             )}>
-                                                {timeLeft.isClose ? (
+                                                {(timeLeft.isCritical || timeLeft.isWarning) ? (
                                                     <span className="flex items-center gap-1">
                                                         <AlertTriangle className="h-3 w-3" />
                                                         {timeLeft.hours === 0 

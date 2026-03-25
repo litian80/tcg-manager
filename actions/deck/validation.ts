@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { parseDeckList, DeckParseResult, normalizeCardName } from "@/utils/deck-validator";
+import { parseDeckList, normalizeCardName } from "@/utils/deck-validator";
+import type { DeckParseResult } from "@/types/deck";
 
 export interface ValidationResult {
     isValid: boolean;

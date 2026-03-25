@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import TournamentView, { Match, Tournament, RosterPlayer } from "./tournament-view";
+import TournamentView from "./tournament-view";
+import { Match, ExtendedTournament as Tournament, RosterPlayer } from "@/types";
 import { Role } from "@/lib/rbac";
 import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
@@ -41,7 +42,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     if (user) {
         const { data: profileData } = await supabase
             .from('profiles')
-            .select('role, pokemon_player_id')
+            .select('role, pokemon_player_id, birth_year')
             .eq('id', user.id)
             .single();
 
@@ -63,13 +64,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     // 3. Fetch user's registration status and deck list in parallel if user has profile
     let myRegistrationStatus: string | null = null;
+    let myWaitlistPosition: number | null = null;
     let deckList: any = null;
     
     if (profile?.pokemon_player_id) {
         const [registrationData, deckListData] = await Promise.all([
             supabase
                 .from("tournament_players")
-                .select("registration_status")
+                .select("registration_status, created_at, division")
                 .eq("tournament_id", id)
                 .eq("player_id", profile.pokemon_player_id)
                 .maybeSingle(),
@@ -85,9 +87,21 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     myRegistrationStatus = registrationData.data?.registration_status || null;
     deckList = deckListData.data || null;
+    
+    // Calculate waitlist position if applicable
+    if (myRegistrationStatus === 'waitlisted' && registrationData.data?.division && registrationData.data?.created_at) {
+        const { count } = await supabase
+            .from("tournament_players")
+            .select("*", { count: "exact", head: true })
+            .eq("tournament_id", id)
+            .eq("division", registrationData.data.division)
+            .eq("registration_status", "waitlisted")
+            .lt("created_at", registrationData.data.created_at);
+            
+        myWaitlistPosition = (count || 0) + 1;
+    }
     }
 
-    // 4. Fetch matches and penalties in parallel (penalties only for staff)
     const [matchesPromise, penaltiesPromise] = await Promise.all([
         supabase
             .from("matches")
@@ -199,6 +213,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     }
 
+
     return (
         <>
             <RealtimeListener tournamentId={id} />
@@ -216,8 +231,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 rosterPlayers={rosterPlayers}
                 myPlayerId={profile?.pokemon_player_id}
                 myRegistrationStatus={myRegistrationStatus}
+                myWaitlistPosition={myWaitlistPosition}
                 penaltyCounts={penaltyCounts}
                 deckList={deckList}
+
             />
         </>
     );

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Check, Handshake, Gavel, Search, Clock } from "lucide-react";
-import { type Match } from "@/app/tournament/[id]/tournament-view";
+import { type Match } from "@/types";
 import { useState, useEffect } from "react";
 
 import { useSecretTrigger } from "@/hooks/use-secret-trigger";

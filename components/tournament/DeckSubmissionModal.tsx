@@ -20,7 +20,7 @@ import { validateDeckListAction, ValidationResult } from "@/actions/deck/validat
 import { submitDeckAction } from "@/actions/deck/submission";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { ParsedCard, ParsedDeckCategories } from "@/utils/deck-validator";
+import type { ParsedCard, ParsedDeckCategories } from "@/types/deck";
 import { useRouter } from "next/navigation";
 
 // --- Types ---
@@ -121,23 +121,30 @@ export function DeckEditor({
   );
 }
 
-const CategorySection = React.memo(function CategorySection({ title, cards }: { title: string; cards: ParsedCard[] }) {
+const CategorySection = React.memo(function CategorySection({ title, cards, color }: { title: string; cards: ParsedCard[]; color?: string }) {
   if (!cards || cards.length === 0) return null;
+  const count = cards.reduce((sum, card) => sum + (card.qty || 0), 0);
   return (
-    <div className="space-y-1.5">
-      <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">{title}</h4>
-      <div className="space-y-1">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between border-b pb-1">
+        <h4 className="text-sm font-bold tracking-tight uppercase text-muted-foreground">{title}</h4>
+        <Badge variant="secondary" className="font-mono">{count}</Badge>
+      </div>
+      <div className="space-y-1.5">
         {cards.map((card, i) => (
           <div 
             key={`${card.name}-${card.set || 'unknown'}-${card.number || 'unknown'}-${card.qty}-${i}`} 
-            className="text-sm flex justify-between items-center group hover:bg-accent/50 p-1 rounded transition-colors"
+            className={cn(
+              "text-sm flex justify-between items-center p-2 rounded-md transition-all bg-background border shadow-sm hover:shadow-md",
+              color
+            )}
           >
-            <div className="flex gap-2 items-center min-w-0">
-              <span className="font-bold text-primary w-4 flex-shrink-0">{card.qty}</span>
-              <span className="truncate">{card.name}</span>
+            <div className="flex gap-3 items-center min-w-0">
+              <span className="font-bold w-5 text-center text-muted-foreground bg-muted rounded py-0.5">{card.qty}</span>
+              <span className="truncate font-medium">{card.name}</span>
             </div>
             {card.category === 'pokemon' && (card.set || card.number) && (
-              <span className="text-xs text-muted-foreground flex-shrink-0">
+              <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded flex-shrink-0">
                 {card.set} {card.number}
               </span>
             )}
@@ -497,10 +504,20 @@ export function DeckSubmissionModal({
                       {isValidating ? (
                         <LoadingSkeleton />
                       ) : (parsedDeck ? (
-                        <div className="space-y-4">
-                          <CategorySection title="Pokémon" cards={parsedDeck.Pokemon || []} />
-                          <CategorySection title="Trainer" cards={parsedDeck.Trainer || []} />
-                          <CategorySection title="Energy" cards={parsedDeck.Energy || []} />
+                        <div className="space-y-6 pb-6">
+                          <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                            <span className="font-semibold">Total Cards</span>
+                            <Badge variant="default" className="text-sm px-3 shadow-sm">
+                              {
+                                ((parsedDeck.Pokemon || []).reduce((sum, card) => sum + (card.qty || 0), 0)) +
+                                ((parsedDeck.Trainer || []).reduce((sum, card) => sum + (card.qty || 0), 0)) +
+                                ((parsedDeck.Energy || []).reduce((sum, card) => sum + (card.qty || 0), 0))
+                              } / 60
+                            </Badge>
+                          </div>
+                          <CategorySection title="Pokémon" cards={parsedDeck.Pokemon || []} color="border-l-[4px] border-l-green-500" />
+                          <CategorySection title="Trainer" cards={parsedDeck.Trainer || []} color="border-l-[4px] border-l-blue-500" />
+                          <CategorySection title="Energy" cards={parsedDeck.Energy || []} color="border-l-[4px] border-l-amber-500" />
                         </div>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

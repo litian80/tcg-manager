@@ -3,7 +3,7 @@
 import { useEffect, useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { updateProfile, UpdateProfileState } from './actions'
-import { Profile } from '@/lib/types'
+import { Profile } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
