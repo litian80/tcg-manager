@@ -7,6 +7,7 @@ import { Info, Copy } from 'lucide-react'
 import { Database } from '@/utils/supabase/database.types'
 import { DataTableRowActions } from './row-actions'
 import { EditTournamentDialog } from '@/components/admin/edit-tournament-dialog'
+import { formatDate, getTournamentStatusConfig } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export type Tournament = Database['public']['Tables']['tournaments']['Row']
@@ -61,8 +62,7 @@ export const columns: ColumnDef<Tournament>[] = [
         accessorKey: 'date',
         header: 'Date',
         cell: ({ row }) => {
-            const date = new Date(row.getValue('date'))
-            return <div className="text-muted-foreground">{date.toLocaleDateString('en-US')}</div>
+            return <div className="text-muted-foreground">{formatDate(row.getValue('date'))}</div>
         },
     },
     {
@@ -75,12 +75,13 @@ export const columns: ColumnDef<Tournament>[] = [
         header: 'Status',
         cell: ({ row }) => {
             const status = row.getValue('status') as string
+            const config = getTournamentStatusConfig(status)
             return (
                 <Badge
-                    variant={status === 'running' ? 'default' : 'secondary'}
-                    className={status === 'running' ? 'bg-green-600 hover:bg-green-700' : ''}
+                    variant={config.variant}
+                    className={config.className}
                 >
-                    {status === 'running' ? 'Live' : 'Completed'}
+                    {config.label}
                 </Badge>
             )
         },

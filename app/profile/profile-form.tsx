@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card'
 import { toast } from 'sonner' // Assuming Sonner is used, or use-toast if not. Checking dir showed sonner.tsx
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Lock } from 'lucide-react'
 
 const initialState: UpdateProfileState = {
     message: '',
@@ -29,6 +29,23 @@ interface ProfileFormProps {
     profile: Profile
 }
 
+const ADMIN_EMAIL = 'admin@tcgmanager.co.nz'
+
+function RequestChangeLink({ field, currentValue, userName }: { field: string; currentValue: string; userName: string }) {
+    const subject = encodeURIComponent(`Request to change ${field}`)
+    const body = encodeURIComponent(
+        `Hi,\n\nI would like to request a change to my ${field}.\n\nName: ${userName}\nCurrent ${field}: ${currentValue}\nNew ${field}: [please fill in]\n\nThank you.`
+    )
+    return (
+        <a
+            href={`mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`}
+            className="text-primary hover:underline font-medium"
+        >
+            Request Change →
+        </a>
+    )
+}
+
 export function ProfileForm({ profile }: ProfileFormProps) {
     const [state, formAction] = useActionState(updateProfile, initialState)
     const isAdmin = profile.role === 'admin'
@@ -36,6 +53,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     const isIdLocked = isIdSet && !isAdmin
     const isYearSet = !!profile.birth_year
     const isYearLocked = isYearSet && !isAdmin
+    const userName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Unknown'
 
     useEffect(() => {
         if (state.message) {
@@ -104,7 +122,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                             readOnly={isIdLocked}
                             className={isIdLocked ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                         />
-                        {isIdLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an administrator to change.</p>}
+                        {isIdLocked && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                This field is locked.
+                                <RequestChangeLink field="Player ID" currentValue={profile.pokemon_player_id || ''} userName={userName} />
+                            </p>
+                        )}
                         {isIdSet && isAdmin && <p className="text-xs text-green-600 flex items-center gap-1">(Admin Override Active)</p>}
                         {state.errors?.pokemon_player_id && <p className="text-sm text-red-500">{state.errors.pokemon_player_id}</p>}
                     </div>
@@ -120,7 +144,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                             readOnly={isYearLocked}
                             className={isYearLocked ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                         />
-                        {isYearLocked && <p className="text-xs text-amber-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Locked. Contact an administrator to change.</p>}
+                        {isYearLocked && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                This field is locked.
+                                <RequestChangeLink field="Birth Year" currentValue={String(profile.birth_year || '')} userName={userName} />
+                            </p>
+                        )}
                         {isYearSet && isAdmin && <p className="text-xs text-green-600 flex items-center gap-1">(Admin Override Active)</p>}
                         {state.errors?.birth_year && <p className="text-sm text-red-500">{state.errors.birth_year}</p>}
                     </div>

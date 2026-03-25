@@ -265,10 +265,10 @@ export function JudgePlayerDetailModal({
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-white border-gray-200 text-gray-900 hover:bg-gray-50 hover:text-gray-900"
+                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-border text-foreground hover:bg-muted hover:text-foreground"
                                         onClick={() => setActionMode("check")}
                                     >
-                                        <CheckCircle2 className="w-8 h-8 mb-1 text-gray-500" />
+                                        <CheckCircle2 className="w-8 h-8 mb-1 text-muted-foreground" />
                                         <span>Log Deck Check</span>
                                         <span className="text-xs font-normal text-muted-foreground opacity-80">Record a passed deck check</span>
                                     </Button>

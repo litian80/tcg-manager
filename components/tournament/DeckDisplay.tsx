@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { getPlayerDeckList } from "@/actions/judge";
 import { parseDeckList } from "@/utils/deck-validator";
@@ -71,7 +71,7 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                         {deckListData.validation_status?.toUpperCase() || 'UNKNOWN'}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                        Submitted: {format(new Date(deckListData.submitted_at), "MMM d, HH:mm")}
+                        Submitted: {formatDateTime(deckListData.submitted_at)}
                     </span>
                 </div>
                 {deckListData.validation_errors && Array.isArray(deckListData.validation_errors) && deckListData.validation_errors.length > 0 && (

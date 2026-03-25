@@ -33,8 +33,8 @@ export default async function TournamentFlyerPage({ params }: { params: Promise<
     return (
         <div className="bg-white min-h-screen text-black flex flex-col items-center">
             {/* Print Controls - Hidden on Print */}
-            <div className="print:hidden w-full p-4 flex justify-between items-center bg-gray-100 border-b mb-8">
-                <div className="font-medium text-sm text-gray-600">
+            <div className="print:hidden w-full p-4 flex justify-between items-center bg-muted border-b mb-8">
+                <div className="font-medium text-sm text-muted-foreground">
                     🖨️ For best results: A4/Letter size, Portrait, Scale 100%.
                 </div>
                 <PrintButton />

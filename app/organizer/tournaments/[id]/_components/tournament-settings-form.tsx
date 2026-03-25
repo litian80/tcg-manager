@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -167,16 +169,19 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                     {/* Tournament Type Section */}
                     <div className="space-y-2">
                         <Label htmlFor="tournament_mode">Tournament Type</Label>
-                        <select
-                            id="tournament_mode"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        <Select
                             value={tournamentMode}
-                            onChange={(e) => setTournamentMode(e.target.value)}
+                            onValueChange={(value) => setTournamentMode(value)}
                         >
-                            <option value="LEAGUECHALLENGE">League Challenge</option>
-                            <option value="TCG1DAY">League Cup</option>
-                            <option value="PRERELEASE">Prerelease / Draft</option>
-                        </select>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select tournament type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="LEAGUECHALLENGE">League Challenge</SelectItem>
+                                <SelectItem value="TCG1DAY">League Cup</SelectItem>
+                                <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Tournament Timing Section */}
@@ -244,12 +249,10 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         <h3 className="text-lg font-medium">Deck List Settings</h3>
                         
                         <div className="flex items-center space-x-2 pb-2">
-                            <input 
-                                type="checkbox" 
+                            <Checkbox 
                                 id="requires_deck_list" 
-                                className="h-4 w-4 rounded border-gray-300"
                                 checked={requiresDeckList}
-                                onChange={(e) => setRequiresDeckList(e.target.checked)}
+                                onCheckedChange={(checked) => setRequiresDeckList(checked === true)}
                             />
                             <Label htmlFor="requires_deck_list">Require Deck List Submission</Label>
                         </div>
@@ -281,23 +284,19 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         <h3 className="text-lg font-medium">Registration Settings</h3>
                         
                         <div className="flex items-center space-x-2">
-                            <input 
-                                type="checkbox" 
+                            <Checkbox 
                                 id="registration_open" 
-                                className="h-4 w-4 rounded border-gray-300"
                                 checked={registrationOpen}
-                                onChange={(e) => setRegistrationOpen(e.target.checked)}
+                                onCheckedChange={(checked) => setRegistrationOpen(checked === true)}
                             />
                             <Label htmlFor="registration_open">Enable Online Registration</Label>
                         </div>
                         
                         <div className="flex items-center space-x-2 pb-4">
-                            <input 
-                                type="checkbox" 
+                            <Checkbox 
                                 id="publish_roster" 
-                                className="h-4 w-4 rounded border-gray-300"
                                 checked={publishRoster}
-                                onChange={(e) => setPublishRoster(e.target.checked)}
+                                onCheckedChange={(checked) => setPublishRoster(checked === true)}
                             />
                             <Label htmlFor="publish_roster">Publish Player Roster (Visible to Public)</Label>
                         </div>

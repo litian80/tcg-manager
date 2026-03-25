@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createTournament } from "@/actions/tournament/create";
 import { Loader2 } from "lucide-react";
 
@@ -25,6 +27,7 @@ async function submitTournament(prevState: FormState, formData: FormData) {
 export function CreateTournamentForm({ userRole, userPopId }: CreateTournamentFormProps) {
     const isAdmin = userRole === 'admin';
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
+    const [tournamentMode, setTournamentMode] = useState("LEAGUECHALLENGE");
 
     // Set default time to 09:00
     const defaultTime = "09:00";
@@ -47,17 +50,21 @@ export function CreateTournamentForm({ userRole, userPopId }: CreateTournamentFo
                 <form action={formAction} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="tournament_mode">Tournament Type</Label>
-                        <select
-                            id="tournament_mode"
-                            name="tournament_mode"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        <input type="hidden" name="tournament_mode" value={tournamentMode} />
+                        <Select
+                            value={tournamentMode}
+                            onValueChange={setTournamentMode}
                             disabled={isPending}
-                            defaultValue="LEAGUECHALLENGE"
                         >
-                            <option value="LEAGUECHALLENGE">League Challenge</option>
-                            <option value="TCG1DAY">League Cup</option>
-                            <option value="PRERELEASE">Prerelease / Draft</option>
-                        </select>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select tournament type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="LEAGUECHALLENGE">League Challenge</SelectItem>
+                                <SelectItem value="TCG1DAY">League Cup</SelectItem>
+                                <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-2">

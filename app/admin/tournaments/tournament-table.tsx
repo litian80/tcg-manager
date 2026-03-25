@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { EditTournamentDialog } from "@/components/admin/edit-tournament-dialog"
+import { formatDate, getTournamentStatusConfig } from "@/lib/utils"
 import { Database } from "@/utils/supabase/database.types"
 
 type Tournament = Database['public']['Tables']['tournaments']['Row']
@@ -36,12 +37,17 @@ export function TournamentTable({ tournaments }: TournamentTableProps) {
                     {tournaments.map((tournament) => (
                         <TableRow key={tournament.id}>
                             <TableCell className="font-medium">{tournament.name}</TableCell>
-                            <TableCell>{new Date(tournament.date).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDate(tournament.date)}</TableCell>
                             <TableCell>{tournament.organizer_popid || 'N/A'}</TableCell>
                             <TableCell>
-                                <Badge variant={tournament.status === 'running' ? 'default' : 'secondary'}>
-                                    {tournament.status}
-                                </Badge>
+                                {(() => {
+                                    const config = getTournamentStatusConfig(tournament.status)
+                                    return (
+                                        <Badge variant={config.variant} className={config.className}>
+                                            {config.label}
+                                        </Badge>
+                                    )
+                                })()}
                             </TableCell>
                             <TableCell>
                                 <Badge variant={tournament.is_published ? 'outline' : 'destructive'}>

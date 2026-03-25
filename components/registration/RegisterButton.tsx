@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { registerPlayer, withdrawPlayer } from "@/actions/registration";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
@@ -159,7 +160,7 @@ export function RegisterButton({
     if (isRegistrationUpcoming) {
         return (
             <Button disabled variant="outline" className="w-full">
-                Opens {new Date(opensAt!).toLocaleString()}
+                Opens {formatDateTime(opensAt!)}
             </Button>
         );
     }

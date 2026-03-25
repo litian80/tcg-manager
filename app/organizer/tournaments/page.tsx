@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import { requireOrganizerOrAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -61,16 +62,21 @@ export default async function OrganizerTournamentsListPage() {
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg">{tournament.name}</CardTitle>
-                                <Badge variant={tournament.status === "completed" ? "secondary" : "default"}>
-                                    {tournament.status}
-                                </Badge>
+                                {(() => {
+                                    const config = getTournamentStatusConfig(tournament.status)
+                                    return (
+                                        <Badge variant={config.variant} className={config.className}>
+                                            {config.label}
+                                        </Badge>
+                                    )
+                                })()}
                             </div>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
                                     <p className="text-sm">
-                                        {new Date(tournament.date).toLocaleDateString()} • {tournament.city || "No location"}
+                                        {formatDate(tournament.date)} • {tournament.city || "No location"}
                                     </p>
                                     {tournament.tom_uid && (
                                         <p className="text-xs text-green-600">

@@ -8,6 +8,7 @@ import { TdfExportCard } from "./_components/tdf-export-card";
 import { RosterManager } from "./_components/roster-manager";
 import { Role } from "@/lib/rbac";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { AutoSyncUploader } from "./_components/auto-sync-uploader";
 import { StaffManager } from "@/components/tournament/staff-manager";
 import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
@@ -101,14 +102,15 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Link
-                        href={`/organizer/tournaments/${id}/flyer`}
-                        target="_blank"
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 transition-colors"
-                    >
-                        <Printer className="w-4 h-4" />
-                        Print QR Poster
-                    </Link>
+                    <Button asChild>
+                        <Link
+                            href={`/organizer/tournaments/${id}/flyer`}
+                            target="_blank"
+                        >
+                            <Printer className="w-4 h-4" />
+                            Print QR Poster
+                        </Link>
+                    </Button>
                 </div>
             </div>
 

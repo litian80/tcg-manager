@@ -164,7 +164,8 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                             currentRoster.map((player) => (
                                 <div key={player.id} className="flex items-center justify-between p-3 text-sm">
                                     <div className="flex-1">
-                                        <button 
+                                        <Button 
+                                            variant="link"
                                             onClick={() => {
                                                 setSelectedPlayer({
                                                     id: player.tom_player_id || player.id,
@@ -172,10 +173,10 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                                                 });
                                                 setIsDeckModalOpen(true);
                                             }}
-                                            className="text-left font-medium hover:text-blue-600 transition-colors"
+                                            className="text-left font-medium p-0 h-auto"
                                         >
                                             {player.first_name} {player.last_name}
-                                        </button>
+                                        </Button>
                                         <p className="text-xs text-muted-foreground">
                                             ID: {player.tom_player_id || "N/A"}
                                             {player.birth_year ? ` • Born: ${player.birth_year}` : ""}

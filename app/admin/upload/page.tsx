@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -84,17 +85,13 @@ export default function UploadPage() {
                     </Label>
                 </div>
 
-                <button
+                <Button
                     onClick={handleUpload}
                     disabled={!file || loading}
-                    className={`w-full py-2 px-4 rounded-md text-primary-foreground font-medium 
-                        ${!file || loading
-                            ? 'bg-muted cursor-not-allowed text-muted-foreground'
-                            : 'bg-primary hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2'
-                        } transition-colors`}
+                    className="w-full"
                 >
                     {loading ? 'Uploading...' : 'Upload Data'}
-                </button>
+                </Button>
 
                 {status && (
                     <div className={`mt-4 p-3 rounded-md text-sm ${status.startsWith('Success') ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>

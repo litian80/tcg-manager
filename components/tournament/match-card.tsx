@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Check, Handshake, Gavel, Search, Clock } from "lucide-react";
 import { type Match } from "@/app/tournament/[id]/tournament-view";
 import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
+
 import { useSecretTrigger } from "@/hooks/use-secret-trigger";
 import { createOrJoinGame } from "@/actions/minigame";
 import { toast } from "sonner";
@@ -42,18 +43,17 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
     }, [isMe]);
 
     // Easter Egg Logic
-    const [myTomId, setMyTomId] = useState<string | null>(null);
     const [isGameOpen, setIsGameOpen] = useState(false);
     const [gameData, setGameData] = useState<unknown>(null);
     const { trigger: triggerSecret, reset: resetSecret } = useSecretTrigger(async () => {
-        if (!myTomId) return;
+        if (!myPlayerId) return;
 
         // Determine if valid player
-        if (myTomId !== p1Id && myTomId !== p2Id) return;
+        if (myPlayerId !== p1Id && myPlayerId !== p2Id) return;
 
         // Fetch or create game
         try {
-            const { game, error } = await createOrJoinGame(match.id, myTomId);
+            const { game, error } = await createOrJoinGame(match.id, myPlayerId);
             if (error) {
                 toast.error("Failed to start secret game");
                 return;
@@ -66,26 +66,12 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
         }
     });
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: profile } = await supabase.from('profiles').select('pokemon_player_id').eq('id', user.id).single();
-            if (profile?.pokemon_player_id) {
-                setMyTomId(profile.pokemon_player_id);
-            }
-        };
-        fetchUser();
-    }, []);
-
     const isMyOpponent = (targetId: string | undefined) => {
-        if (!myTomId || !targetId) return false;
+        if (!myPlayerId || !targetId) return false;
         // If I am P1, opponent is P2. Target must be P2.
-        if (myTomId === p1Id && targetId === p2Id) return true;
+        if (myPlayerId === p1Id && targetId === p2Id) return true;
         // If I am P2, opponent is P1. Target must be P1.
-        if (myTomId === p2Id && targetId === p1Id) return true;
+        if (myPlayerId === p2Id && targetId === p1Id) return true;
         return false;
     };
 
@@ -188,16 +174,18 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
                 )}
                 {/* Judge Extension Button */}
                 {isJudge && onExtensionClick && !isFinished && (
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={(e) => {
                             e.stopPropagation();
                             onExtensionClick(match.id, match.time_extension_minutes || 0);
                         }}
-                        className="mt-1 p-1 rounded hover:bg-muted transition-colors group/ext"
+                        className="mt-1 h-6 w-6 group/ext"
                         title="Manage Time Extension"
                     >
                         <Clock className="w-3.5 h-3.5 text-muted-foreground group-hover/ext:text-foreground" />
-                    </button>
+                    </Button>
                 )}
             </div>
 
@@ -243,12 +231,12 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
             </div>
 
             {/* Easter Egg Modal */}
-            {myTomId && (
+            {myPlayerId && (
                 <ConnectFourModal
                     isOpen={isGameOpen}
                     onClose={() => setIsGameOpen(false)}
                     matchId={match.id}
-                    currentUserTomId={myTomId}
+                    currentUserTomId={myPlayerId}
                     p1Id={p1Id || ""}
                     p2Id={p2Id || ""}
                     startPlayerId={match.outcome === 1 ? match.player2_tom_id! : (match.outcome === 2 ? match.player1_tom_id! : (match.player1_tom_id!))}

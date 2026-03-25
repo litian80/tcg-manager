@@ -1,5 +1,6 @@
 import { getTournaments } from "@/actions/tournament/queries";
 import { createClient } from "@/utils/supabase/server";
+import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -94,13 +95,18 @@ export default async function Home() {
                       <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
                         {tournament.name}
                       </CardTitle>
-                      <Badge variant={tournament.status === 'running' ? "default" : "secondary"} className={tournament.status === 'running' ? "bg-green-600 hover:bg-green-700" : ""}>
-                        {tournament.status === 'running' ? "Live" : (tournament.status === 'completed' ? "Completed" : tournament.status)}
-                      </Badge>
+                      {(() => {
+                        const config = getTournamentStatusConfig(tournament.status)
+                        return (
+                          <Badge variant={config.variant} className={config.className}>
+                            {config.label}
+                          </Badge>
+                        )
+                      })()}
                     </div>
                     <CardDescription className="flex items-center gap-2 pt-2">
                       <Calendar className="h-4 w-4" />
-                      {new Date(tournament.date).toLocaleDateString()}
+                      {formatDate(tournament.date)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">

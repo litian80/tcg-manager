@@ -1,7 +1,7 @@
 "use client";
 
 import { UserResult } from "@/actions/tournament/staff";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,25 @@ import { RegisterButton } from "@/components/registration/RegisterButton";
 import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
 import { toast } from "sonner";
 import type { ParsedCard } from "@/utils/deck-validator";
+
+/** Track the rendered height of an element via ResizeObserver. */
+function useStickyHeight() {
+    const ref = useRef<HTMLDivElement>(null);
+    const [height, setHeight] = useState(0);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        const ro = new ResizeObserver(([entry]) => {
+            setHeight(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
+    return { ref, height };
+}
 
 export interface Player {
     first_name: string;
@@ -98,6 +117,10 @@ export default function TournamentView({
     const [deckListState, setDeckListState] = useState(deckList);
     const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isClose: boolean; isPast: boolean } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
+
+    // Dynamic sticky offset measurement (UX-005)
+    const header = useStickyHeight();
+    const divisionSelector = useStickyHeight();
 
     // Determine if we have matches to decide view mode
     const hasMatches = matches.length > 0;
@@ -244,7 +267,7 @@ export default function TournamentView({
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Sticky Header & Search */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
+            <div ref={header.ref} className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
                 <div className="p-4 pb-2 max-w-md mx-auto w-full space-y-3">
                     {/* Top Navigation & Title */}
                     <div className="flex items-center justify-between gap-4 w-full">
@@ -452,10 +475,11 @@ export default function TournamentView({
                             <>
                                 {/* Division Selector */}
                                 {sortedDivisions.length > 0 && (
-                                    <div className={cn(
-                                        "px-4 py-2 sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-                                        tournament.status === 'completed' ? "top-[125px]" : "top-[80px]"
-                                    )}>
+                                    <div
+                                        ref={divisionSelector.ref}
+                                        style={{ top: header.height }}
+                                        className="px-4 py-2 sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+                                    >
                                         <div className="flex p-1 bg-muted rounded-lg">
                                             {sortedDivisions.map((division) => (
                                                 <button
@@ -476,12 +500,10 @@ export default function TournamentView({
                                 )}
 
                                 <Tabs defaultValue={String(currentRound)} className="w-full">
-                                    <div className={cn(
-                                        "sticky z-10 bg-background border-b px-4",
-                                        sortedDivisions.length > 0
-                                            ? (tournament.status === 'completed' ? "top-[180px]" : "top-[135px]")
-                                            : (tournament.status === 'completed' ? "top-[125px]" : "top-[80px]")
-                                    )}>
+                                    <div
+                                        style={{ top: header.height + divisionSelector.height }}
+                                        className="sticky z-10 bg-background border-b px-4"
+                                    >
                                         <TabsList className="w-full flex overflow-x-auto justify-start h-auto p-1 bg-transparent hide-scrollbar">
                                             {rounds.map((round) => (
                                                 <TabsTrigger

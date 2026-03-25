@@ -22,7 +22,7 @@ export function Header({ initialUser }: { initialUser: User | null }) {
     }, [supabase])
 
     return (
-        <header className="border-b bg-white dark:bg-gray-950">
+        <header className="border-b bg-background">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2">
                     <div className="relative h-8 w-8">
