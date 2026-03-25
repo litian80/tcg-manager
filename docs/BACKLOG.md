@@ -22,8 +22,8 @@ Work top-down. Items within each tier are ordered by priority.
 - [ ] **[UX-006] Organiser dashboard progressive disclosure** (L)
   - Tabbed/phased layout: Pre-Tournament, During, Post-Tournament.
 
-- [ ] **[UX-Q5] Admin panel URL consolidation** (S)
-  - Move `/organizer/admin/roles` → `/admin/roles`. Consolidate all admin pages under `/admin/*`.
+- [x] **[UX-Q5] Admin panel URL consolidation** (S) ✅ (March 26, 2026)
+  - Moved `/organizer/admin/roles` → `/admin/roles`. All admin pages under `/admin/*`.
 
 ### Tier 4 — 🟢 Polish & Extras
 

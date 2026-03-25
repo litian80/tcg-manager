@@ -28,8 +28,8 @@ export default async function AdminRolesPage() {
     .limit(10);
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <div>
+    <div className="container py-10 space-y-8">
+      <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Role Management</h1>
         <p className="text-muted-foreground">
           Promote or demote users to manage application permissions.

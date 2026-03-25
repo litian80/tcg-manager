@@ -58,16 +58,12 @@ Each decision has:
 
 ## Architecture & URL Structure
 
-### DEC-005: Admin Panel Consolidation (Pending Detail Approval)
-- **Date**: 2026-03-25
-- **Status**: REVISIT
-- **Context**: Admin pages are fragmented across `/admin/*` and `/organizer/admin/roles`. The role management page sits under the organizer namespace despite being admin-only.
-- **Decision**: Owner is open to consolidation. Proposed plan:
-  1. Move `/organizer/admin/roles` → `/admin/roles`
-  2. All admin pages under `/admin/*`: tournaments, users, roles, upload
-  3. Add admin sidebar/nav
-  4. Update middleware to protect `/admin/*`
-- **Rationale**: Centralising admin pages under one namespace simplifies mental model and middleware configuration. Awaiting final approval of proposed structure.
+### DEC-005: Admin Panel Consolidation
+- **Date**: 2026-03-26
+- **Status**: DECIDED
+- **Context**: Admin pages were fragmented across `/admin/*` and `/organizer/admin/roles`. The role management page sat under the organizer namespace despite being admin-only.
+- **Decision**: All admin pages consolidated under `/admin/*`: tournaments, users, roles, upload. Middleware simplified to protect `/admin/*` only. Role Management added to secondary nav and user dropdown.
+- **Rationale**: Centralising admin pages under one namespace simplifies mental model and middleware configuration.
 
 ---
 

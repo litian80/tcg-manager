@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
 
     const userId = user.id
 
-    const isAdminPath = path.startsWith('/admin') || path.startsWith('/organizer/admin')
+    const isAdminPath = path.startsWith('/admin')
 
     // Role check from DB
     const { data: profile } = await supabase

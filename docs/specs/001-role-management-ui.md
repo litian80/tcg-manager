@@ -5,7 +5,7 @@ Currently, assigning roles (`admin`, `organizer`, `judge`) requires manual SQL u
 
 ## Requirements
 - **Access Control**: Only users with the `admin` role can access this page.
-- **Location**: `/organizer/admin/roles` or a similar dedicated admin route.
+- **Location**: `/admin/roles`
 - **Features**:
   - Search/List users by email, name, or POP ID.
   - View current assigned roles.

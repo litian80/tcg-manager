@@ -41,6 +41,10 @@ export function SecondaryNav({ role, hasJudgeAssignments = false }: SecondaryNav
       href: '/admin/users',
       label: 'Users'
     })
+    links.push({
+      href: '/admin/roles',
+      label: 'Roles'
+    })
   }
 
   if (canManageTournaments) {
