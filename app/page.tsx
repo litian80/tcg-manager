@@ -28,10 +28,14 @@ export default async function Home() {
   }[] = [];
   let error;
 
-  try {
-    tournaments = await getTournaments();
-  } catch (e: any) {
-    error = { message: e.message || "Failed to load tournaments" };
+  const result = await getTournaments();
+  if (result && 'error' in result && result.error) {
+    error = { message: result.error };
+  } else if (result && 'success' in result && result.success) {
+    tournaments = result.success;
+  } else if (Array.isArray(result)) {
+    // Anonymous user path returns raw array
+    tournaments = result;
   }
 
   const renderEmptyState = () => {

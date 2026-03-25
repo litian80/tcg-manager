@@ -2,98 +2,100 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { safeAction, type ActionResult } from "@/lib/safe-action";
 
-export async function updateTournamentStatus(id: string, isPublished: boolean) {
-    const supabase = await createClient();
+export async function updateTournamentStatus(id: string, isPublished: boolean): Promise<ActionResult> {
+    return safeAction(async () => {
+        const supabase = await createClient();
 
-    // Check Auth & Role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error('Unauthorized');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return { error: 'Unauthorized' };
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-    if (profile?.role !== 'admin') {
-        throw new Error('Forbidden: Admins only');
-    }
+        if (profile?.role !== 'admin') {
+            return { error: 'Forbidden: Admins only' };
+        }
 
-    // Update
-    const { error } = await supabase
-        .from('tournaments')
-        .update({ is_published: isPublished })
-        .eq('id', id);
+        const { error } = await supabase
+            .from('tournaments')
+            .update({ is_published: isPublished })
+            .eq('id', id);
 
-    if (error) {
-        console.error('Error updating tournament:', error);
-        throw new Error('Failed to update tournament');
-    }
+        if (error) {
+            console.error('Error updating tournament:', error);
+            return { error: 'Failed to update tournament' };
+        }
 
-    revalidatePath('/admin/tournaments');
-    revalidatePath('/'); // Update public list too
-    return { success: true };
+        revalidatePath('/admin/tournaments');
+        revalidatePath('/');
+        return { success: true };
+    });
 }
 
 export async function getAllTournaments() {
-    const supabase = await createClient();
+    return safeAction(async () => {
+        const supabase = await createClient();
 
-    // Check Auth & Role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error('Unauthorized');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return { error: 'Unauthorized' };
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-    if (profile?.role !== 'admin') {
-        throw new Error('Forbidden: Admins only');
-    }
+        if (profile?.role !== 'admin') {
+            return { error: 'Forbidden: Admins only' };
+        }
 
-    const { data, error } = await supabase
-        .from('tournaments')
-        .select('*')
-        .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+            .from('tournaments')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        throw new Error(error.message);
-    }
+        if (error) {
+            return { error: error.message };
+        }
 
-    return data;
+        return { success: data };
+    });
 }
 
-export async function deleteTournament(id: string) {
-    const supabase = await createClient();
+export async function deleteTournament(id: string): Promise<ActionResult> {
+    return safeAction(async () => {
+        const supabase = await createClient();
 
-    // Check Auth & Role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error('Unauthorized');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) return { error: 'Unauthorized' };
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-    if (profile?.role !== 'admin') {
-        throw new Error('Forbidden: Admins only');
-    }
+        if (profile?.role !== 'admin') {
+            return { error: 'Forbidden: Admins only' };
+        }
 
-    const { error } = await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', id);
+        const { error } = await supabase
+            .from('tournaments')
+            .delete()
+            .eq('id', id);
 
-    if (error) {
-        console.error('Delete tournament error:', error);
-        // Throwing the error message allows the client to display it
-        throw new Error(error.message || 'Failed to delete tournament');
-    }
+        if (error) {
+            console.error('Delete tournament error:', error);
+            return { error: error.message || 'Failed to delete tournament' };
+        }
 
-    revalidatePath('/admin/tournaments');
-    revalidatePath('/'); // Update public list too
-    return { success: true };
+        revalidatePath('/admin/tournaments');
+        revalidatePath('/');
+        return { success: true };
+    });
 }

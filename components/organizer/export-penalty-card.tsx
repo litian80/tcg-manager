@@ -16,13 +16,11 @@ export function ExportPenaltyCard({ tournamentId }: ExportPenaltyCardProps) {
 
     const handleExport = async () => {
         setIsExporting(true);
-        try {
-            const csvContent = await generatePenaltyCSV(tournamentId);
-
-            // Create a Blob from the CSV String
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-            // Create a link and trigger download
+        const result = await generatePenaltyCSV(tournamentId);
+        if (result.error) {
+            toast.error(result.error);
+        } else if (result.success) {
+            const blob = new Blob([result.success], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -30,14 +28,9 @@ export function ExportPenaltyCard({ tournamentId }: ExportPenaltyCardProps) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
             toast.success("Penalty report exported successfully");
-        } catch (error) {
-            console.error("Export failed:", error);
-            toast.error("Failed to export penalty report");
-        } finally {
-            setIsExporting(false);
         }
+        setIsExporting(false);
     };
 
     return (

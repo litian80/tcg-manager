@@ -24,17 +24,17 @@ All work items in a single queue, ordered by priority. Work top-down.
 
 ### Tier 2 — 🟠 Error Handling & Resilience
 
-- [ ] **[ERR-01] Create `app/global-error.tsx`** (S)
+- [x] **[ERR-01] Create `app/global-error.tsx`** (S) ✅ (March 25, 2026)
   - Catches unhandled errors at the root layout level. Prevents white-screen crashes. → [Spec 002](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/002-global-error-handling.md)
 
-- [ ] **[ERR-02] Create `app/error.tsx`** (S)
+- [x] **[ERR-02] Create `app/error.tsx`** (S) ✅ (March 25, 2026)
   - Catches errors within the root layout's children. Shows branded "Something went wrong" fallback with retry button. → [Spec 002](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/002-global-error-handling.md)
 
-- [ ] **[ERR-03] Create `safeAction` server action wrapper** (S)
+- [x] **[ERR-03] Create `safeAction` server action wrapper** (S) ✅ (March 25, 2026)
   - Utility wrapping all server actions in try/catch, guaranteeing `{ success?: T, error?: string }` return shape. Eliminates raw throws to client. → [Spec 002](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/002-global-error-handling.md)
 
-- [ ] **[ERR-04] Migrate existing server actions to `safeAction`** (M)
-  - Refactor all actions in `actions/` to use wrapper. Sonner toasts (already installed) surface errors consistently. → [Spec 002](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/002-global-error-handling.md)
+- [x] **[ERR-04] Migrate existing server actions to `safeAction`** (M) ✅ (March 25, 2026)
+  - Refactored all actions in `actions/` and `app/admin/users/actions.ts` to use wrapper. Updated 8 caller components to result-based patterns. → [Spec 002](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/002-global-error-handling.md)
 
 ### Tier 3 — 🟡 Quick Wins (Small Effort, High Impact)
 

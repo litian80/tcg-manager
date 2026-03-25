@@ -19,9 +19,11 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
 
     const handleExport = async () => {
         setIsExporting(true);
-        try {
-            const { xml, filename } = await exportTournamentTDF(tournament.id);
-            console.log("TDF XML Received:", xml);
+        const result = await exportTournamentTDF(tournament.id);
+        if (result.error) {
+            toast.error(result.error);
+        } else if (result.success) {
+            const { xml, filename } = result.success;
 
             // Trigger download
             const blob = new Blob([xml], { type: "application/octet-stream" });
@@ -35,12 +37,8 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
             document.body.removeChild(a);
 
             toast.success("TDF file exported successfully");
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || "Failed to export TDF file");
-        } finally {
-            setIsExporting(false);
         }
+        setIsExporting(false);
     };
 
     return (

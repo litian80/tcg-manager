@@ -4,6 +4,12 @@ import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { sanitizeSearchQuery } from '@/lib/utils'
+import { safeAction, type ActionResult } from '@/lib/safe-action'
+
+import { z } from 'zod'
+
+const RoleSchema = z.enum(['admin', 'organizer', 'judge', 'user'])
+export type AppRole = z.infer<typeof RoleSchema>
 
 export async function searchUsers(query: string) {
     const supabase = await createClient()
@@ -24,14 +30,16 @@ export async function searchUsers(query: string) {
 
     // 2. Perform Search
     if (!query) {
-        // Return recent users if no query
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .order('first_name', { ascending: true })
             .limit(20)
 
-        if (error) throw error
+        if (error) {
+            console.error('Search error:', error)
+            return []
+        }
         return data
     }
 
@@ -55,95 +63,78 @@ export type UpdatePayload = {
     birth_year: string
 }
 
-export async function adminUpdateUser(targetUserId: string, payload: UpdatePayload) {
-    const supabase = await createClient()
+export async function adminUpdateUser(targetUserId: string, payload: UpdatePayload): Promise<ActionResult> {
+    return safeAction(async () => {
+        const supabase = await createClient()
 
-    // 1. Verify Admin (Double check securely on server)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error("Unauthorized")
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: "Unauthorized" }
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
 
-    if (profile?.role !== 'admin') {
-        throw new Error("Forbidden: Admins only")
-    }
+        if (profile?.role !== 'admin') {
+            return { error: "Forbidden: Admins only" }
+        }
 
-    // 2. Perform Update
-    // Note: Database trigger 'check_sensitive_updates' allows admins to modify these fields.
-    // Use Admin Client to bypass RLS policies that restrict updates to "own profile only"
-    const adminSupabase = createAdminClient()
-    const { error } = await adminSupabase
-        .from('profiles')
-        .update({
-            pokemon_player_id: payload.pokemon_player_id || null,
-            birth_year: payload.birth_year ? parseInt(payload.birth_year) : null
-        })
-        .eq('id', targetUserId)
+        const adminSupabase = createAdminClient()
+        const { error } = await adminSupabase
+            .from('profiles')
+            .update({
+                pokemon_player_id: payload.pokemon_player_id || null,
+                birth_year: payload.birth_year ? parseInt(payload.birth_year) : null
+            })
+            .eq('id', targetUserId)
 
-    if (error) {
-        throw new Error(error.message)
-    }
+        if (error) {
+            return { error: error.message }
+        }
 
-    revalidatePath('/admin/users')
-    return { success: true }
+        revalidatePath('/admin/users')
+        return { success: true }
+    });
 }
 
-import { z } from 'zod'
+export async function updateUserRole(targetUserId: string, newRole: AppRole): Promise<ActionResult> {
+    return safeAction(async () => {
+        const supabase = await createClient()
 
-const RoleSchema = z.enum(['admin', 'organizer', 'judge', 'user'])
-export type AppRole = z.infer<typeof RoleSchema>
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: 'Unauthorized' }
 
-export async function updateUserRole(targetUserId: string, newRole: AppRole) {
-    const supabase = await createClient()
+        const { data: currentUserProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
 
-    // 1. Authentication
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+        if (profileError || !currentUserProfile) {
+            return { error: 'Failed to verify permissions' }
+        }
 
-    if (!user) {
-        throw new Error('Unauthorized')
-    }
+        if (currentUserProfile.role !== 'admin') {
+            return { error: 'Unauthorized: Only admins can change roles' }
+        }
 
-    // 2. Authorization (Check if caller is admin)
-    const { data: currentUserProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+        if (targetUserId === user.id) {
+            return { error: 'Cannot change your own role to prevent lockout.' }
+        }
 
-    if (profileError || !currentUserProfile) {
-        throw new Error('Failed to verify permissions')
-    }
+        const adminSupabase = createAdminClient()
+        const { error: updateError } = await adminSupabase
+            .from('profiles')
+            .update({ role: newRole })
+            .eq('id', targetUserId)
 
-    if (currentUserProfile.role !== 'admin') {
-        throw new Error('Unauthorized: Only admins can change roles')
-    }
+        if (updateError) {
+            console.error('Error updating role:', updateError)
+            return { error: 'Failed to update role' }
+        }
 
-    // 3. Self-Protection
-    if (targetUserId === user.id) {
-        throw new Error('Cannot change your own role to prevent lockout.')
-    }
-
-    // 4. Operation
-    // Use Admin Client to bypass RLS
-    const adminSupabase = createAdminClient()
-    const { error: updateError } = await adminSupabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', targetUserId)
-
-    if (updateError) {
-        console.error('Error updating role:', updateError)
-        throw new Error('Failed to update role')
-    }
-
-    // 5. Revalidation
-    revalidatePath('/admin/users')
-
-    return { success: true }
+        revalidatePath('/admin/users')
+        return { success: true }
+    });
 }

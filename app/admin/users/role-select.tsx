@@ -23,21 +23,18 @@ export function RoleSelect({ userId, currentRole, disabled }: RoleSelectProps) {
     const [isUpdating, setIsUpdating] = useState(false)
 
     const handleValueChange = async (newRole: AppRole) => {
-        // Optimistic update
         const previousRole = role
         setRole(newRole)
         setIsUpdating(true)
 
-        try {
-            await updateUserRole(userId, newRole)
-            toast.success(`Role updated to ${newRole}`)
-        } catch (error: any) {
-            // Revert on error
+        const result = await updateUserRole(userId, newRole)
+        if (result.error) {
             setRole(previousRole)
-            toast.error(error.message || "Failed to update role")
-        } finally {
-            setIsUpdating(false)
+            toast.error(result.error)
+        } else {
+            toast.success(`Role updated to ${newRole}`)
         }
+        setIsUpdating(false)
     }
 
     return (

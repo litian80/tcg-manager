@@ -1,113 +1,111 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { safeAction } from "@/lib/safe-action";
 
 export async function generatePenaltyCSV(tournamentId: string) {
-    const supabase = await createClient();
+    return safeAction(async () => {
+        const supabase = await createClient();
 
-    // Auth Check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new Error('Unauthorized');
-    }
-
-    // 1. Fetch Tournament Details
-    const { data: tournament, error: tournamentError } = await supabase
-        .from("tournaments")
-        .select("name, id, tom_uid, organizer_popid")
-        .eq("id", tournamentId)
-        .single();
-
-    if (tournamentError || !tournament) {
-        throw new Error("Tournament not found");
-    }
-
-    // Authorization: must be admin or matching organizer
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, pokemon_player_id')
-        .eq('id', user.id)
-        .single();
-
-    const isAdmin = profile?.role === 'admin';
-    const isOrgMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
-    if (!isAdmin && !isOrgMatch) {
-        throw new Error('Unauthorized: You must be an Organizer or Admin to export reports.');
-    }
-
-    // 2. Fetch Penalties
-    const { data: penalties, error: penaltiesError } = await supabase
-        .from("player_penalties")
-        .select("*")
-        .eq("tournament_id", tournamentId)
-        .order("round_number", { ascending: true });
-
-    if (penaltiesError) {
-        console.error("Error fetching penalties:", penaltiesError);
-        throw new Error("Failed to fetch penalties");
-    }
-
-    // 3. Manual Join for Judges
-    // Collect IDs
-    const judgeIds = Array.from(new Set(penalties.map((p) => p.judge_user_id)));
-
-    // Fetch Judges (Profiles)
-    let judgesMap: Record<string, any> = {};
-    if (judgeIds.length > 0) {
-        const { data: judges, error: judgesError } = await supabase
-            .from("profiles")
-            .select("id, pokemon_player_id, first_name, last_name")
-            .in("id", judgeIds);
-
-        if (judgesError) console.error("Error fetching judges:", judgesError);
-        if (judges) {
-            judges.forEach((j) => {
-                judgesMap[j.id] = j;
-            });
+        // Auth Check
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return { error: 'Unauthorized' };
         }
-    }
 
-    // 4. Format CSV
-    const headers = [
-        "Tournament ID",
-        "Round of Issue",
-        "Judge Player ID",
-        "Competitor's Player ID",
-        "Category",
-        "Severity",
-        "Penalty",
-        "Notes",
-    ];
+        // 1. Fetch Tournament Details
+        const { data: tournament, error: tournamentError } = await supabase
+            .from("tournaments")
+            .select("name, id, tom_uid, organizer_popid")
+            .eq("id", tournamentId)
+            .single();
 
-    // Helper to escape CSV fields
-    const escapeCsv = (str: string | null | undefined) => {
-        if (str === null || str === undefined) return "";
-        const stringValue = String(str);
-        if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
-            return `"${stringValue.replace(/"/g, '""')}"`;
+        if (tournamentError || !tournament) {
+            return { error: "Tournament not found" };
         }
-        return stringValue;
-    };
 
-    const rows = penalties.map((p: any) => {
-        const judge = judgesMap[p.judge_user_id];
+        // Authorization: must be admin or matching organizer
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, pokemon_player_id')
+            .eq('id', user.id)
+            .single();
 
-        // Judge ID: preference for POP ID, fallback to Unknown
-        const judgeId = judge?.pokemon_player_id || "Unknown";
+        const isAdmin = profile?.role === 'admin';
+        const isOrgMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
+        if (!isAdmin && !isOrgMatch) {
+            return { error: 'Unauthorized: You must be an Organizer or Admin to export reports.' };
+        }
 
-        return [
-            escapeCsv(tournament.tom_uid || tournament.name), // Preference for TOM UID as requested
-            escapeCsv(p.round_number),
-            escapeCsv(judgeId),
-            escapeCsv(p.player_id), // Directly use player_id from penalties table as requested
-            escapeCsv(p.category),
-            escapeCsv(p.severity),
-            escapeCsv(p.penalty),
-            escapeCsv(p.notes),
-        ].join(",");
+        // 2. Fetch Penalties
+        const { data: penalties, error: penaltiesError } = await supabase
+            .from("player_penalties")
+            .select("*")
+            .eq("tournament_id", tournamentId)
+            .order("round_number", { ascending: true });
+
+        if (penaltiesError) {
+            console.error("Error fetching penalties:", penaltiesError);
+            return { error: "Failed to fetch penalties" };
+        }
+
+        // 3. Manual Join for Judges
+        const judgeIds = Array.from(new Set(penalties.map((p) => p.judge_user_id)));
+
+        let judgesMap: Record<string, any> = {};
+        if (judgeIds.length > 0) {
+            const { data: judges, error: judgesError } = await supabase
+                .from("profiles")
+                .select("id, pokemon_player_id, first_name, last_name")
+                .in("id", judgeIds);
+
+            if (judgesError) console.error("Error fetching judges:", judgesError);
+            if (judges) {
+                judges.forEach((j) => {
+                    judgesMap[j.id] = j;
+                });
+            }
+        }
+
+        // 4. Format CSV
+        const headers = [
+            "Tournament ID",
+            "Round of Issue",
+            "Judge Player ID",
+            "Competitor's Player ID",
+            "Category",
+            "Severity",
+            "Penalty",
+            "Notes",
+        ];
+
+        const escapeCsv = (str: string | null | undefined) => {
+            if (str === null || str === undefined) return "";
+            const stringValue = String(str);
+            if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        };
+
+        const rows = penalties.map((p: any) => {
+            const judge = judgesMap[p.judge_user_id];
+            const judgeId = judge?.pokemon_player_id || "Unknown";
+
+            return [
+                escapeCsv(tournament.tom_uid || tournament.name),
+                escapeCsv(p.round_number),
+                escapeCsv(judgeId),
+                escapeCsv(p.player_id),
+                escapeCsv(p.category),
+                escapeCsv(p.severity),
+                escapeCsv(p.penalty),
+                escapeCsv(p.notes),
+            ].join(",");
+        });
+
+        const csvContent = [headers.join(","), ...rows].join("\n");
+
+        return { success: csvContent };
     });
-
-    const csvContent = [headers.join(","), ...rows].join("\n");
-
-    return csvContent;
 }

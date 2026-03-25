@@ -21,12 +21,12 @@ export default async function AdminTournamentsPage() {
         redirect('/')
     }
 
-    let tournaments = []
-    try {
-        tournaments = await getAllTournaments()
-    } catch (e) {
-        console.error(e)
-        // Handle error gracefully in UI if needed
+    let tournaments: any[] = []
+    const result = await getAllTournaments()
+    if (result.error) {
+        console.error(result.error)
+    } else if (result.success) {
+        tournaments = result.success
     }
 
     return (

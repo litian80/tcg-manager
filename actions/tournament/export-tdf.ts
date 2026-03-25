@@ -1,14 +1,16 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { safeAction } from "@/lib/safe-action";
 
 export async function exportTournamentTDF(tournamentId: string) {
+    return safeAction(async () => {
     const supabase = await createClient();
 
     // Auth Check
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        throw new Error('Unauthorized');
+        return { error: 'Unauthorized' };
     }
 
     // 1. Fetch Tournament Data
@@ -19,7 +21,7 @@ export async function exportTournamentTDF(tournamentId: string) {
         .single();
 
     if (tError || !tournament) {
-        throw new Error('Tournament not found');
+        return { error: 'Tournament not found' };
     }
 
     // Authorization: must be admin or matching organizer
@@ -32,11 +34,11 @@ export async function exportTournamentTDF(tournamentId: string) {
     const isAdmin = profile?.role === 'admin';
     const isOrgMatch = tournament.organizer_popid && profile?.pokemon_player_id === tournament.organizer_popid;
     if (!isAdmin && !isOrgMatch) {
-        throw new Error('Unauthorized: You must be an Organizer or Admin to export TDF.');
+        return { error: 'Unauthorized: You must be an Organizer or Admin to export TDF.' };
     }
 
     if (!tournament.tom_uid) {
-        throw new Error('TOM UID (Sanction ID) is required to export TDF.');
+        return { error: 'TOM UID (Sanction ID) is required to export TDF.' };
     }
 
     // 2. Fetch Roster
@@ -113,7 +115,7 @@ export async function exportTournamentTDF(tournamentId: string) {
     }
 
     if (tpError) {
-        throw new Error('Failed to fetch players');
+        return { error: 'Failed to fetch players' };
     }
 
     // 3. Construct XML
@@ -171,9 +173,12 @@ export async function exportTournamentTDF(tournamentId: string) {
 </tournament>`;
 
     return {
-        xml,
-        filename: `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_${tournament.tom_uid}.tdf`
+        success: {
+            xml,
+            filename: `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_${tournament.tom_uid}.tdf`
+        }
     };
+    });
 }
 
 function escapeXml(unsafe: string | null | undefined): string {

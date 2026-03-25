@@ -37,17 +37,15 @@ export function DataTableRowActions<TData>({
 
     const handleDelete = async () => {
         setIsDeleting(true)
-        try {
-            await deleteTournament(tournament.id)
+        const result = await deleteTournament(tournament.id)
+        if (result.error) {
+            toast.error(result.error)
+        } else {
             toast.success('Tournament deleted successfully')
             router.refresh()
             setShowDeleteAlert(false)
-        } catch (error) {
-            console.error(error)
-            toast.error(error instanceof Error ? error.message : 'Failed to delete tournament')
-        } finally {
-            setIsDeleting(false)
         }
+        setIsDeleting(false)
     }
 
     return (

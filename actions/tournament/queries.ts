@@ -72,8 +72,8 @@ export async function getTournaments({
 
     if (error) {
         console.error('Error fetching visible tournaments:', error);
-        throw new Error(error.message);
+        return { error: error.message };
     }
 
-    return data as Tournament[];
+    return { success: data as Tournament[] };
 }

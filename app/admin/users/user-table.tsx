@@ -94,16 +94,16 @@ export default function UserTable() {
     const handleSave = async () => {
         if (!editingUser) return
 
-        try {
-            await adminUpdateUser(editingUser.id, {
-                pokemon_player_id: pid,
-                birth_year: byear
-            })
+        const result = await adminUpdateUser(editingUser.id, {
+            pokemon_player_id: pid,
+            birth_year: byear
+        })
+        if (result.error) {
+            toast.error(result.error)
+        } else {
             toast.success("User updated successfully")
             setOpen(false)
-            fetchUsers(debouncedSearch) // Refresh list
-        } catch (err: any) {
-            toast.error(err.message || "Failed to update user")
+            fetchUsers(debouncedSearch)
         }
     }
 

@@ -53,28 +53,26 @@ export function StaffManager({ tournamentId, judges }: StaffManagerProps) {
     }, [debouncedQuery, judges]);
 
     const handleAddUser = async (user: UserResult) => {
-        try {
-            toast.info("Adding judge...");
-            await addJudge(tournamentId, user.id);
+        toast.info("Adding judge...");
+        const result = await addJudge(tournamentId, user.id);
+        if (result.error) {
+            toast.error(result.error);
+        } else {
             toast.success(`${user.display_name || user.email} added as Judge`);
             setOpen(false);
             setQuery("");
-        } catch (error) {
-            toast.error("Failed to add judge");
-            console.error(error);
         }
     };
 
     const handleRemoveUser = async (user: UserResult) => {
         if (!confirm(`Remove ${user.display_name || user.email} from staff?`)) return;
 
-        try {
-            toast.info("Removing judge...");
-            await removeJudge(tournamentId, user.id);
+        toast.info("Removing judge...");
+        const result = await removeJudge(tournamentId, user.id);
+        if (result.error) {
+            toast.error(result.error);
+        } else {
             toast.success("Judge removed");
-        } catch (error) {
-            toast.error("Failed to remove judge");
-            console.error(error);
         }
     };
 
