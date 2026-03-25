@@ -2,10 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 
-// In-memory cache for profiles to reduce DB queries on navigation
-// Note: This is per-edge-instance/server-process
-const profileCache = new Map<string, { role: string; expires: number }>()
-
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
@@ -49,17 +45,6 @@ export async function middleware(request: NextRequest) {
 
     const isAdminPath = path.startsWith('/admin') || path.startsWith('/organizer/admin')
 
-    // Check cache first
-    const cached = profileCache.get(userId)
-    if (cached && cached.expires > Date.now()) {
-      if (isAdminPath) {
-        if (cached.role === 'admin') return NextResponse.next()
-      } else {
-        if (cached.role === 'admin' || cached.role === 'organizer') return NextResponse.next()
-      }
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-
     // Role check from DB
     const { data: profile } = await supabase
       .from('profiles')
@@ -80,12 +65,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url))
       }
     }
-
-    // Update cache (5 minute TTL)
-    profileCache.set(userId, {
-      role: profile.role,
-      expires: Date.now() + 5 * 60 * 1000
-    })
 
     return NextResponse.next()
   } catch (error) {
