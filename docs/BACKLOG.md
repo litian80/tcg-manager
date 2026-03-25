@@ -111,9 +111,10 @@ Items from the full UX review. Decisions noted where the product owner has confi
 - **Effort**: Medium
 - **Roles**: Player
 
-### [UX-011] Empty State Messaging
-- **Problem**: Homepage empty state says "Get started by creating a tournament in the admin panel" — wrong audience for regular players.
-- **Fix**: Role-appropriate empty states. Player: "No upcoming tournaments. Check back soon!" Organiser: Illustration + "Create your first tournament" CTA.
+### [UX-011] ~~Empty State Messaging~~ ✅ FIXED (March 25, 2026)
+- **Problem**: Homepage empty state said "Get started by creating a tournament in the admin panel" — wrong for players.
+- **Fix**: Role-aware empty states. Admin/Organiser: Trophy icon + "Create your first tournament". Player: Calendar icon + "Check back soon". Unauthenticated: Sign-in link.
+- **Files**: `app/page.tsx`
 - **Effort**: Small
 - **Roles**: All
 

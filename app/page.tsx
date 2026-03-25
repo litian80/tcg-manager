@@ -1,10 +1,24 @@
 import { getTournaments } from "@/actions/tournament/queries";
+import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 
 export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let userRole: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    userRole = profile?.role ?? null;
+  }
+
   let tournaments: {
     id: string;
     name: string;
@@ -19,6 +33,36 @@ export default async function Home() {
   } catch (e: any) {
     error = { message: e.message || "Failed to load tournaments" };
   }
+
+  const renderEmptyState = () => {
+    if (userRole === 'admin' || userRole === 'organizer') {
+      return (
+        <div className="col-span-full text-center py-12 border rounded-lg border-dashed bg-muted/20">
+          <Trophy className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+          <h3 className="text-lg font-medium">No tournaments yet</h3>
+          <p className="text-muted-foreground mt-1">Create your first tournament to get started.</p>
+        </div>
+      );
+    }
+    if (user) {
+      return (
+        <div className="col-span-full text-center py-12 border rounded-lg border-dashed bg-muted/20">
+          <Calendar className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+          <h3 className="text-lg font-medium">No upcoming tournaments</h3>
+          <p className="text-muted-foreground mt-1">Check back soon for new events in your area!</p>
+        </div>
+      );
+    }
+    return (
+      <div className="col-span-full text-center py-12 border rounded-lg border-dashed bg-muted/20">
+        <Users className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="text-lg font-medium">No upcoming tournaments</h3>
+        <p className="text-muted-foreground mt-1">
+          <Link href="/login" className="text-primary underline underline-offset-4 hover:text-primary/80">Sign in</Link> to register for events and submit your deck lists.
+        </p>
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground p-8">
@@ -68,13 +112,11 @@ export default async function Home() {
               </Link>
             ))
           ) : (
-            <div className="col-span-full text-center py-12 border rounded-lg border-dashed bg-muted/20">
-              <h3 className="text-lg font-medium">No tournaments found</h3>
-              <p className="text-muted-foreground">Get started by creating a tournament in the admin panel.</p>
-            </div>
+            renderEmptyState()
           )}
         </div>
       </div>
     </main>
   );
 }
+
