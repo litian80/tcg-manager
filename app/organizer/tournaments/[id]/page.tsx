@@ -12,11 +12,14 @@ import { Button } from "@/components/ui/button";
 import { AutoSyncUploader } from "./_components/auto-sync-uploader";
 import { StaffManager } from "@/components/tournament/staff-manager";
 import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
+import { TournamentPhaseIndicator } from "./_components/tournament-phase-indicator";
+import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs";
 
 
 
-export default async function OrganizerTournamentPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrganizerTournamentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
     const { id } = await params;
+    const { tab } = await searchParams;
 
     let authResult;
     try {
@@ -42,6 +45,9 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         .eq("tournament_id", id);
 
     const isActive = matchesCount !== null && matchesCount > 0;
+
+    // Determine the default tab based on tournament state
+    const defaultTab = tab || (isActive ? "during" : "pre");
 
     // Fetch Current Roster for RosterManager
     const { data: tpData } = await supabase
@@ -90,7 +96,8 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
     }
 
     return (
-        <div className="container max-w-7xl py-8 space-y-8">
+        <div className="container max-w-7xl py-8 space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href={`/tournament/${id}`} className="text-muted-foreground hover:text-foreground">
@@ -114,39 +121,59 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                 </div>
             </div>
 
-            {isActive && (
-                <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Tournament Active</AlertTitle>
-                    <AlertDescription>
-                        This tournament has active matches. Configuration and Roster Management are disabled.
-                    </AlertDescription>
-                </Alert>
-            )}
+            {/* Phase Indicator */}
+            <TournamentPhaseIndicator isActive={isActive} />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                {/* Left Column: Configuration, Roster, TDF Export */}
-                <div className="space-y-6">
-                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
-                        <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} />
-                    </div>
+            {/* Tabbed Dashboard */}
+            <TournamentDashboardTabs defaultTab={defaultTab}>
+                {{
+                    pre: (
+                        <div className="space-y-6">
+                            {isActive && (
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Tournament Active</AlertTitle>
+                                    <AlertDescription>
+                                        This tournament has active matches. Configuration and Roster Management are disabled.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
-                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
-                    </div>
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <div className="space-y-6">
+                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                        <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} />
+                                    </div>
 
-                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
-                        <TdfExportCard tournament={tournament} />
-                    </div>
-                </div>
-
-                {/* Right Column: Auto-Sync, Staff, Penalties */}
-                <div className="space-y-6">
-                    <AutoSyncUploader tournamentId={tournament.id} />
-                    <StaffManager tournamentId={tournament.id} judges={judges} />
-                    <ExportPenaltyCard tournamentId={tournament.id} />
-                </div>
-            </div>
+                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <StaffManager tournamentId={tournament.id} judges={judges} />
+                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                        <TdfExportCard tournament={tournament} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    during: (
+                        <div className="space-y-6">
+                            <div className="max-w-2xl">
+                                <AutoSyncUploader tournamentId={tournament.id} />
+                            </div>
+                        </div>
+                    ),
+                    post: (
+                        <div className="space-y-6">
+                            <div className="max-w-2xl">
+                                <ExportPenaltyCard tournamentId={tournament.id} />
+                            </div>
+                        </div>
+                    ),
+                }}
+            </TournamentDashboardTabs>
         </div>
     );
 }

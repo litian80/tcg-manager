@@ -19,8 +19,8 @@ Work top-down. Items within each tier are ordered by priority.
 
 ### Tier 3 — 🔵 Large System Features
 
-- [ ] **[UX-006] Organiser dashboard progressive disclosure** (L)
-  - Tabbed/phased layout: Pre-Tournament, During, Post-Tournament.
+- [x] **[UX-006] Organiser dashboard progressive disclosure** (L) ✅ (March 26, 2026)
+  - Tabbed/phased layout: Pre-Tournament, During, Post-Tournament with URL persistence.
 
 - [x] **[UX-Q5] Admin panel URL consolidation** (S) ✅ (March 26, 2026)
   - Moved `/organizer/admin/roles` → `/admin/roles`. All admin pages under `/admin/*`.
