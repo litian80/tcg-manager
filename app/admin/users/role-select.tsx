@@ -49,7 +49,7 @@ export function RoleSelect({ userId, currentRole, disabled }: RoleSelectProps) {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="organizer">Organizer</SelectItem>
+                    <SelectItem value="organizer">Organiser</SelectItem>
                     <SelectItem value="judge">Judge</SelectItem>
                     <SelectItem value="user">User</SelectItem>
                 </SelectContent>

@@ -121,7 +121,7 @@ export function UserRoleTable({ initialUsers }: { initialUsers: UserProfile[] })
                       <SelectContent>
                         <SelectItem value="user">User</SelectItem>
                         <SelectItem value="judge">Judge</SelectItem>
-                        <SelectItem value="organizer">Organizer</SelectItem>
+                        <SelectItem value="organizer">Organiser</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>

@@ -120,7 +120,7 @@ export function UserNav({ user }: UserNavProps) {
                 {canUploadTom && (
                     <DropdownMenuItem asChild>
                         <Link href="/help/organizer" className="w-full cursor-pointer">
-                            Organizer Manuals
+                            Organiser Manuals
                         </Link>
                     </DropdownMenuItem>
                 )}
