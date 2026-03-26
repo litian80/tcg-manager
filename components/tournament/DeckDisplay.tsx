@@ -100,12 +100,6 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                             <ScrollArea className="h-full p-4">
                                 {parsed ? (
                                     <div className="space-y-6 pb-6">
-                                        <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
-                                            <span className="font-semibold">Total Cards</span>
-                                            <Badge variant="default" className="text-sm px-3 shadow-sm">
-                                                {parsed.TotalCards} / 60
-                                            </Badge>
-                                        </div>
                                         <CategorySection title="Pokémon" cards={parsed.Pokemon || []} color="border-l-[4px] border-l-green-500" />
                                         <CategorySection title="Trainer" cards={parsed.Trainer || []} color="border-l-[4px] border-l-blue-500" />
                                         <CategorySection title="Energy" cards={parsed.Energy || []} color="border-l-[4px] border-l-amber-500" />
@@ -121,9 +115,9 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="raw" className="mt-4">
-                    <div className="relative">
-                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+                <TabsContent value="raw" className="mt-4 flex-1">
+                    <div className="relative h-[55vh] min-h-[400px]">
+                        <ScrollArea className="h-full w-full border rounded-md p-3 bg-muted/30 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
                             {deckListData.raw_text}
                         </ScrollArea>
                         <Button 
