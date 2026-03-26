@@ -43,7 +43,13 @@ Once registration is closed:
 ### Step 4: Run in TOM
 1.  Open the **TOM** desktop software.
 2.  Select **File -> Open Tournament** and select the downloaded \`.tdf\` file.
-3.  *Verify all players appear correctly*, then **Create Pairings** for Round 1 as normal and **Save** the tournament in TOM.
+3.  **CRITICAL**: Go back to **Step 1** in TOM and verify the following are correctly selected before you proceed:
+    *   Tournament Mode
+    *   Game Type
+    *   Name
+    *   Sanctioned ID
+    *   City, State, Country
+4.  *Verify all players appear correctly*, then **Create Pairings** for Round 1 as normal and **Save** the tournament in TOM.
 
 ### Step 5: Live Auto-Sync
 Make your pairings visible to the world instantly.
@@ -102,7 +108,13 @@ const ZH_MANUAL = `
 ### 第 4 步：在 TOM 中运行
 1.  打开 **TOM** 桌面软件。
 2.  选择 **File -> Open Tournament**，打开刚才下载的 \`.tdf\` 文件。
-3.  *初查所有选手的 POP ID 与出生年份无误后*，照常执行 **Create Pairings** 生成第 1 轮配对，并在 TOM 中点击 **Save** (保存)。
+3.  **至关重要**：在 TOM 中返回 **Step 1**，并在继续之前确认以下字段已正确选择：
+    *   Tournament Mode
+    *   Game Type
+    *   Name
+    *   Sanctioned ID
+    *   City, State, Country
+4.  *初查所有选手的 POP ID 与出生年份无误后*，照常执行 **Create Pairings** 生成第 1 轮配对，并在 TOM 中点击 **Save** (保存)。
 
 ### 第 5 步：Live Auto-Sync (实时自动同步)
 让赛场配对即刻公开。

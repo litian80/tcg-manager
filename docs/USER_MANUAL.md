@@ -36,7 +36,13 @@ Once registration is closed:
 ### Step 4: Run in TOM
 1.  Open the **TOM** desktop software.
 2.  Select **File -> Open Tournament** and select the downloaded \`.tdf\` file.
-3.  *Verify all players appear correctly*, then **Create Pairings** for Round 1 as normal and **Save** the tournament in TOM.
+3.  **CRITICAL**: Go back to **Step 1** in TOM and verify the following are correctly selected before you proceed:
+    *   Tournament Mode
+    *   Game Type
+    *   Name
+    *   Sanctioned ID
+    *   City, State, Country
+4.  *Verify all players appear correctly*, then **Create Pairings** for Round 1 as normal and **Save** the tournament in TOM.
 
 ### Step 5: Live Auto-Sync
 Make your pairings visible to the world instantly.
