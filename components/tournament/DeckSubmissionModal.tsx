@@ -125,26 +125,23 @@ const CategorySection = React.memo(function CategorySection({ title, cards, colo
   if (!cards || cards.length === 0) return null;
   const count = cards.reduce((sum, card) => sum + (card.qty || 0), 0);
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between border-b pb-1">
-        <h4 className="text-sm font-bold tracking-tight uppercase text-muted-foreground">{title}</h4>
-        <Badge variant="secondary" className="font-mono">{count}</Badge>
+    <div className="space-y-0.5">
+      <div className={cn("flex items-center justify-between pb-0.5 mb-0.5 border-b", color)}>
+        <h4 className="text-xs font-bold tracking-tight uppercase text-muted-foreground">{title}</h4>
+        <span className="text-xs font-mono text-muted-foreground">{count}</span>
       </div>
-      <div className="space-y-1.5">
+      <div>
         {cards.map((card, i) => (
           <div 
             key={`${card.name}-${card.set || 'unknown'}-${card.number || 'unknown'}-${card.qty}-${i}`} 
-            className={cn(
-              "text-sm flex justify-between items-center p-2 rounded-md transition-all bg-background border shadow-sm hover:shadow-md",
-              color
-            )}
+            className="text-sm flex justify-between items-center py-0.5 px-1"
           >
-            <div className="flex gap-3 items-center min-w-0">
-              <span className="font-bold w-5 text-center text-muted-foreground bg-muted rounded py-0.5">{card.qty}</span>
-              <span className="truncate font-medium">{card.name}</span>
+            <div className="flex gap-2 items-center min-w-0">
+              <span className="font-mono w-4 text-right text-muted-foreground text-xs">{card.qty}</span>
+              <span className="truncate">{card.name}</span>
             </div>
             {card.category === 'pokemon' && (card.set || card.number) && (
-              <span className="text-xs text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded flex-shrink-0">
+              <span className="text-[10px] text-muted-foreground font-mono flex-shrink-0 ml-2">
                 {card.set} {card.number}
               </span>
             )}
@@ -504,7 +501,7 @@ export function DeckSubmissionModal({
                       {isValidating ? (
                         <LoadingSkeleton />
                       ) : (parsedDeck ? (
-                        <div className="space-y-6 pb-6">
+                        <div className="space-y-3 pb-4">
                           <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
                             <span className="font-semibold">Total Cards</span>
                             <Badge variant="default" className="text-sm px-3 shadow-sm">
@@ -515,9 +512,9 @@ export function DeckSubmissionModal({
                               } / 60
                             </Badge>
                           </div>
-                          <CategorySection title="Pokémon" cards={parsedDeck.Pokemon || []} color="border-l-[4px] border-l-green-500" />
-                          <CategorySection title="Trainer" cards={parsedDeck.Trainer || []} color="border-l-[4px] border-l-blue-500" />
-                          <CategorySection title="Energy" cards={parsedDeck.Energy || []} color="border-l-[4px] border-l-amber-500" />
+                          <CategorySection title="Pokémon" cards={parsedDeck.Pokemon || []} color="border-l-[3px] border-l-green-500" />
+                          <CategorySection title="Trainer" cards={parsedDeck.Trainer || []} color="border-l-[3px] border-l-blue-500" />
+                          <CategorySection title="Energy" cards={parsedDeck.Energy || []} color="border-l-[3px] border-l-amber-500" />
                         </div>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

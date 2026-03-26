@@ -17,9 +17,8 @@ import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs
 
 
 
-export default async function OrganizerTournamentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+export default async function OrganizerTournamentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const { tab } = await searchParams;
 
     let authResult;
     try {
@@ -47,7 +46,7 @@ export default async function OrganizerTournamentPage({ params, searchParams }: 
     const isActive = matchesCount !== null && matchesCount > 0;
 
     // Determine the default tab based on tournament state
-    const defaultTab = tab || (isActive ? "during" : "pre");
+    const defaultTab = isActive ? "during" : "pre";
 
     // Fetch Current Roster for RosterManager
     const { data: tpData } = await supabase

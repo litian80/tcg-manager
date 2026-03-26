@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClipboardList, Radio, FlagTriangleRight } from "lucide-react";
-import { useCallback } from "react";
 
 interface TournamentDashboardTabsProps {
     defaultTab: string;
@@ -15,20 +14,10 @@ interface TournamentDashboardTabsProps {
 }
 
 export function TournamentDashboardTabs({ defaultTab, children }: TournamentDashboardTabsProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-
-    const currentTab = searchParams.get("tab") || defaultTab;
-
-    const handleTabChange = useCallback((value: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("tab", value);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }, [router, pathname, searchParams]);
+    const [currentTab, setCurrentTab] = useState(defaultTab);
 
     return (
-        <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
             <TabsList className="w-full grid grid-cols-3 h-auto">
                 <TabsTrigger value="pre" className="gap-1.5 py-2.5 data-[state=active]:shadow-md">
                     <ClipboardList className="w-4 h-4" />

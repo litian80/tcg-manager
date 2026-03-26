@@ -10,7 +10,7 @@ import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { getPlayerDeckList } from "@/actions/judge";
 import { parseDeckList } from "@/utils/deck-validator";
-import { CategorySection, PreviewCard } from "@/components/tournament/DeckSubmissionModal";
+import { CategorySection } from "@/components/tournament/DeckSubmissionModal";
 
 interface DeckDisplayProps {
     tournamentId: string;
@@ -63,7 +63,7 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
     const parsed = parseDeckList(deckListData.raw_text);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             {/* Summary & Date */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
@@ -93,25 +93,22 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                     <TabsTrigger value="raw">Raw Text</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="structured" className="mt-4 flex-1">
+                <TabsContent value="structured" className="mt-2 flex-1">
                     <div className="h-[55vh] min-h-[400px]">
-                        {/* Parsed List */}
-                        <PreviewCard className="border-none shadow-none bg-muted/30 overflow-hidden h-full">
-                            <ScrollArea className="h-full p-4">
-                                {parsed ? (
-                                    <div className="space-y-6 pb-6">
-                                        <CategorySection title="Pokémon" cards={parsed.Pokemon || []} color="border-l-[4px] border-l-green-500" />
-                                        <CategorySection title="Trainer" cards={parsed.Trainer || []} color="border-l-[4px] border-l-blue-500" />
-                                        <CategorySection title="Energy" cards={parsed.Energy || []} color="border-l-[4px] border-l-amber-500" />
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">
-                                        <Info className="h-8 w-8" />
-                                        <p>No parsed results.</p>
-                                    </div>
-                                )}
-                            </ScrollArea>
-                        </PreviewCard>
+                        <ScrollArea className="h-full px-2 py-1">
+                            {parsed ? (
+                                <div className="space-y-3 pb-4">
+                                    <CategorySection title="Pokémon" cards={parsed.Pokemon || []} color="border-l-[3px] border-l-green-500" />
+                                    <CategorySection title="Trainer" cards={parsed.Trainer || []} color="border-l-[3px] border-l-blue-500" />
+                                    <CategorySection title="Energy" cards={parsed.Energy || []} color="border-l-[3px] border-l-amber-500" />
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">
+                                    <Info className="h-8 w-8" />
+                                    <p>No parsed results.</p>
+                                </div>
+                            )}
+                        </ScrollArea>
                     </div>
                 </TabsContent>
 
