@@ -1,5 +1,3 @@
-"use client";
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
@@ -8,202 +6,120 @@ import ReactMarkdown from "react-markdown";
 
 const EN_MANUAL = `
 # TCG Manager - Organizer Manual
-**Last Updated:** 2026-01-28
+**Last Updated:** March 26, 2026
 
-Welcome to **TCG Manager**, the modern companion app for running Pokémon TCG tournaments. This platform serves as a **live visibility layer** and **roster management tool** that works in tandem with the official Tournament Operations Manager (TOM) software.
+Welcome to **TCG Manager**, the modern companion app for running Pokémon TCG tournaments. This platform acts as a live display layer, player registration portal, and roster management tool that works alongside the official Tournament Operations Manager (TOM) software.
 
-## Core Concept: Source of Truth
-Understanding this is critical for success:
-*   **Web App (This Platform)**: Used for **Registration**, **Roster Management**, and **Public Visibility** (Pairings/Standings).
-*   **TOM (Desktop Software)**: Used to **Run the Tournament** (Generate Pairings, Enter Results).
-*   The **\`.tdf\` file** implies the state. You move it from Web -> TOM -> Web to keep everything in sync.
+## The Core Concept: Web ↔ TOM
+Understanding data flow is critical for a smooth event:
+1.  **Web App (Here)**: Used for Player Registration, Deck List Submission, Roster Management, and Live Standings/Pairings.
+2.  **TOM (Desktop App)**: Used strictly to run the tournament (generating pairings and entering results).
+3.  **The \`.tdf\` File**: This file holds the tournament state. You pass it from **Web → TOM → Web** to keep everything in sync.
 
 ---
 
 ## 1. Getting Started
+To get started, simply sign in with Google. You will be prompted to complete an onboarding profile (Name, Birth Year, and POP ID). *Note: Ensure your POP ID is correct, as the system links tournament permissions to this ID.*
 
-### Login & Access
-Access the platform using your Google Account.
-1.  Click **Sign In** on the homepage.
-2.  Use your standard Google credentials.
-
-### Profile Setup (CRITICAL)
-Before you can organize or judge, you **MUST** configure your profile.
-1.  Go to **Settings** (User Menu -> Settings).
-2.  **Display Name**: Your full name (e.g., "John Doe").
-3.  **Pokémon Player ID**: Your official POP ID.
-    *   **Important**: The system links tournaments to you based on this ID. If this is missing or wrong, you will not have "Organizer" access to your own files.
-
----
-
-## 2. Organization Workflow (Step-by-Step)
-
+## 2. The Organizer Workflow
 Follow this "Web-First" workflow to ensure the smoothest experience.
 
 ### Step 1: Create Tournament
-Instead of starting in TOM, start here.
-1.  Navigate to **My Tournaments**.
-2.  Click **Create TOM File**.
-3.  Enter the event details:
-    *   **Name**: e.g., "Ace Cup March"
-    *   **Date & Location**: Required for the generated file.
-    *   **Sanction ID**: Highly recommended if you have it (format: XX-MM-000123).
+Do not start in TOM. Navigate to **My Tournaments** and click **Create Tournament**.
+Here, you can configure:
+*   **Registration & Deck Lists**: Enable player self-registration, set capacities, and require Deck List submissions with automated cutoff deadlines.
+*   **Divisions & Caps**: Set maximum capacities for Juniors, Seniors, and Masters.
 
 ### Step 2: Build Your Roster
-Add players to the event *before* you go to T.O.M.
-1.  On the **Tournament Dashboard**, use the **Roster Management** card.
-2.  **Search** for players by Name or Player ID.
-    *   *Note: This searches the global database of players who have used the app or played in previous events.*
-3.  Click **Add** to move them into the Current Roster.
-    *   This ensures all Player IDs and Birth Years are correct in the final file.
+Add players to the event *before* opening T.O.M.
+*   If registration is open, players will appear automatically.
+*   You can also manually search and add players from the **Roster Management** section on the Tournament Dashboard.
 
 ### Step 3: Export TDF
-Once registration is closed or you are ready to start:
-1.  Look for the **Export TDF** card.
-2.  Click **Download .tdf**.
-3.  Save this file to your computer (e.g., in a \`Tournaments\` folder).
+Once registration is closed:
+1.  Locate the **Export TDF** card on the dashboard.
+2.  Click **Download .tdf** and save it to your computer.
 
 ### Step 4: Run in TOM
 1.  Open the **TOM** desktop software.
-2.  Select **File -> Open Tournament**.
-3.  Select the \`.tdf\` file you just downloaded.
-    *   *Verify: You should see all your players automatically populated.*
-4.  **Create Pairings** for Round 1 as normal.
-5.  **Save** the tournament in TOM.
+2.  Select **File -> Open Tournament** and select the downloaded \`.tdf\` file.
+3.  *Verify all players appear correctly*, then **Create Pairings** for Round 1 as normal and **Save** the tournament in TOM.
 
-### Step 5: Live Auto-Sync (The Magic)
+### Step 5: Live Auto-Sync
 Make your pairings visible to the world instantly.
-1.  Go back to the **Tournament Dashboard** on the web.
+1.  Return to the **Tournament Dashboard** on the web.
 2.  Locate the **Auto-Sync Uploader**.
-3.  Click **Select TDF to Auto-Sync**.
-4.  Select the **active** \`.tdf\` file you are currently using in TOM.
-5.  **Leave this browser tab open.**
-    *   Whenever you save in TOM, the website will detect the change and upload the new results/pairings immediately.
-    *   Players can now see their table numbers on their phones!
+3.  Select the **active** \`.tdf\` file you are currently using in TOM.
+4.  **Leave this browser tab open.**
+    *   Whenever you save in TOM, the website detects the change and uploads the new results/pairings immediately.
+    *   Players can now see their table numbers and submit results on their phones!
 
 ---
 
-## 3. Management Features
+## 3. Advanced Features
 
-### Staff & Judges
-You can give other users access to help run the event (e.g., scorekeepers).
-1.  In the Dashboard, look for **Staff / Judges**.
-2.  Search for the user by name.
-3.  **Add** them.
-    *   *Permissions*: Judges can view "Hidden" tournaments and see penalty info.
-
-### Penalty Management
-TCG Manager allows you to export penalties for official reporting.
-1.  **Export Penalty Log (CSV)**: Generates a CSV file compatible with official reporting tools (My Pokemon/RK9).
-    *   *Note*: Ensure all penalties are entered correctly in TOM.
-
-### Printable Assets
-*   **QR Poster**: Click **Print QR Poster** in the header to generate a printable PDF. Hang this at the venue so players can scan and find their pairings.
-
-### Publishing
-*   **Hidden** (Default): Only visible to You and Judges.
-*   **Published**: Visible on the public homepage.
-    *   Toggle this in the **Settings** card when you are ready to go live.
+*   **Judges & Staff**: Add judges from the dashboard. Judges get access to a dedicated **Judge Dashboard** where they can issue penalties, grant time extensions, and review submitted player Deck Lists.
+*   **Printable Assets**: Click **Print QR Poster** to generate a PDF for players to scan and find their Pairings.
+*   **Data Export**: Export Penalty Logs for official reporting to Pokemon.
 `;
 
 const ZH_MANUAL = `
 # TCG Manager - 主办方用户手册
-**最后更新：** 2026-01-28
+**最后更新：** 2026年3月26日
 
-欢迎使用 **TCG Manager**，这是用于举办 Pokémon TCG 赛事的现代化辅助工具。本平台作为一个**实时展示层**和**名单管理工具**，与官方的赛事运营管理软件 (TOM) 协同工作。
+欢迎使用 **TCG Manager**，这是用于举办 Pokémon TCG 赛事的现代化辅助工具。本平台作为玩家报名系统、自动收表工具、名单管理系统以及实时的赛况展示板，与官方的 **TOM (Tournament Operations Manager)** 软件协同工作。
 
-## 核心概念：唯一真实数据源 (Source of Truth)
-理解这一点对于顺利举办比赛至关重要：
-*   **网页应用 (本平台)**：用于**报名**、**名单管理**和**对外展示**（配对/排名表）。
-*   **TOM (桌面软件)**：用于**运行比赛**（生成配对、录入成绩）。
-*   **\`.tdf\` 文件**承载了比赛状态。您需要在 网页 -> TOM -> 网页 之间传递此文件，以保持数据同步。
+## 核心概念：Web ↔ TOM 数据流
+理解数据流方向是顺利举办比赛的关键：
+1.  **Web App (本平台)**：用于 Player Registration (玩家报名)、Deck List (卡表提交)、Roster Management (名单管理) 以及实时展示 Pairings (配对) 与 Standings (排名)。
+2.  **TOM (桌面软件)**：仅用于实际运行比赛 (生成配对、录入成绩)。
+3.  **\`.tdf\` 文件**：承载比赛数据的核心文件。您需要在 **Web → TOM → Web** 之间传递此文件，以保持数据同步。
 
 ---
 
 ## 1. 入门指南
+使用 Google 账户登录。首次登录需要完成 Profile Onboarding (输入姓名、出生年份、以及 POP ID)。*注意：系统会根据 POP ID 关联您的赛事权限，请确保填写准确。*
 
-### 登录与访问
-使用您的 Google 账户访问平台。
-1.  点击主页上的 **Sign In (登录)**。
-2.  使用您的标准 Google 凭证登录。
+## 2. 赛事组织流程
+请务必遵循“Web 优先”的工作流，以获得最佳体验。
 
-### 个人资料设置 (至关重要)
-在您成为主办方或裁判之前，您**必须**配置您的个人资料。
-1.  前往 **Settings (设置)** (用户菜单 -> Settings)。
-2.  **Display Name (显示名称)**：您的全名（例如 "John Doe"）。
-3.  **Pokémon Player ID (宝可梦玩家 ID)**：您的官方 POP ID。
-    *   **重要**：系统会根据此 ID 将比赛与您关联。如果此 ID 缺失或错误，您将无法作为“主办方”访问您自己的文件。
+### 第 1 步：Create Tournament (创建赛事)
+请勿在 TOM 中直接新建比赛。导航至 **My Tournaments** 并点击 **Create Tournament**。
+在这里配置赛事参数：
+*   **Registration & Deck Lists**: 开启玩家自助 Registration，设置名额上限，以及开启具有自动倒计时约束的 Deck List 提交流程。
+*   **Divisions**: 设置 Juniors, Seniors, Masters 三个组别的容纳人数上限。
 
----
-
-## 2. 赛事组织流程 (分步指南)
-
-请遵循此“网页优先 (Web-First)”流程，以确得最佳体验。
-
-### 第 1 步：创建比赛
-不要在 TOM 中开始，请先在这里开始。
-1.  导航至 **My Tournaments (我的赛事)**。
-2.  点击 **Create TOM File (创建 TOM 文件)**。
-3.  输入赛事详情：
-    *   **Name (名称)**：例如 "Ace Cup March"
-    *   **Date & Location (日期与地点)**：生成文件所需。
-    *   **Sanction ID (认证 ID)**：强烈建议填写 (格式：XX-MM-000123)。
-
-### 第 2 步：构建选手名单
-在进入 T.O.M. 之前，先将选手添加到比赛中。
-1.  在 **Tournament Dashboard (赛事仪表板)** 上，使用 **Roster Management (名单管理)** 卡片。
-2.  通过姓名或玩家 ID **搜索**选手。
-    *   *注意：此时搜索的是曾经使用过本 App 或参加过往届比赛的全球玩家数据库。*
-3.  点击 **Add (添加)** 将其移入当前名单。
-    *   这可确保最终文件中的所有玩家 ID 和出生年份都是正确的。
+### 第 2 步：构建 Roster (选手名单)
+在进入 TOM *之前*，确保所有玩家已进入该赛事的 Roster：
+*   如果您开启了在线报名，玩家会自动进入该列表 (支持 Waitlist 排队功能)。
+*   您也可以在 Tournament Dashboard 的 **Roster Management** 模块，手动搜索并添加玩家。
 
 ### 第 3 步：导出 TDF
-报名截止或准备开始时：
-1.  找到 **Export TDF (导出 TDF)** 卡片。
-2.  点击 **Download .tdf (下载 .tdf)**。
-3.  将此文件保存到您的电脑 (例如 \`Tournaments\` 文件夹)。
+当报名结束时：
+1.  在 Dashboard 找到 **Export TDF** 卡片。
+2.  点击 **Download .tdf**，将文件保存到电脑中。
 
 ### 第 4 步：在 TOM 中运行
 1.  打开 **TOM** 桌面软件。
-2.  选择 **File -> Open Tournament (文件 -> 打开比赛)**。
-3.  选择您刚刚下载的 \`.tdf\` 文件。
-    *   *验证：您应该可以看到所有选手已自动填充。*
-4.  照常为第 1 轮 **Create Pairings (创建配对)**。
-5.  在 TOM 中 **Save (保存)** 比赛。
+2.  选择 **File -> Open Tournament**，打开刚才下载的 \`.tdf\` 文件。
+3.  *初查所有选手的 POP ID 与出生年份无误后*，照常执行 **Create Pairings** 生成第 1 轮配对，并在 TOM 中点击 **Save** (保存)。
 
-### 第 5 步：实时自动同步 (魔法时刻)
-让全世界即时看到您的配对。
-1.  回到网页上的 **Tournament Dashboard (赛事仪表板)**。
-2.  找到 **Auto-Sync Uploader (自动同步上传器)**。
-3.  点击 **Select TDF to Auto-Sync (选择要自动同步的 TDF)**。
-4.  选择您当前在 TOM 中使用的 **活跃** \`.tdf\` 文件。
-5.  **保持此浏览器标签页开启。**
-    *   每当您在 TOM 中保存时，网站会自动检测更改并立即上传新的成绩/配对。
-    *   选手们现在可以在手机上查看他们的桌号了！
+### 第 5 步：Live Auto-Sync (实时自动同步)
+让赛场配对即刻公开。
+1.  回到网页版的 **Tournament Dashboard**。
+2.  找到 **Auto-Sync Uploader** 卡片。
+3.  选中您刚才在 TOM 中使用的那个 **活跃的** \`.tdf\` 文件。
+4.  **请保持此浏览器标签页开启，不要关闭。**
+    *   此后，每当您在 TOM 中点击保存，网站便会自动捕获更改，并立即推送最新赛况。
+    *   Player 们现在可以通过手机直接查看桌号！
 
 ---
 
-## 3. 管理功能
+## 3. 进阶功能
 
-### 工作人员与裁判
-您可以授权其他用户协助举办赛事（例如记分员）。
-1.  在仪表板中，找到 **Staff / Judges (工作人员/裁判)**。
-2.  通过姓名搜索用户。
-3.  **Add (添加)** 他们。
-    *   *权限*：裁判可以查看“隐藏”的比赛并查看判罚信息。
-
-### 判罚管理
-TCG Manager 允许您导出判罚记录以进行官方汇报。
-1.  **Export Penalty Log (导出判罚日志 CSV)**：生成兼容官方汇报工具 (My Pokemon/RK9) 的 CSV 文件。
-    *   *注意*：确保所有判罚都已在 TOM 中正确录入。
-
-### 可打印物料
-*   **QR Poster (二维码海报)**：点击顶部的 **Print QR Poster** 生成可打印的 PDF。将其张贴在会场，方便选手扫描查看配对。
-
-### 发布比赛
-*   **Hidden (隐藏)** (默认)：仅您和裁判可见。
-*   **Published (已发布)**：在公共主页可见。
-    *   准备好上线时，在 **Settings (设置)** 卡片中切换此选项。
+*   **Judges & Staff (裁判与工作人员)**：可在 Dashboard 中指派 Judge。裁判将解锁私有的 **Judge Dashboard**，在网页端快速下达 Penalty 控制、审批 Time Extension 并且审查玩家提交的 Deck List。
+*   **QR Poster (二维码海报)**：点击 **Print QR Poster** 生成可打印的 PDF，张贴于赛场供玩家扫码查看 Pairings。
+*   **Data Export (数据导出)**：赛事结束后，一键导出 Penalty Log (判罚记录 CSV)，方便向官方提交赛后汇报材料。
 `;
 
 export default function OrganizerHelpPage() {
