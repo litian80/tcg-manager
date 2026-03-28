@@ -38,7 +38,7 @@ export async function submitDeckAction(tournamentId: string, deckText: string): 
     // 2. Check tournament and registration
     const { data: tournament, error: tournamentError } = await supabase
         .from('tournaments')
-        .select('requires_deck_list, deck_list_submission_deadline, status')
+        .select('requires_deck_list, deck_list_submission_deadline')
         .eq('id', tournamentId)
         .single();
 
@@ -60,7 +60,12 @@ export async function submitDeckAction(tournamentId: string, deckText: string): 
         };
     }
 
-    if (tournament.status !== 'upcoming') {
+    const { count: matchesCount } = await supabase
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tournamentId);
+
+    if (matchesCount && matchesCount > 0) {
         return { 
             isValid: false, 
             errors: ["The tournament has already started. Decklist submission is now closed."], 

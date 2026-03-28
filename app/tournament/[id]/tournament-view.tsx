@@ -147,7 +147,7 @@ export default function TournamentView({
         return tournament.deck_list_submission_deadline ? new Date(tournament.deck_list_submission_deadline) : null;
     }, [tournament.deck_list_submission_deadline]);
 
-    const isTournamentStarted = tournament.status !== 'upcoming';
+    const isTournamentStarted = hasMatches;
     const isDeadlinePassed = !!(memoizedDeadline && memoizedDeadline < new Date()) || isTournamentStarted;
     
     // Calculate time left to deadline
