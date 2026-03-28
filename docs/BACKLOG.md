@@ -37,8 +37,14 @@ Work top-down. Items within each tier are ordered by priority.
 
 - [ ] **Manual Result Entry**: Judge interface for match results. (M)
 - [ ] **Roster Virtualisation**: Virtualization for large player lists. (M)
+  - _Scoped_: Primary targets are `StandingsView` and `PlayerRoster` (unbounded `.map()` renders). Pairings already partitioned by round+division. At typical scales (≤250 rows of lightweight text+badge), DOM cost is negligible. Breaks `Ctrl+F` and `scrollIntoView` auto-scroll. Only pursue if real jank observed at regional-scale events.
 - [ ] **Advanced TDF Configuration** (M) → [Spec 004](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/004-advanced-tdf-config.md)
 - [ ] **Email Notification System** (L) → [Spec 003](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/003-email-notifications.md)
+- [ ] **Player Dashboard** (S-M)
+  - _Scoped_: "My Tournaments" list (cross-tournament aggregation) to keep players informed. Requires new query `getMyTournaments()`, a new page or homepage section showing status, next pairing/table, and final rank. Optional: "My matches only" filter on existing pairings view. No schema changes needed.
+- [ ] **External Payment Portal Integration** (M)
+  - _Scoped_: Organizer brings their own checkout flow. Updates `use_payment_processor` fields. Requires: (1) DB additions for `payment_url` and `webhook_secret` on tournaments, `pending_payment` status on tournament_players. (2) `RegisterButton` redirects to `payment_url` passing player metadata. (3) New `/api/webhooks/payment` endpoint to receive success flag and upgrade `pending_payment` to `registered` (or `waitlisted`). No internal PCI data handling.
+
 
 ### Deferred — ⏸️ Conditional
 

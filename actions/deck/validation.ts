@@ -231,7 +231,8 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
             return result;
         }
 
-        // Build cardDetails for submission
+        // Build cardDetails for submission (using a Map to merge duplicate card_ids)
+        const cardDetailsMap = new Map<string, { card_id: string; quantity: number; name: string; set: string; number: string }>();
         const groupCounts = new Map<string, number>();
         let radiantCount = 0;
         let aceSpecCount = 0;
@@ -240,14 +241,19 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
             const { parsed, dbCard, setCode } = validated;
             const isBasicEnergy = parsed.isBasicEnergy || false;
 
-            // Populate cardDetails
-            result.cardDetails.push({
-                card_id: dbCard.id,
-                quantity: parsed.qty,
-                name: dbCard.name,
-                set: setCode || 'unknown',
-                number: dbCard.card_number || '0'
-            });
+            // Populate cardDetails (merge duplicates by card_id)
+            const existing = cardDetailsMap.get(dbCard.id);
+            if (existing) {
+                existing.quantity += parsed.qty;
+            } else {
+                cardDetailsMap.set(dbCard.id, {
+                    card_id: dbCard.id,
+                    quantity: parsed.qty,
+                    name: dbCard.name,
+                    set: setCode || 'unknown',
+                    number: dbCard.card_number || '0'
+                });
+            }
 
             // Rule logic
             const lowName = dbCard.name.toLowerCase();
@@ -273,6 +279,9 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
                 groupCounts.set(countKey, currentCount + parsed.qty);
             }
         }
+
+        // Convert merged cardDetails map to array
+        result.cardDetails = Array.from(cardDetailsMap.values());
 
         // Rule Enforcements
         if (radiantCount > 1) {
