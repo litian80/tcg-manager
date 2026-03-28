@@ -31,6 +31,7 @@ export interface TomPod {
 }
 
 export interface TomTournament {
+    stage?: string | number;
     standings?: {
         pod?: TomPod | TomPod[];
     };

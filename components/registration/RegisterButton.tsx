@@ -25,6 +25,7 @@ interface RegisterButtonProps {
     registrationOpen: boolean;
     opensAt?: string | null;
     closesAt?: string | null;
+    lockedDown?: boolean;
 }
 
 export function RegisterButton({ 
@@ -33,7 +34,8 @@ export function RegisterButton({
     waitlistPosition,
     registrationOpen, 
     opensAt, 
-    closesAt 
+    closesAt,
+    lockedDown
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
@@ -86,27 +88,33 @@ export function RegisterButton({
                 <Button disabled className="w-full bg-green-600 text-white opacity-100 font-semibold border-green-700">
                      {status === 'checked_in' ? 'Checked In' : 'Registered'}
                 </Button>
-                <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
-                            Withdraw
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will remove you from the tournament. If there is a waitlist, your spot will be given to the next person. If you wish to rejoin later, you may be placed on the waitlist.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {lockedDown ? (
+                    <p className="text-xs text-center text-muted-foreground">
+                        Registration has closed. To withdraw, please contact the Event Organizer directly.
+                    </p>
+                ) : (
+                    <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
                                 Withdraw
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will remove you from the tournament. If there is a waitlist, your spot will be given to the next person. If you wish to rejoin later, you may be placed on the waitlist.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Withdraw
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
         );
     }
@@ -120,27 +128,33 @@ export function RegisterButton({
                         <span className="text-xs font-normal opacity-80">Position: #{waitlistPosition}</span>
                     )}
                 </Button>
-                <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
-                            Leave Waitlist
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Leave Waitlist?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will remove you from the waitlist. You will lose your spot in line.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {lockedDown ? (
+                    <p className="text-xs text-center text-muted-foreground">
+                        Registration has closed. To leave the waitlist, please contact the Event Organizer.
+                    </p>
+                ) : (
+                    <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
                                 Leave Waitlist
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Leave Waitlist?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will remove you from the waitlist. You will lose your spot in line.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Leave Waitlist
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
         );
     }

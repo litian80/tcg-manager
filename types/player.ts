@@ -33,6 +33,7 @@ export interface RosterPlayer {
     last_name: string | null;
     tom_player_id: string | null;
     registration_status?: string;
+    division?: string | null;
     deck_list_status?: DeckListStatus;
 }
 

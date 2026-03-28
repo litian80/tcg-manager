@@ -195,6 +195,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             .select(`
                 player_id,
                 registration_status,
+                division,
                 player:players!player_id(first_name, last_name, tom_player_id)
             `)
             .eq("tournament_id", id);
@@ -222,6 +223,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 last_name: item.player?.last_name || "Unknown",
                 tom_player_id: item.player?.tom_player_id,
                 registration_status: item.registration_status,
+                division: item.division,
                 deck_list_status: deckStatusMap.has(item.player_id)
                     ? (deckStatusMap.get(item.player_id) === 'paper' ? 'paper' as const : 'online' as const)
                     : 'missing' as const
@@ -241,10 +243,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     }
 
 
+    const parsedData = tournamentRecord.parsed_data as { tom_stage?: number } | null;
+    const tomStage = parsedData?.tom_stage ?? 1;
+
     return (
         <>
             <RealtimeListener tournamentId={id} />
             <TournamentView
+                tomStage={tomStage}
                 tournament={{
                     ...tournament,
                     requires_deck_list: tournamentRecord.requires_deck_list,

@@ -179,6 +179,7 @@ export async function POST(req: NextRequest) {
         }
 
         let tournamentId: string;
+        const parsedDataPayload = { tom_stage: tournamentRoot.stage ? Number(tournamentRoot.stage) : 1 };
 
         if (existingTournament) {
             tournamentId = existingTournament.id;
@@ -188,7 +189,8 @@ export async function POST(req: NextRequest) {
                 .update({
                     status: tournamentStatus,
                     name: name, // Update name just in case
-                    is_published: isPublished
+                    is_published: isPublished,
+                    parsed_data: parsedDataPayload
                 })
                 .eq('id', tournamentId);
         } else {
@@ -203,7 +205,8 @@ export async function POST(req: NextRequest) {
                     city: city,
                     country: country,
                     organizer_popid: organizerPopId,
-                    is_published: isPublished
+                    is_published: isPublished,
+                    parsed_data: parsedDataPayload
                 })
                 .select('id')
                 .single();
@@ -261,6 +264,22 @@ export async function POST(req: NextRequest) {
             if (tpError) {
                 console.error('Error populating tournament_players:', tpError);
             }
+            
+            // Delete any players NOT in this TOM file to ensure strict syncing
+            const tomPlayerIds = tournamentPlayersToInsert.map(p => p.player_id);
+            if (tomPlayerIds.length > 0) {
+                await supabase
+                    .from('tournament_players')
+                    .delete()
+                    .eq('tournament_id', tournamentId)
+                    .not('player_id', 'in', `(${tomPlayerIds.map(id => `"${id}"`).join(',')})`); // Quote strings in postgres syntax
+            }
+        } else {
+            // Delete everyone if TOM file is totally empty
+            await supabase
+                .from('tournament_players')
+                .delete()
+                .eq('tournament_id', tournamentId);
         }
 
         // --- Step C: Matches ---

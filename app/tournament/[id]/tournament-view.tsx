@@ -43,6 +43,7 @@ function useStickyHeight() {
 import { Match, ExtendedTournament as Tournament, RosterPlayer, MatchPlayer as Player } from '@/types'
 
 interface TournamentViewProps {
+    tomStage: number;
     tournament: Tournament;
     matches: Match[];
     currentRound: number;
@@ -58,6 +59,7 @@ interface TournamentViewProps {
 }
 
 export default function TournamentView({
+    tomStage,
     tournament,
     matches,
     currentRound,
@@ -147,7 +149,7 @@ export default function TournamentView({
         return tournament.deck_list_submission_deadline ? new Date(tournament.deck_list_submission_deadline) : null;
     }, [tournament.deck_list_submission_deadline]);
 
-    const isTournamentStarted = hasMatches;
+    const isTournamentStarted = hasMatches || tomStage >= 3;
     const isDeadlinePassed = !!(memoizedDeadline && memoizedDeadline < new Date()) || isTournamentStarted;
     
     // Calculate time left to deadline
@@ -306,6 +308,7 @@ export default function TournamentView({
                                 registrationOpen={!!tournament.registration_open}
                                 opensAt={tournament.registration_opens_at}
                                 closesAt={tournament.registration_closes_at}
+                                lockedDown={tomStage >= 3}
                             />
                         </div>
                     )}
@@ -440,12 +443,13 @@ export default function TournamentView({
             <div className="flex-1 max-w-md mx-auto w-full pb-8">
                 {!hasMatches ? (
                     <div className="p-4">
-                        {(canManageStaff || tournament.publish_roster) ? (
+                        {(canManageStaff || isJudge || tomStage >= 3) ? (
                             <PlayerRoster 
                                 players={rosterPlayers} 
                                 canManage={canManageStaff} 
                                 tournamentId={tournament.id}
                                 requiresDeckList={!!tournament.requires_deck_list}
+                                myPlayerId={myPlayerId}
                                 onPlayerClick={isJudge || canManageStaff ? (player) => {
                                     setSelectedPlayer({ ...player, tomId: player.id, dbId: player.dbId || player.id });
                                     setPenaltyModalOpen(true);

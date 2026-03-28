@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { updateRegistrationStatus } from "@/actions/roster-management";
 import { useState } from "react";
 import { ScrollText } from "lucide-react";
 
@@ -21,6 +20,7 @@ interface Player {
     last_name: string | null;
     tom_player_id: string | null;
     registration_status?: string;
+    division?: string | null;
     deck_list_status?: 'online' | 'paper' | 'missing';
 }
 
@@ -29,32 +29,19 @@ interface PlayerRosterProps {
     canManage?: boolean;
     tournamentId?: string;
     requiresDeckList?: boolean;
+    myPlayerId?: string;
     onPlayerClick?: (player: { id: string; name: string; dbId?: string }) => void;
 }
 
-export function PlayerRoster({ players, canManage, tournamentId, requiresDeckList, onPlayerClick }: PlayerRosterProps) {
-    const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
-
-    const handleStatusChange = async (playerId: string, newStatus: string) => {
-        if (!tournamentId || !playerId) return;
-        
-        setLoadingMap(prev => ({ ...prev, [playerId]: true }));
-        try {
-            const result = await updateRegistrationStatus(tournamentId, playerId, newStatus);
-            if (result.error) {
-                toast.error(result.error);
-            } else {
-                toast.success(`Player marked as ${newStatus.replace('_', ' ')}`);
-            }
-        } catch (e) {
-            toast.error("An error occurred");
-        } finally {
-            setLoadingMap(prev => ({ ...prev, [playerId]: false }));
-        }
-    };
-
+export function PlayerRoster({ players, canManage, tournamentId, requiresDeckList, myPlayerId, onPlayerClick }: PlayerRosterProps) {
     // Sort players alphabetically by First Name
     const sortedPlayers = [...players].sort((a, b) => {
+        const isMeA = myPlayerId && (a.id === myPlayerId || a.tom_player_id === myPlayerId);
+        const isMeB = myPlayerId && (b.id === myPlayerId || b.tom_player_id === myPlayerId);
+        
+        if (isMeA && !isMeB) return -1;
+        if (!isMeA && isMeB) return 1;
+
         const nameA = (a.first_name || "").toLowerCase();
         const nameB = (b.first_name || "").toLowerCase();
         return nameA.localeCompare(nameB);
@@ -88,13 +75,15 @@ export function PlayerRoster({ players, canManage, tournamentId, requiresDeckLis
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Status</TableHead>
-                                {canManage && <TableHead className="text-right">Actions</TableHead>}
+                                {canManage && <TableHead>Status</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sortedPlayers.map((player) => (
-                                <TableRow key={player.id}>
+                            {sortedPlayers.map((player) => {
+                                const isMe = (myPlayerId) && (player.id === myPlayerId || player.tom_player_id === myPlayerId);
+                                
+                                return (
+                                <TableRow key={player.id} className={isMe ? "bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40" : ""}>
                                     <TableCell className="font-medium">
                                         {canManage && onPlayerClick ? (
                                             <button
@@ -103,73 +92,56 @@ export function PlayerRoster({ players, canManage, tournamentId, requiresDeckLis
                                                     name: `${player.first_name || "Unknown"} ${player.last_name || "Unknown"}`,
                                                     dbId: player.player_id || player.id
                                                 })}
-                                                className="text-left hover:underline"
+                                                className="text-left hover:underline flex items-center gap-2"
                                             >
-                                                {player.first_name || "Unknown"} {player.last_name || "Unknown"}
+                                                <span>{player.first_name || "Unknown"} {player.last_name || "Unknown"}</span>
+                                                {isMe && <Badge variant="secondary" className="text-[10px] h-5 px-1.5 mt-0.5">You</Badge>}
                                             </button>
                                         ) : (
-                                            <>{player.first_name || "Unknown"} {player.last_name || "Unknown"}</>
+                                            <div className="flex items-center gap-2">
+                                                <span>{player.first_name || "Unknown"} {player.last_name || "Unknown"}</span>
+                                                {isMe && <Badge variant="secondary" className="text-[10px] h-5 px-1.5">You</Badge>}
+                                            </div>
                                         )}
                                     </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-1 items-start">
-                                            <Badge 
-                                                variant={
-                                                    player.registration_status === 'checked_in' ? 'default' : 
-                                                    player.registration_status === 'waitlisted' ? 'secondary' : 
-                                                    player.registration_status === 'withdrawn' || player.registration_status === 'cancelled' ? 'destructive' : 
-                                                    'outline'
-                                                }
-                                                className={player.registration_status === 'checked_in' ? "bg-green-600 hover:bg-green-700 text-white" : ""}
-                                            >
-                                                {player.registration_status ? player.registration_status.replace('_', ' ').toUpperCase() : 'REGISTERED'}
-                                            </Badge>
-                                            {requiresDeckList && (
-                                                player.deck_list_status === 'online' ? (
-                                                    <span className="text-xs text-green-600 flex items-center gap-0.5">
-                                                        <ScrollText className="h-3 w-3" />
-                                                        Online ✓
-                                                    </span>
-                                                ) : player.deck_list_status === 'paper' ? (
-                                                    <span className="text-xs text-blue-600 flex items-center gap-0.5">
-                                                        <ScrollText className="h-3 w-3" />
-                                                        Paper ✓
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-destructive flex items-center gap-0.5">
-                                                        <ScrollText className="h-3 w-3" />
-                                                        No deck
-                                                    </span>
-                                                )
-                                            )}
-                                        </div>
-                                    </TableCell>
                                     {canManage && (
-                                        <TableCell className="text-right space-x-2">
-                                            {(player.registration_status === 'registered' || !player.registration_status) && (
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline"
-                                                    onClick={() => handleStatusChange(player.id, 'checked_in')}
-                                                    disabled={loadingMap[player.id]}
-                                                    className="border-green-600 text-green-600 hover:bg-green-50"
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <Badge 
+                                                    variant={
+                                                        player.registration_status === 'checked_in' ? 'default' : 
+                                                        player.registration_status === 'waitlisted' ? 'secondary' : 
+                                                        player.registration_status === 'withdrawn' || player.registration_status === 'cancelled' ? 'destructive' : 
+                                                        'outline'
+                                                    }
+                                                    className={player.registration_status === 'checked_in' ? "bg-green-600 hover:bg-green-700 text-white" : ""}
                                                 >
-                                                    Check In
-                                                </Button>
-                                            )}
-                                            {player.registration_status === 'waitlisted' && (
-                                                <Button 
-                                                    size="sm" 
-                                                    onClick={() => handleStatusChange(player.id, 'registered')}
-                                                    disabled={loadingMap[player.id]}
-                                                >
-                                                    Approve
-                                                </Button>
-                                            )}
+                                                    {player.registration_status ? player.registration_status.replace('_', ' ').toUpperCase() : 'REGISTERED'}
+                                                </Badge>
+                                                {requiresDeckList && (
+                                                    player.deck_list_status === 'online' ? (
+                                                        <span className="text-xs text-green-600 flex items-center gap-0.5">
+                                                            <ScrollText className="h-3 w-3" />
+                                                            Online ✓
+                                                        </span>
+                                                    ) : player.deck_list_status === 'paper' ? (
+                                                        <span className="text-xs text-blue-600 flex items-center gap-0.5">
+                                                            <ScrollText className="h-3 w-3" />
+                                                            Paper ✓
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-destructive flex items-center gap-0.5">
+                                                            <ScrollText className="h-3 w-3" />
+                                                            No deck
+                                                        </span>
+                                                    )
+                                                )}
+                                            </div>
                                         </TableCell>
                                     )}
                                 </TableRow>
-                            ))}
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 )}
