@@ -9,7 +9,7 @@ import { AlertCircle, Loader2, Info } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { getPlayerDeckList } from "@/actions/judge";
-import { parseDeckList } from "@/utils/deck-validator";
+import { parseDeckList, mergeCards } from "@/utils/deck-validator";
 import { CategorySection } from "@/components/tournament/DeckSubmissionModal";
 
 interface DeckDisplayProps {
@@ -98,9 +98,9 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                         <ScrollArea className="h-full px-2 py-1">
                             {parsed ? (
                                 <div className="space-y-3 pb-4">
-                                    <CategorySection title="Pokémon" cards={parsed.Pokemon || []} color="border-l-[3px] border-l-green-500" />
-                                    <CategorySection title="Trainer" cards={parsed.Trainer || []} color="border-l-[3px] border-l-blue-500" />
-                                    <CategorySection title="Energy" cards={parsed.Energy || []} color="border-l-[3px] border-l-amber-500" />
+                                    <CategorySection title="Pokémon" cards={mergeCards(parsed.Pokemon || [])} color="border-l-[3px] border-l-green-500" />
+                                    <CategorySection title="Trainer" cards={mergeCards(parsed.Trainer || [])} color="border-l-[3px] border-l-blue-500" />
+                                    <CategorySection title="Energy" cards={mergeCards(parsed.Energy || [])} color="border-l-[3px] border-l-amber-500" />
                                 </div>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

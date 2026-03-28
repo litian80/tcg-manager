@@ -245,3 +245,21 @@ export function parseDeckList(deckText: string): DeckParseResult {
 
     return result;
 }
+
+/**
+ * Merge duplicate ParsedCard entries (same name + set + number) by summing quantities.
+ * Used by display components to consolidate identical lines like "1 Duskull PRE 35" × 2 → "2 Duskull PRE 35".
+ */
+export function mergeCards(cards: ParsedCard[]): ParsedCard[] {
+    const map = new Map<string, ParsedCard>();
+    for (const card of cards) {
+        const key = `${card.name}|${card.set}|${card.number}`;
+        const existing = map.get(key);
+        if (existing) {
+            existing.qty += card.qty;
+        } else {
+            map.set(key, { ...card });
+        }
+    }
+    return Array.from(map.values());
+}
