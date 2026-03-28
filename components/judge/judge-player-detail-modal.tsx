@@ -23,8 +23,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, FileText, History as HistoryIcon, Gavel, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import { AlertCircle, FileText, History as HistoryIcon, Gavel, CheckCircle2, ChevronDown, ChevronUp, Edit, Trash2, ScrollText } from "lucide-react";
 import { getPlayerJudgeDetails, addPenalty, addDeckCheck, updatePenalty, deletePenalty } from "@/actions/judge";
+import { markPaperDecklist, unmarkPaperDecklist } from "@/actions/deck/paper-decklist";
 import { DeckDisplay } from "@/components/tournament/DeckDisplay";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -39,11 +40,13 @@ interface JudgePlayerDetailModalProps {
     tournamentId: string;
     player: {
         id: string; // tom_player_id
+        dbId?: string; // real db uuid
         name: string;
         record?: string;
     };
     roundNumber: number;
     canEditPenalties?: boolean;
+    requiresDeckList?: boolean;
 }
 
 const CATEGORIES = [
@@ -81,15 +84,19 @@ export function JudgePlayerDetailModal({
     tournamentId,
     player,
     roundNumber,
-    canEditPenalties = false
+    canEditPenalties = false,
+    requiresDeckList = false
 }: JudgePlayerDetailModalProps) {
     const [activeTab, setActiveTab] = useState("actions");
     const [isLoading, setIsLoading] = useState(true);
     const [history, setHistory] = useState<{
         penalties: any[];
         deckChecks: any[];
+        paperMeta?: any;
     }>({ penalties: [], deckChecks: [] });
     const [isPending, startTransition] = useTransition();
+    const [deckStatus, setDeckStatus] = useState<'online' | 'paper' | 'missing'>('missing');
+    const [paperLoading, setPaperLoading] = useState(false);
 
     // Action Modes
     const [actionMode, setActionMode] = useState<"none" | "penalty" | "check" | "edit_penalty">("none");
@@ -107,11 +114,15 @@ export function JudgePlayerDetailModal({
     // Start with blank check note
     const [checkNote, setCheckNote] = useState("");
 
-    // Load History
+    // Load History + Deck Status
     const refreshData = async () => {
         setIsLoading(true);
-        const data = await getPlayerJudgeDetails(tournamentId, player.id);
+        const data = await getPlayerJudgeDetails(tournamentId, player.id, player.dbId || player.id);
         setHistory(data);
+        // Check deck status
+        if (requiresDeckList && (data as any).deckStatus) {
+            setDeckStatus((data as any).deckStatus);
+        }
         setIsLoading(false);
     };
 
@@ -315,6 +326,52 @@ export function JudgePlayerDetailModal({
                                         <span>Issue Penalty</span>
                                         <span className="text-xs font-normal text-red-600/70">Warning, Game Loss, etc.</span>
                                     </Button>
+
+                                    {requiresDeckList && deckStatus !== 'online' && (
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className={deckStatus === 'paper'
+                                                ? "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                                                : "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-blue-200 text-blue-700 hover:bg-blue-50"
+                                            }
+                                            disabled={paperLoading}
+                                            onClick={async () => {
+                                                setPaperLoading(true);
+                                                if (deckStatus === 'paper') {
+                                                    const res = await unmarkPaperDecklist(tournamentId, player.dbId || player.id);
+                                                    if (res.error) toast.error(res.error);
+                                                    else { 
+                                                        toast.success("Paper mark removed"); 
+                                                        setDeckStatus('missing'); 
+                                                        refreshData(); 
+                                                    }
+                                                } else {
+                                                    const res = await markPaperDecklist(tournamentId, player.dbId || player.id);
+                                                    if (res.error) toast.error(res.error);
+                                                    else { 
+                                                        toast.success("Paper decklist marked"); 
+                                                        setDeckStatus('paper'); 
+                                                        refreshData(); 
+                                                    }
+                                                }
+                                                setPaperLoading(false);
+                                            }}
+                                        >
+                                            <ScrollText className="w-8 h-8 mb-1 text-blue-500" />
+                                            <span>{paperLoading ? "..." : deckStatus === 'paper' ? "Unmark Paper Decklist" : "Mark Paper Decklist"}</span>
+                                            <span className="text-xs font-normal text-blue-600/70">
+                                                {deckStatus === 'paper' ? "Remove paper submission mark" : "Player submitted a physical paper list"}
+                                            </span>
+                                        </Button>
+                                    )}
+
+                                    {deckStatus === 'paper' && history.paperMeta && (
+                                        <div className="text-center text-xs text-muted-foreground mt-2 border border-blue-100 bg-blue-50/50 p-2 rounded">
+                                            <div>Accepted by <strong>{history.paperMeta.accepted_by_name}</strong></div>
+                                            <div>{format(new Date(history.paperMeta.accepted_at), "MMM d, yyyy 'at' HH:mm")}</div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -453,13 +510,26 @@ export function JudgePlayerDetailModal({
                         <TabsContent value="history" className="mt-0">
                             {isLoading ? (
                                 <div className="text-center py-8 text-muted-foreground">Loading history...</div>
-                            ) : (history.penalties.length === 0 && history.deckChecks.length === 0) ? (
+                            ) : (history.penalties.length === 0 && history.deckChecks.length === 0 && !history.paperMeta) ? (
                                 <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-2">
                                     <HistoryIcon className="w-8 h-8 opacity-20" />
                                     <p>No history found for this tournament.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
+                                    {/* Paper Decklist History */}
+                                    {history.paperMeta && (
+                                        <div className="space-y-3">
+                                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Deck Submission</h4>
+                                            <div className="border-l-4 border-blue-500 bg-muted/40 p-3 rounded-r text-sm">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="font-bold text-blue-700 dark:text-blue-400">PAPER DECKLIST</span>
+                                                    <span className="text-xs text-muted-foreground">{format(new Date(history.paperMeta.accepted_at), "HH:mm")}</span>
+                                                </div>
+                                                <div className="text-muted-foreground mt-1 text-xs">Accepted by {history.paperMeta.accepted_by_name}</div>
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* Penalties */}
                                     {history.penalties.length > 0 && (
                                         <div className="space-y-3">

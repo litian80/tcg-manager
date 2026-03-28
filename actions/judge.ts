@@ -128,7 +128,7 @@ export async function addDeckCheck(formData: FormData) {
     return { success: true };
 }
 
-export async function getPlayerJudgeDetails(tournamentId: string, playerId: string) {
+export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: string, playerDbId: string) {
     const supabase = await createClient();
 
     // Auth Check
@@ -142,28 +142,49 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerId: stri
         return { penalties: [], deckChecks: [], error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
     }
 
-    // Fetch penalties
-    const { data: penalties, error: penaltiesError } = await supabase
-        .from('player_penalties')
-        .select('*')
-        .eq('tournament_id', tournamentId)
-        .eq('player_id', playerId)
-        .order('created_at', { ascending: false });
+    // Fetch penalties, deck checks, and deck submission status in parallel
+    const [penaltiesResult, checksResult, deckListResult] = await Promise.all([
+        supabase
+            .from('player_penalties')
+            .select('*')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerTomId)
+            .order('created_at', { ascending: false }),
+        supabase
+            .from('deck_checks')
+            .select('*')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerTomId)
+            .order('check_time', { ascending: false }),
+        supabase
+            .from('deck_lists')
+            .select('validation_status, raw_text, validation_errors')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerDbId)
+            .maybeSingle()
+    ]);
 
-    // Fetch deck checks
-    const { data: deckChecks, error: checksError } = await supabase
-        .from('deck_checks')
-        .select('*')
-        .eq('tournament_id', tournamentId)
-        .eq('player_id', playerId)
-        .order('check_time', { ascending: false });
+    const { data: penalties, error: penaltiesError } = penaltiesResult;
+    const { data: deckChecks, error: checksError } = checksResult;
 
     if (penaltiesError) console.error("Error fetching penalties:", penaltiesError);
     if (checksError) console.error("Error fetching deck checks:", checksError);
 
+    // Derive deck status
+    let deckStatus: 'online' | 'paper' | 'missing' = 'missing';
+    let paperMeta: any = null;
+    if (deckListResult.data) {
+        deckStatus = deckListResult.data.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online';
+        if (deckStatus === 'paper' && deckListResult.data.validation_errors) {
+            paperMeta = deckListResult.data.validation_errors;
+        }
+    }
+
     return {
         penalties: penalties || [],
-        deckChecks: deckChecks || []
+        deckChecks: deckChecks || [],
+        deckStatus,
+        paperMeta
     };
 }
 

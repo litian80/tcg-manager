@@ -187,9 +187,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     });
 
-    // 3. Fetch Roster if Matches are empty (Pre-Tournament)
+    // 3. Fetch Roster (always — needed for pre-tournament view AND the Roster tab during active play)
     let rosterPlayers: RosterPlayer[] = [];
-    if (matches.length === 0) {
+    {
         const { data: rosterData, error: rosterError } = await supabase
             .from("tournament_players")
             .select(`
@@ -202,13 +202,29 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         if (rosterError) {
             console.error("Error fetching roster:", rosterError);
         } else if (rosterData) {
-            // Map to flat structure
+            const { data: deckStatusData } = tournamentRecord.requires_deck_list
+                ? await supabase
+                    .from('deck_lists')
+                    .select('player_id, validation_status, raw_text')
+                    .eq('tournament_id', id)
+                : { data: [] };
+
+            const deckStatusMap = new Map<string, string>();
+            if (deckStatusData) {
+                deckStatusData.forEach((item: any) => {
+                    deckStatusMap.set(item.player_id, item.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online');
+                });
+            }
+
             rosterPlayers = rosterData.map((item: any) => ({
-                id: item.player?.tom_player_id || item.player_id, // Use TOM ID if available as simpler ID, or UUID
+                id: item.player?.tom_player_id || item.player_id,
                 first_name: item.player?.first_name || "Unknown",
                 last_name: item.player?.last_name || "Unknown",
                 tom_player_id: item.player?.tom_player_id,
-                registration_status: item.registration_status
+                registration_status: item.registration_status,
+                deck_list_status: deckStatusMap.has(item.player_id)
+                    ? (deckStatusMap.get(item.player_id) === 'paper' ? 'paper' as const : 'online' as const)
+                    : 'missing' as const
             }));
         }
     }

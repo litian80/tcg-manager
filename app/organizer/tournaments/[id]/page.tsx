@@ -48,25 +48,48 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
     // Determine the default tab based on tournament state
     const defaultTab = isActive ? "during" : "pre";
 
-    // Fetch Current Roster for RosterManager
-    const { data: tpData } = await supabase
-        .from('tournament_players')
-        .select(`
-            player_id,
-            players:player_id (
-                id,
-                first_name,
-                last_name,
-                tom_player_id
-            )
-        `)
-        .eq('tournament_id', id);
+    // Fetch Current Roster and Deck Lists for RosterManager
+    const [rosterResult, deckListResult] = await Promise.all([
+        supabase
+            .from('tournament_players')
+            .select(`
+                player_id,
+                players:player_id (
+                    id,
+                    first_name,
+                    last_name,
+                    tom_player_id
+                )
+            `)
+            .eq('tournament_id', id),
+        // Fetch which players have submitted deck lists
+        tournament.requires_deck_list
+            ? supabase
+                .from('deck_lists')
+                .select('player_id, validation_status, raw_text')
+                .eq('tournament_id', id)
+            : Promise.resolve({ data: null, error: null })
+    ]);
+
+    const rosterData = rosterResult.data;
+    const deckStatusData = deckListResult.data;
+    const deckStatusMap = new Map<string, string>();
+    if (deckStatusData) {
+        deckStatusData.forEach((item: any) => {
+            deckStatusMap.set(item.player_id, item.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online');
+        });
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentRoster = tpData?.map((tp: any) => ({
+    const currentRoster = (rosterData || []).map((tp: any) => ({
         ...tp.players,
-        birth_year: tp.players.birth_year || null
-    })) || [];
+        id: tp.player_id,
+        birth_year: tp.players?.birth_year || null,
+        registration_status: tp.registration_status,
+        deck_list_status: deckStatusMap.has(tp.player_id)
+            ? (deckStatusMap.get(tp.player_id) === 'paper' ? 'paper' as const : 'online' as const)
+            : 'missing' as const
+    }));
 
     // Fetch Current Judges
     const { data: judgeLinks } = await supabase
@@ -145,7 +168,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                                     </div>
 
                                     <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
-                                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} />
+                                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} requiresDeckList={!!tournament.requires_deck_list} />
                                     </div>
                                 </div>
                                 <div className="space-y-6">

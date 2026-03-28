@@ -138,20 +138,45 @@ export async function POST(req: NextRequest) {
 
         const roundCount = 0; // Will update if we find rounds
 
+        const targetId = searchParams.get('targetId');
+
         // STRICT IDENTIFICATION CHECK
         // We use tom_uid, city, country, organizer_popid, date to identify.
-        // Falls back to just Name+Date if these are missing? 
-        // Valid TDF should have them. 
+        // OR, if the client provided a explicit targetId (e.g., updating an existing tournament), use that first.
+        let existingTournament: { id: string } | null = null;
+        
+        if (targetId) {
+            const { data } = await supabase
+                .from('tournaments')
+                .select('id')
+                .eq('id', targetId)
+                .single();
+            existingTournament = data;
+        }
 
-        const { data: existingTournament, error: fetchError } = await supabase
-            .from('tournaments')
-            .select('id')
-            .eq('tom_uid', tomUid)
-            .eq('city', city)
-            .eq('country', country)
-            .eq('organizer_popid', organizerPopId)
-            .eq('date', date)
-            .single();
+        // Fallback 1: If tom_uid exists, it's a globally unique Sanction ID. Match on that alone.
+        if (!existingTournament && tomUid) {
+            const { data } = await supabase
+                .from('tournaments')
+                .select('id')
+                .eq('tom_uid', tomUid)
+                .maybeSingle(); // Use maybeSingle in case there are duplicates, we grab the first.
+            
+            if (data) existingTournament = data;
+        }
+
+        // Fallback 2: If no tom_uid in the file (unofficial tournament), match on Name, Date, Organizer
+        if (!existingTournament) {
+            const { data } = await supabase
+                .from('tournaments')
+                .select('id')
+                .eq('name', name)
+                .eq('date', date)
+                .eq('organizer_popid', organizerPopId)
+                .maybeSingle();
+            
+            if (data) existingTournament = data;
+        }
 
         let tournamentId: string;
 
@@ -195,7 +220,7 @@ export async function POST(req: NextRequest) {
         const playersRoot = tournamentRoot.players;
         const xmlPlayers = asArray(playersRoot?.player);
 
-        const tournamentPlayersToInsert: { tournament_id: string; player_id: string }[] = [];
+        const tournamentPlayersToInsert: { tournament_id: string; player_id: string; registration_status: string }[] = [];
 
         for (const p of xmlPlayers) {
             const userid = p.userid ? p.userid.toString() : null;
@@ -215,19 +240,22 @@ export async function POST(req: NextRequest) {
             }
 
             // New logic: Collect for tournament_players index
+            // TOM is source of truth — if a player is in TOM, they are checked in
             tournamentPlayersToInsert.push({
                 tournament_id: tournamentId,
-                player_id: userid
+                player_id: userid,
+                registration_status: 'checked_in'
             });
         }
 
-        // Bulk insert into tournament_players
+        // Bulk upsert into tournament_players
+        // ignoreDuplicates: false so TOM can update existing registrations to checked_in
         if (tournamentPlayersToInsert.length > 0) {
             const { error: tpError } = await supabase
                 .from('tournament_players')
                 .upsert(tournamentPlayersToInsert, {
                     onConflict: 'tournament_id, player_id',
-                    ignoreDuplicates: true
+                    ignoreDuplicates: false
                 });
 
             if (tpError) {

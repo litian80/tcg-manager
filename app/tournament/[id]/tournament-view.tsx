@@ -2,7 +2,7 @@
 
 import { UserResult } from "@/actions/tournament/staff";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock } from "lucide-react";
+import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -121,13 +121,12 @@ export default function TournamentView({
             (m.p2 ? `${m.p2.first_name} ${m.p2.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase())
         ));
     };
-
-    const [viewMode, setViewMode] = useState<'pairings' | 'standings'>('pairings');
+    const [viewMode, setViewMode] = useState<'pairings' | 'standings' | 'roster'>('pairings');
 
     // Judge Actions Logic
     const isJudge = hasPermission(userRole, 'match.edit_result');
     const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
-    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; name: string; tomId: string; matchId?: string; extension?: number } | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; tomId?: string; dbId?: string; name: string; record?: string } | null>(null);
 
     // Time Extension Modal State
     const [extensionModalOpen, setExtensionModalOpen] = useState(false);
@@ -148,7 +147,8 @@ export default function TournamentView({
         return tournament.deck_list_submission_deadline ? new Date(tournament.deck_list_submission_deadline) : null;
     }, [tournament.deck_list_submission_deadline]);
 
-    const isDeadlinePassed = !!(memoizedDeadline && memoizedDeadline < new Date());
+    const isTournamentStarted = tournament.status !== 'upcoming';
+    const isDeadlinePassed = !!(memoizedDeadline && memoizedDeadline < new Date()) || isTournamentStarted;
     
     // Calculate time left to deadline
     useEffect(() => {
@@ -327,7 +327,7 @@ export default function TournamentView({
                                 {deckSubmissionButtonText}
                                 {isDeadlinePassed && (
                                     <span className="ml-auto text-xs text-muted-foreground">
-                                        Deadline Passed
+                                        {isTournamentStarted ? "Tournament Started" : "Deadline Passed"}
                                     </span>
                                 )}
                                 {!isDeadlinePassed && !deckListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
@@ -347,7 +347,7 @@ export default function TournamentView({
                                     <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
                                     <div className="space-y-1">
                                         <p className="text-muted-foreground">
-                                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} on {isMounted ? memoizedDeadline.toLocaleDateString() : '...'} at {isMounted ? memoizedDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `on ${isMounted ? memoizedDeadline.toLocaleDateString() : '...'} at ${isMounted ? memoizedDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}` : ''}
                                         </p>
                                         
                                         {timeLeft && !timeLeft.isPast && (
@@ -376,9 +376,12 @@ export default function TournamentView({
                         </div>
                     )}
 
-                    {/* View Toggle - Only show if completed AND has matches */}
-                    {hasMatches && tournament.status === 'completed' && (
-                        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-lg">
+                    {/* View Toggle - Show to staff during active tournaments, or to everyone when completed */}
+                    {hasMatches && (tournament.status === 'completed' || isJudge || canManageStaff) && (
+                        <div className={cn(
+                            "grid gap-1 p-1 bg-muted rounded-lg",
+                            (isJudge || canManageStaff) && tournament.requires_deck_list ? "grid-cols-3" : "grid-cols-2"
+                        )}>
                             <button
                                 onClick={() => setViewMode('pairings')}
                                 className={cn(
@@ -401,6 +404,20 @@ export default function TournamentView({
                             >
                                 Standings
                             </button>
+                            {(isJudge || canManageStaff) && tournament.requires_deck_list && (
+                                <button
+                                    onClick={() => setViewMode('roster')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center justify-center gap-1",
+                                        viewMode === 'roster'
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <Users className="h-3.5 w-3.5" />
+                                    Roster
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -427,7 +444,12 @@ export default function TournamentView({
                             <PlayerRoster 
                                 players={rosterPlayers} 
                                 canManage={canManageStaff} 
-                                tournamentId={tournament.id} 
+                                tournamentId={tournament.id}
+                                requiresDeckList={!!tournament.requires_deck_list}
+                                onPlayerClick={isJudge || canManageStaff ? (player) => {
+                                    setSelectedPlayer({ ...player, tomId: player.id, dbId: player.dbId || player.id });
+                                    setPenaltyModalOpen(true);
+                                } : undefined}
                             />
                         ) : (
                             <div className="text-center p-8 bg-muted/50 rounded-lg text-muted-foreground">
@@ -441,6 +463,14 @@ export default function TournamentView({
                             <div className="p-4">
                                 <StandingsView tournamentId={tournament.id} myPlayerId={myPlayerId} />
                             </div>
+                        ) : viewMode === 'roster' ? (
+                            <RosterTabContent
+                                rosterPlayers={rosterPlayers}
+                                onPlayerClick={(player) => {
+                                    setSelectedPlayer({ ...player, tomId: player.id, dbId: player.dbId || player.id });
+                                    setPenaltyModalOpen(true);
+                                }}
+                            />
                         ) : (
                             <>
                                 {/* Division Selector */}
@@ -551,6 +581,7 @@ export default function TournamentView({
                     player={selectedPlayer}
                     roundNumber={currentRound}
                     canEditPenalties={canManageStaff}
+                    requiresDeckList={!!tournament.requires_deck_list}
                 />
             )}
 
@@ -571,4 +602,102 @@ export default function TournamentView({
     );
 }
 
+
+// --- Roster Tab Content ---
+
+interface RosterTabContentProps {
+    rosterPlayers: RosterPlayer[];
+    onPlayerClick: (player: { id: string; name: string; dbId?: string }) => void;
+}
+
+function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProps) {
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const onlineCount = rosterPlayers.filter(p => p.deck_list_status === 'online').length;
+    const paperCount = rosterPlayers.filter(p => p.deck_list_status === 'paper').length;
+    const totalSubmitted = onlineCount + paperCount;
+
+    const filteredPlayers = [...rosterPlayers]
+        .filter(p => {
+            if (!searchQuery) return true;
+            const name = `${p.first_name} ${p.last_name}`.toLowerCase();
+            return name.includes(searchQuery.toLowerCase());
+        })
+        .sort((a, b) => {
+            const nameA = (a.first_name || "").toLowerCase();
+            const nameB = (b.first_name || "").toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+    return (
+        <div className="p-4 space-y-3">
+            {/* Summary */}
+            <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{rosterPlayers.length} players</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="gap-1 text-xs">
+                        <ScrollText className="h-3 w-3" />
+                        {totalSubmitted}/{rosterPlayers.length}
+                    </Badge>
+                    {onlineCount > 0 && <span className="text-green-600">{onlineCount} online</span>}
+                    {paperCount > 0 && <span className="text-blue-600">{paperCount} paper</span>}
+                </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search players..."
+                    className="pl-9 h-9 text-base shadow-none bg-muted/50 focus-visible:bg-background rounded-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+
+            {/* Player List */}
+            <div className="divide-y rounded-lg border bg-card">
+                {filteredPlayers.map((player) => (
+                    <div key={player.id} className="flex items-center justify-between p-3 gap-2">
+                        <div className="flex-1 min-w-0">
+                            <button
+                                onClick={() => onPlayerClick({
+                                    id: player.tom_player_id || player.id,
+                                    name: `${player.first_name || "Unknown"} ${player.last_name || "Unknown"}`,
+                                    dbId: player.player_id || player.id
+                                })}
+                                className="text-sm font-medium text-left hover:underline truncate block"
+                            >
+                                {player.first_name || "Unknown"} {player.last_name || "Unknown"}
+                            </button>
+                        </div>
+
+                        {/* Status Badge */}
+                        {player.deck_list_status === 'online' ? (
+                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-xs">
+                                Online ✓
+                            </Badge>
+                        ) : player.deck_list_status === 'paper' ? (
+                            <Badge variant="default" className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs">
+                                Paper ✓
+                            </Badge>
+                        ) : (
+                            <Badge variant="destructive" className="text-xs">
+                                No deck
+                            </Badge>
+                        )}
+                    </div>
+                ))}
+                {filteredPlayers.length === 0 && (
+                    <div className="text-center text-sm text-muted-foreground py-8">
+                        {searchQuery ? "No players match your search." : "No players in roster."}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 

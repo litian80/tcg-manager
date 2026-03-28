@@ -265,16 +265,14 @@ export function mergeCards(cards: ParsedCard[]): ParsedCard[] {
 }
 
 /**
- * Trainer sub-type sort priority.
+ * Trainer sub-type sort priority (matches secondary_category values in prod DB).
  * Lower number = appears first in the sorted list.
  */
 const TRAINER_SUBTYPE_ORDER: Record<string, number> = {
     'supporter': 0,
     'item': 1,
-    'technical machine': 2,
-    'tool': 3,
-    'ace spec': 4,
-    'stadium': 5,
+    'tool': 2,
+    'stadium': 3,
 };
 
 /**

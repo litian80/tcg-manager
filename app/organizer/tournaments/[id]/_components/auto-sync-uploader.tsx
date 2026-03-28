@@ -57,7 +57,8 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
             // Using FormData would break compatibility as the text parser would read the multipart boundary.
             // We send the file directly as the body, mirroring the logic in app/admin/upload/page.tsx.
 
-            const response = await fetch(`/api/upload-tom?published=${isPublished}`, {
+            const targetQuery = tournamentId ? `&targetId=${tournamentId}` : '';
+            const response = await fetch(`/api/upload-tom?published=${isPublished}${targetQuery}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/xml',

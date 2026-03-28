@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, UserPlus, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, UserPlus, Trash2, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { searchRosterCandidates, addPlayerToRoster, removePlayerFromRoster, RosterCandidate } from "@/actions/roster-management";
 import { useRouter } from "next/navigation";
@@ -16,14 +17,17 @@ interface Player {
     last_name: string;
     tom_player_id?: string;
     birth_year?: number;
+    has_deck_list?: boolean; // deprecated, kept for compat
+    deck_list_status?: 'online' | 'paper' | 'missing';
 }
 
 interface RosterManagerProps {
     tournamentId: string;
     currentRoster: Player[];
+    requiresDeckList?: boolean;
 }
 
-export function RosterManager({ tournamentId, currentRoster }: RosterManagerProps) {
+export function RosterManager({ tournamentId, currentRoster, requiresDeckList }: RosterManagerProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<RosterCandidate[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -155,6 +159,12 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold">Current Roster ({currentRoster.length})</h3>
+                        {requiresDeckList && currentRoster.length > 0 && (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                                <ScrollText className="h-3 w-3" />
+                                {currentRoster.filter(p => p.deck_list_status === 'online' || p.deck_list_status === 'paper').length}/{currentRoster.length} decks
+                            </Badge>
+                        )}
                     </div>
 
                     <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
@@ -164,19 +174,36 @@ export function RosterManager({ tournamentId, currentRoster }: RosterManagerProp
                             currentRoster.map((player) => (
                                 <div key={player.id} className="flex items-center justify-between p-3 text-sm">
                                     <div className="flex-1">
-                                        <Button 
-                                            variant="link"
-                                            onClick={() => {
-                                                setSelectedPlayer({
-                                                    id: player.tom_player_id || player.id,
-                                                    name: `${player.first_name} ${player.last_name}`
-                                                });
-                                                setIsDeckModalOpen(true);
-                                            }}
-                                            className="text-left font-medium p-0 h-auto"
-                                        >
-                                            {player.first_name} {player.last_name}
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button 
+                                                variant="link"
+                                                onClick={() => {
+                                                    setSelectedPlayer({
+                                                        id: player.tom_player_id || player.id,
+                                                        name: `${player.first_name} ${player.last_name}`
+                                                    });
+                                                    setIsDeckModalOpen(true);
+                                                }}
+                                                className="text-left font-medium p-0 h-auto"
+                                            >
+                                                {player.first_name} {player.last_name}
+                                            </Button>
+                                            {requiresDeckList && (
+                                                player.deck_list_status === 'online' ? (
+                                                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 text-xs px-1.5 py-0">
+                                                        ✓
+                                                    </Badge>
+                                                ) : player.deck_list_status === 'paper' ? (
+                                                    <Badge variant="default" className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs px-1.5 py-0">
+                                                        📄
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                                                        No deck
+                                                    </Badge>
+                                                )
+                                            )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground">
                                             ID: {player.tom_player_id || "N/A"}
                                             {player.birth_year ? ` • Born: ${player.birth_year}` : ""}
