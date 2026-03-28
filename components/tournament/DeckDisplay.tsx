@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,8 +9,9 @@ import { AlertCircle, Loader2, Info } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { getPlayerDeckList } from "@/actions/judge";
-import { parseDeckList, mergeCards } from "@/utils/deck-validator";
+import { parseDeckList, mergeCards, sortCards } from "@/utils/deck-validator";
 import { CategorySection } from "@/components/tournament/DeckSubmissionModal";
+import type { ParsedCard } from "@/types/deck";
 
 interface DeckDisplayProps {
     tournamentId: string;
@@ -42,6 +43,31 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
         fetchDeckList();
     }, [tournamentId, playerId]);
 
+    // Build a lookup map from DB card data: "name|set_code|card_number" → secondary_category
+    const secondaryCategoryMap = useMemo(() => {
+        const map = new Map<string, string>();
+        if (!deckListData?.deck_list_cards) return map;
+        for (const dlc of deckListData.deck_list_cards) {
+            const card = dlc.cards;
+            if (!card) continue;
+            const setCode = card.sets?.code || '';
+            const key = `${(card.name || '').toLowerCase()}|${setCode.toLowerCase()}|${card.card_number}`;
+            if (card.secondary_category) {
+                map.set(key, card.secondary_category);
+            }
+        }
+        return map;
+    }, [deckListData]);
+
+    // Enrich parsed cards with secondaryCategory from DB lookup
+    const enrichCards = (cards: ParsedCard[]): ParsedCard[] => {
+        return cards.map(card => {
+            const key = `${card.name.toLowerCase()}|${card.set.toLowerCase()}|${card.number}`;
+            const secondaryCategory = secondaryCategoryMap.get(key);
+            return secondaryCategory ? { ...card, secondaryCategory } : card;
+        });
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
@@ -61,6 +87,11 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
     }
 
     const parsed = parseDeckList(deckListData.raw_text);
+
+    // Merge → Enrich with DB sub-types → Sort
+    const pokemonCards = sortCards(enrichCards(mergeCards(parsed.Pokemon || [])), 'pokemon');
+    const trainerCards = sortCards(enrichCards(mergeCards(parsed.Trainer || [])), 'trainer');
+    const energyCards = sortCards(enrichCards(mergeCards(parsed.Energy || [])), 'energy');
 
     return (
         <div className="space-y-3">
@@ -98,9 +129,9 @@ export function DeckDisplay({ tournamentId, playerId }: DeckDisplayProps) {
                         <ScrollArea className="h-full px-2 py-1">
                             {parsed ? (
                                 <div className="space-y-3 pb-4">
-                                    <CategorySection title="Pokémon" cards={mergeCards(parsed.Pokemon || [])} color="border-l-[3px] border-l-green-500" />
-                                    <CategorySection title="Trainer" cards={mergeCards(parsed.Trainer || [])} color="border-l-[3px] border-l-blue-500" />
-                                    <CategorySection title="Energy" cards={mergeCards(parsed.Energy || [])} color="border-l-[3px] border-l-amber-500" />
+                                    <CategorySection title="Pokémon" cards={pokemonCards} color="border-l-[3px] border-l-green-500" />
+                                    <CategorySection title="Trainer" cards={trainerCards} color="border-l-[3px] border-l-blue-500" />
+                                    <CategorySection title="Energy" cards={energyCards} color="border-l-[3px] border-l-amber-500" />
                                 </div>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

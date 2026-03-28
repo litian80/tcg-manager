@@ -263,3 +263,53 @@ export function mergeCards(cards: ParsedCard[]): ParsedCard[] {
     }
     return Array.from(map.values());
 }
+
+/**
+ * Trainer sub-type sort priority.
+ * Lower number = appears first in the sorted list.
+ */
+const TRAINER_SUBTYPE_ORDER: Record<string, number> = {
+    'supporter': 0,
+    'item': 1,
+    'technical machine': 2,
+    'tool': 3,
+    'ace spec': 4,
+    'stadium': 5,
+};
+
+/**
+ * Sort cards within a category according to display rules.
+ * 
+ * - Pokémon: Quantity (desc), then Name (alpha)
+ * - Trainer: Sub-type priority (Supporter → Item → TM → Tool → Ace Spec → Stadium),
+ *            then Quantity (desc), then Name (alpha).
+ *            Requires secondaryCategory to be set on cards for sub-type sorting.
+ * - Energy:  Special first, Basic last, then Quantity (desc), then Name (alpha)
+ */
+export function sortCards(cards: ParsedCard[], category: 'pokemon' | 'trainer' | 'energy'): ParsedCard[] {
+    return [...cards].sort((a, b) => {
+        if (category === 'trainer') {
+            const aType = TRAINER_SUBTYPE_ORDER[(a.secondaryCategory || '').toLowerCase()] ?? 99;
+            const bType = TRAINER_SUBTYPE_ORDER[(b.secondaryCategory || '').toLowerCase()] ?? 99;
+            if (aType !== bType) return aType - bType;
+        }
+
+        if (category === 'energy') {
+            // Special energy first (isBasicEnergy = false), Basic energy last
+            const aBasic = a.isBasicEnergy ? 1 : 0;
+            const bBasic = b.isBasicEnergy ? 1 : 0;
+            if (aBasic !== bBasic) return aBasic - bBasic;
+        }
+
+        if (category === 'pokemon') {
+            // Name alphabetical first, then quantity descending
+            const nameCompare = a.name.localeCompare(b.name);
+            if (nameCompare !== 0) return nameCompare;
+            return b.qty - a.qty;
+        }
+
+        // Trainers & Energy: Quantity descending, then name alphabetical
+        if (b.qty !== a.qty) return b.qty - a.qty;
+        return a.name.localeCompare(b.name);
+    });
+}

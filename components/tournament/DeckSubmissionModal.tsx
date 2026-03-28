@@ -20,7 +20,7 @@ import { validateDeckListAction, ValidationResult } from "@/actions/deck/validat
 import { submitDeckAction } from "@/actions/deck/submission";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { mergeCards } from "@/utils/deck-validator";
+import { mergeCards, sortCards } from "@/utils/deck-validator";
 import type { ParsedCard, ParsedDeckCategories } from "@/types/deck";
 import { useRouter } from "next/navigation";
 
@@ -513,9 +513,9 @@ export function DeckSubmissionModal({
                               } / 60
                             </Badge>
                           </div>
-                          <CategorySection title="Pokémon" cards={mergeCards(parsedDeck.Pokemon || [])} color="border-l-[3px] border-l-green-500" />
-                          <CategorySection title="Trainer" cards={mergeCards(parsedDeck.Trainer || [])} color="border-l-[3px] border-l-blue-500" />
-                          <CategorySection title="Energy" cards={mergeCards(parsedDeck.Energy || [])} color="border-l-[3px] border-l-amber-500" />
+                          <CategorySection title="Pokémon" cards={sortCards(mergeCards(parsedDeck.Pokemon || []), 'pokemon')} color="border-l-[3px] border-l-green-500" />
+                          <CategorySection title="Trainer" cards={sortCards(mergeCards(parsedDeck.Trainer || []), 'trainer')} color="border-l-[3px] border-l-blue-500" />
+                          <CategorySection title="Energy" cards={sortCards(mergeCards(parsedDeck.Energy || []), 'energy')} color="border-l-[3px] border-l-amber-500" />
                         </div>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

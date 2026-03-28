@@ -6,6 +6,7 @@ export interface ParsedCard {
     raw: string;
     isBasicEnergy?: boolean;
     category?: 'pokemon' | 'trainer' | 'energy';
+    secondaryCategory?: string; // e.g. Supporter, Item, Tool, Stadium, Ace Spec
 }
 
 export interface ParsedDeckCategories {

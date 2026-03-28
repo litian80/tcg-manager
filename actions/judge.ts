@@ -288,7 +288,14 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
 
     const { data: deckList, error } = await supabase
         .from("deck_lists")
-        .select("id, raw_text, validation_status, submitted_at, validation_errors")
+        .select(`
+            id, raw_text, validation_status, submitted_at, validation_errors,
+            deck_list_cards(
+                card_id,
+                quantity,
+                cards(name, card_number, set_id, secondary_category, sets(code))
+            )
+        `)
         .eq("tournament_id", tournamentId)
         .eq("player_id", playerId)
         .maybeSingle();
