@@ -54,6 +54,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
             .from('tournament_players')
             .select(`
                 player_id,
+                registration_status,
                 players:player_id (
                     id,
                     first_name,

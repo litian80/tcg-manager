@@ -8,10 +8,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useState } from "react";
-import { ScrollText } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ScrollText, Loader2 } from "lucide-react";
+import { updateRegistrationStatus } from "@/actions/roster-management";
 
 interface Player {
     id: string;
@@ -27,13 +27,22 @@ interface Player {
 interface PlayerRosterProps {
     players: Player[];
     canManage?: boolean;
+    canCheckIn?: boolean;
     tournamentId?: string;
     requiresDeckList?: boolean;
     myPlayerId?: string;
     onPlayerClick?: (player: { id: string; name: string; dbId?: string }) => void;
 }
 
-export function PlayerRoster({ players, canManage, tournamentId, requiresDeckList, myPlayerId, onPlayerClick }: PlayerRosterProps) {
+export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, requiresDeckList, myPlayerId, onPlayerClick }: PlayerRosterProps) {
+    const [isPending, startTransition] = useTransition();
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+    // Local optimistic state for registration statuses
+    const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
+
+    const showStatusColumn = canManage || canCheckIn;
+    const isClickable = showStatusColumn && onPlayerClick;
+
     // Sort players alphabetically by First Name
     const sortedPlayers = [...players].sort((a, b) => {
         const isMeA = myPlayerId && (a.id === myPlayerId || a.tom_player_id === myPlayerId);
@@ -52,17 +61,51 @@ export function PlayerRoster({ players, canManage, tournamentId, requiresDeckLis
     const paperCount = requiresDeckList ? players.filter(p => p.deck_list_status === 'paper').length : 0;
     const totalSubmitted = onlineCount + paperCount;
 
+    // Count check-ins
+    const checkedInCount = players.filter(p => {
+        const status = localStatuses[p.tom_player_id || p.id] || p.registration_status;
+        return status === 'checked_in';
+    }).length;
+
+    const handleToggleCheckIn = (player: Player) => {
+        if (!tournamentId) return;
+        const playerId = player.tom_player_id || player.id;
+        const currentStatus = localStatuses[playerId] || player.registration_status || 'registered';
+        const newStatus = currentStatus === 'checked_in' ? 'registered' : 'checked_in';
+
+        setTogglingId(playerId);
+        // Optimistic update
+        setLocalStatuses(prev => ({ ...prev, [playerId]: newStatus }));
+
+        startTransition(async () => {
+            const res = await updateRegistrationStatus(tournamentId, playerId, newStatus);
+            if (res.error) {
+                toast.error(res.error);
+                // Revert optimistic update
+                setLocalStatuses(prev => ({ ...prev, [playerId]: currentStatus }));
+            }
+            setTogglingId(null);
+        });
+    };
+
     return (
         <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle>Player Roster ({players.length})</CardTitle>
-                    {requiresDeckList && players.length > 0 && (
-                        <Badge variant="outline" className="gap-1 text-xs">
-                            <ScrollText className="h-3 w-3" />
-                            {totalSubmitted}/{players.length} decks
-                        </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {showStatusColumn && players.length > 0 && (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                                ✓ {checkedInCount}/{players.length}
+                            </Badge>
+                        )}
+                        {requiresDeckList && players.length > 0 && (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                                <ScrollText className="h-3 w-3" />
+                                {totalSubmitted}/{players.length} decks
+                            </Badge>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -75,19 +118,22 @@ export function PlayerRoster({ players, canManage, tournamentId, requiresDeckLis
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                {canManage && <TableHead>Status</TableHead>}
+                                {showStatusColumn && <TableHead>Status</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {sortedPlayers.map((player) => {
                                 const isMe = (myPlayerId) && (player.id === myPlayerId || player.tom_player_id === myPlayerId);
+                                const playerId = player.tom_player_id || player.id;
+                                const effectiveStatus = localStatuses[playerId] || player.registration_status || 'registered';
+                                const isToggling = togglingId === playerId;
                                 
                                 return (
                                 <TableRow key={player.id} className={isMe ? "bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40" : ""}>
                                     <TableCell className="font-medium">
-                                        {canManage && onPlayerClick ? (
+                                        {isClickable ? (
                                             <button
-                                                onClick={() => onPlayerClick({
+                                                onClick={() => onPlayerClick!({
                                                     id: player.tom_player_id || player.id,
                                                     name: `${player.first_name || "Unknown"} ${player.last_name || "Unknown"}`,
                                                     dbId: player.player_id || player.id
@@ -104,20 +150,33 @@ export function PlayerRoster({ players, canManage, tournamentId, requiresDeckLis
                                             </div>
                                         )}
                                     </TableCell>
-                                    {canManage && (
+                                    {showStatusColumn && (
                                         <TableCell>
                                             <div className="flex flex-col gap-1 items-start">
-                                                <Badge 
-                                                    variant={
-                                                        player.registration_status === 'checked_in' ? 'default' : 
-                                                        player.registration_status === 'waitlisted' ? 'secondary' : 
-                                                        player.registration_status === 'withdrawn' || player.registration_status === 'cancelled' ? 'destructive' : 
-                                                        'outline'
-                                                    }
-                                                    className={player.registration_status === 'checked_in' ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                                                <button
+                                                    onClick={() => handleToggleCheckIn(player)}
+                                                    disabled={isToggling || isPending}
+                                                    className="cursor-pointer disabled:cursor-wait"
                                                 >
-                                                    {player.registration_status ? player.registration_status.replace('_', ' ').toUpperCase() : 'REGISTERED'}
-                                                </Badge>
+                                                    <Badge 
+                                                        variant={
+                                                            effectiveStatus === 'checked_in' ? 'default' : 
+                                                            effectiveStatus === 'waitlisted' ? 'secondary' : 
+                                                            effectiveStatus === 'withdrawn' || effectiveStatus === 'cancelled' ? 'destructive' : 
+                                                            'outline'
+                                                        }
+                                                        className={
+                                                            effectiveStatus === 'checked_in' 
+                                                                ? "bg-green-600 hover:bg-green-700 text-white transition-colors" 
+                                                                : "hover:bg-muted transition-colors"
+                                                        }
+                                                    >
+                                                        {isToggling ? (
+                                                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                                        ) : null}
+                                                        {effectiveStatus ? effectiveStatus.replace('_', ' ').toUpperCase() : 'REGISTERED'}
+                                                    </Badge>
+                                                </button>
                                                 {requiresDeckList && (
                                                     player.deck_list_status === 'online' ? (
                                                         <span className="text-xs text-green-600 flex items-center gap-0.5">

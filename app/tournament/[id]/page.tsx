@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import TournamentView from "./tournament-view";
@@ -219,6 +220,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             rosterPlayers = rosterData.map((item: any) => ({
                 id: item.player?.tom_player_id || item.player_id,
+                player_id: item.player_id,
                 first_name: item.player?.first_name || "Unknown",
                 last_name: item.player?.last_name || "Unknown",
                 tom_player_id: item.player?.tom_player_id,

@@ -82,8 +82,8 @@ export default function TournamentView({
     const [isMounted, setIsMounted] = useState(false);
 
     // Dynamic sticky offset measurement (UX-005)
-    const header = useStickyHeight();
-    const divisionSelector = useStickyHeight();
+    const { ref: headerRef, height: headerHeight } = useStickyHeight();
+    const { ref: divisionSelectorRef, height: divisionSelectorHeight } = useStickyHeight();
 
     // Determine if we have matches to decide view mode
     const hasMatches = matches.length > 0;
@@ -232,7 +232,7 @@ export default function TournamentView({
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Sticky Header & Search */}
-            <div ref={header.ref} className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
+            <div ref={headerRef} className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
                 <div className="p-4 pb-2 max-w-md mx-auto w-full space-y-3">
                     {/* Top Navigation & Title */}
                     <div className="flex items-center justify-between gap-4 w-full">
@@ -446,6 +446,7 @@ export default function TournamentView({
                             <PlayerRoster 
                                 players={rosterPlayers} 
                                 canManage={canManageStaff} 
+                                canCheckIn={isJudge}
                                 tournamentId={tournament.id}
                                 requiresDeckList={!!tournament.requires_deck_list}
                                 myPlayerId={myPlayerId}
@@ -479,8 +480,8 @@ export default function TournamentView({
                                 {/* Division Selector */}
                                 {sortedDivisions.length > 0 && (
                                     <div
-                                        ref={divisionSelector.ref}
-                                        style={{ top: header.height }}
+                                        ref={divisionSelectorRef}
+                                        style={{ top: headerHeight }}
                                         className="px-4 py-2 sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
                                     >
                                         <div className="flex p-1 bg-muted rounded-lg">
@@ -504,7 +505,7 @@ export default function TournamentView({
 
                                 <Tabs defaultValue={String(currentRound)} className="w-full">
                                     <div
-                                        style={{ top: header.height + divisionSelector.height }}
+                                        style={{ top: headerHeight + divisionSelectorHeight }}
                                         className="sticky z-10 bg-background border-b px-4"
                                     >
                                         <TabsList className="w-full flex overflow-x-auto justify-start h-auto p-1 bg-transparent hide-scrollbar">
