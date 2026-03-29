@@ -114,7 +114,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         isAssignedJudge = (count ?? 0) > 0;
     }
 
-    const [matchesPromise, penaltiesPromise] = await Promise.all([
+    const [matchesPromise, penaltiesPromise, deckChecksPromise] = await Promise.all([
         supabase
             .from("matches")
             .select(`
@@ -127,6 +127,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 division,
                 is_finished,
                 outcome,
+                time_extension_minutes,
                 p1_display_record,
                 p2_display_record,
                 p1:players!player1_tom_id(first_name, last_name),
@@ -139,8 +140,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 .select('player_id')
                 .eq('tournament_id', id) : 
             Promise.resolve({ data: null, error: null })
+        , (isAssignedJudge || canManageStaff) ? 
+            supabase
+                .from('deck_checks')
+                .select('player_id')
+                .eq('tournament_id', id) : 
+            Promise.resolve({ data: null, error: null })
     ]);
-
     const { data: matchesData, error: matchesError } = await matchesPromise;
 
     if (matchesError) {
@@ -244,6 +250,16 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     }
 
+    let deckCheckCounts: Record<string, number> = {};
+    if (deckChecksPromise) {
+        const { data: checks } = await deckChecksPromise;
+        if (checks) {
+            checks.forEach((c: { player_id: string }) => {
+                deckCheckCounts[c.player_id] = (deckCheckCounts[c.player_id] || 0) + 1;
+            });
+        }
+    }
+
 
     const parsedData = tournamentRecord.parsed_data as { tom_stage?: number } | null;
     const tomStage = parsedData?.tom_stage ?? 1;
@@ -268,6 +284,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 myRegistrationStatus={myRegistrationStatus}
                 myWaitlistPosition={myWaitlistPosition}
                 penaltyCounts={penaltyCounts}
+                deckCheckCounts={deckCheckCounts}
                 deckList={deckList}
 
             />

@@ -8,9 +8,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState, useTransition } from "react";
-import { ScrollText, Loader2 } from "lucide-react";
+import { ScrollText, Loader2, CheckCircle2, Undo2 } from "lucide-react";
 import { updateRegistrationStatus } from "@/actions/roster-management";
 
 interface Player {
@@ -118,7 +119,7 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                {showStatusColumn && <TableHead>Status</TableHead>}
+                                {showStatusColumn && <TableHead className="text-right">Check In</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -152,31 +153,39 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                                     </TableCell>
                                     {showStatusColumn && (
                                         <TableCell>
-                                            <div className="flex flex-col gap-1 items-start">
-                                                <button
-                                                    onClick={() => handleToggleCheckIn(player)}
-                                                    disabled={isToggling || isPending}
-                                                    className="cursor-pointer disabled:cursor-wait"
-                                                >
-                                                    <Badge 
-                                                        variant={
-                                                            effectiveStatus === 'checked_in' ? 'default' : 
-                                                            effectiveStatus === 'waitlisted' ? 'secondary' : 
-                                                            effectiveStatus === 'withdrawn' || effectiveStatus === 'cancelled' ? 'destructive' : 
-                                                            'outline'
-                                                        }
-                                                        className={
-                                                            effectiveStatus === 'checked_in' 
-                                                                ? "bg-green-600 hover:bg-green-700 text-white transition-colors" 
-                                                                : "hover:bg-muted transition-colors"
-                                                        }
-                                                    >
-                                                        {isToggling ? (
-                                                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                                        ) : null}
-                                                        {effectiveStatus ? effectiveStatus.replace('_', ' ').toUpperCase() : 'REGISTERED'}
-                                                    </Badge>
-                                                </button>
+                                            <div className="flex flex-col gap-1.5 items-end">
+                                                <div className="flex items-center gap-2">
+                                                    {effectiveStatus === 'checked_in' ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleToggleCheckIn(player)}
+                                                            disabled={isToggling || isPending}
+                                                            className="h-7 px-2.5 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                                                        >
+                                                            {isToggling ? (
+                                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                            ) : (
+                                                                <Undo2 className="h-3 w-3" />
+                                                            )}
+                                                            Undo
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleToggleCheckIn(player)}
+                                                            disabled={isToggling || isPending}
+                                                            className="h-7 px-2.5 text-xs gap-1 bg-green-600 hover:bg-green-700 text-white"
+                                                        >
+                                                            {isToggling ? (
+                                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                            ) : (
+                                                                <CheckCircle2 className="h-3 w-3" />
+                                                            )}
+                                                            Check In
+                                                        </Button>
+                                                    )}
+                                                </div>
                                                 {requiresDeckList && (
                                                     player.deck_list_status === 'online' ? (
                                                         <span className="text-xs text-green-600 flex items-center gap-0.5">

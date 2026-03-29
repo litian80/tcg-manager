@@ -285,6 +285,21 @@ export async function POST(req: NextRequest) {
         // --- Step C: Matches ---
         // <tournament><pods><pod>...<rounds><round>...</round></rounds>...</pod></pods>
 
+        // PRESERVE TIME EXTENSIONS (UX-007)
+        const { data: existingMatches } = await supabase
+            .from('matches')
+            .select('round_number, table_number, time_extension_minutes')
+            .eq('tournament_id', tournamentId);
+
+        const extensionMap = new Map<string, number>();
+        if (existingMatches) {
+            existingMatches.forEach(m => {
+                if (m.time_extension_minutes) {
+                    extensionMap.set(`R${m.round_number}T${m.table_number}`, m.time_extension_minutes);
+                }
+            });
+        }
+
         await supabase.from('matches').delete().eq('tournament_id', tournamentId);
 
         const pods = asArray(tournamentRoot.pods?.pod);
@@ -442,7 +457,8 @@ export async function POST(req: NextRequest) {
                         is_finished: isFinished,
                         division: division,
                         p1_display_record: p1Display,
-                        p2_display_record: p2Display
+                        p2_display_record: p2Display,
+                        time_extension_minutes: extensionMap.get(`R${roundNumber}T${parseInt(m.tablenumber?.toString() || '0')}`) || null
                     });
                 });
             });

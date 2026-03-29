@@ -91,8 +91,8 @@ export function JudgePlayerDetailModal({
     const [activeTab, setActiveTab] = useState("actions");
     const [isLoading, setIsLoading] = useState(true);
     const [history, setHistory] = useState<{
-        penalties: { id: string; category: string; severity: string; penalty: string; notes?: string; round_number: number; created_at: string }[];
-        deckChecks: { id: string; check_time: string; note?: string; round_number: number }[];
+        penalties: { id: string; category: string; severity: string; penalty: string; notes?: string; round_number: number; created_at: string; judge?: { first_name: string | null; last_name: string | null; nick_name: string | null; } | null }[];
+        deckChecks: { id: string; check_time: string; note?: string; round_number: number; judge?: { first_name: string | null; last_name: string | null; nick_name: string | null; } | null }[];
         paperMeta?: { accepted_at: string; accepted_by_name: string } | null;
     }>({ penalties: [], deckChecks: [] });
     const [isPending, startTransition] = useTransition();
@@ -547,6 +547,10 @@ export function JudgePlayerDetailModal({
                                                     </div>
                                                     <div className="font-medium">{p.category} - {p.severity}</div>
                                                     {p.notes && <div className="text-muted-foreground mt-1 text-xs italic">&quot;{p.notes}&quot;</div>}
+                                                    <div className="text-[11px] text-muted-foreground mt-2 border-t border-destructive/10 pt-1 flex items-center gap-1 opacity-80">
+                                                        <Gavel className="w-3 h-3 text-destructive/70" />
+                                                        Issued by: {p.judge?.nick_name || (p.judge?.first_name ? `${p.judge.first_name} ${p.judge.last_name || ''}`.trim() : 'Unknown Judge')}
+                                                    </div>
                                                     {canEditPenalties && (
                                                         <div className="mt-3 flex justify-end gap-2 border-t border-destructive/20 pt-2">
                                                             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleEditClick(p)}>
@@ -579,6 +583,10 @@ export function JudgePlayerDetailModal({
                                                         <span className="text-xs text-muted-foreground">{format(new Date(dc.check_time), "HH:mm")} (R{dc.round_number})</span>
                                                     </div>
                                                     {dc.note && <div className="text-muted-foreground mt-1 text-xs">{dc.note}</div>}
+                                                    <div className="text-[11px] text-muted-foreground mt-2 border-t border-green-500/20 pt-1 flex items-center gap-1 opacity-80">
+                                                        <CheckCircle2 className="w-3 h-3 text-green-600/70" />
+                                                        Logged by: {dc.judge?.nick_name || (dc.judge?.first_name ? `${dc.judge.first_name} ${dc.judge.last_name || ''}`.trim() : 'Unknown Judge')}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

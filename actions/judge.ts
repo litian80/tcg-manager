@@ -167,11 +167,32 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
             .maybeSingle()
     ]);
 
-    const { data: penalties, error: penaltiesError } = penaltiesResult;
-    const { data: deckChecks, error: checksError } = checksResult;
+    const { data: rawPenalties, error: penaltiesError } = penaltiesResult;
+    const { data: rawDeckChecks, error: checksError } = checksResult;
 
     if (penaltiesError) console.error("Error fetching penalties:", penaltiesError);
     if (checksError) console.error("Error fetching deck checks:", checksError);
+
+    let penalties = rawPenalties || [];
+    let deckChecks = rawDeckChecks || [];
+
+    // Manually map judge profiles since foreign key might not be strictly defined in schema
+    const judgeIds = new Set<string>();
+    penalties.forEach(p => p.judge_user_id && judgeIds.add(p.judge_user_id));
+    deckChecks.forEach(dc => dc.judge_user_id && judgeIds.add(dc.judge_user_id));
+
+    if (judgeIds.size > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, nick_name')
+            .in('id', Array.from(judgeIds));
+            
+        if (profiles) {
+            const profileMap = new Map(profiles.map(p => [p.id, p]));
+            penalties = penalties.map(p => ({ ...p, judge: profileMap.get(p.judge_user_id) || null }));
+            deckChecks = deckChecks.map(dc => ({ ...dc, judge: profileMap.get(dc.judge_user_id) || null }));
+        }
+    }
 
     // Derive deck status
     let deckStatus: 'online' | 'paper' | 'missing' = 'missing';

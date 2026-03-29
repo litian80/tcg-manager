@@ -21,9 +21,11 @@ interface MatchCardProps {
     onExtensionClick?: (matchId: string, currentExtension: number) => void;
     p1Penalties?: number;
     p2Penalties?: number;
+    p1DeckChecks?: number;
+    p2DeckChecks?: number;
 }
 
-export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayerClick, onExtensionClick, p1Penalties = 0, p2Penalties = 0 }: MatchCardProps) {
+export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayerClick, onExtensionClick, p1Penalties = 0, p2Penalties = 0, p1DeckChecks = 0, p2DeckChecks = 0 }: MatchCardProps) {
     const isFinished = match.is_finished;
     const winnerId = match.winner_tom_id;
     const p1Id = match.player1_tom_id;
@@ -108,7 +110,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
     const p2Style = getPlayerStyle(p2Id, p1Id);
 
     // Helper to render player block
-    const renderPlayerBlock = (player: typeof match.p1, tomId: string | undefined, record: string | undefined, styleClass: string, penalties: number = 0) => {
+    const renderPlayerBlock = (player: typeof match.p1, tomId: string | undefined, record: string | undefined, styleClass: string, penalties: number = 0, deckChecks: number = 0) => {
         if (!player) return <span className="text-muted-foreground italic">Bye</span>;
 
         const isTarget = isFinished && isMyOpponent(tomId);
@@ -142,9 +144,16 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
                     <span className="truncate text-base leading-tight">
                         {player.first_name} {player.last_name}
                     </span>
-                    <span className="text-xs text-muted-foreground font-mono truncate">
-                        {record || "0-0-0"}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-muted-foreground font-mono truncate">
+                            {record || "0-0-0"}
+                        </span>
+                        {deckChecks > 0 && (
+                            <span className="px-1 py-[1px] bg-blue-100 text-blue-700 text-[9px] font-bold uppercase rounded border border-blue-200 leading-none">
+                                DC{deckChecks}
+                            </span>
+                        )}
+                    </div>
                     {penalties > 0 && (
                         <span className="mt-0.5 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200">
                             {penalties} Penalty
@@ -167,11 +176,6 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
             {/* Table Number */}
             <div className="font-bold text-center text-muted-foreground text-lg flex flex-col items-center justify-center gap-0.5">
                 <span>{match.table_number}</span>
-                {match.time_extension_minutes && match.time_extension_minutes > 0 && (
-                    <span className="text-[10px] uppercase font-black text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-500 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                        +{match.time_extension_minutes}m
-                    </span>
-                )}
                 {/* Judge Extension Button */}
                 {isJudge && onExtensionClick && !isFinished && (
                     <Button
@@ -191,14 +195,22 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
 
             {/* Player 1 - STRICT LEFT ALIGN */}
             <div className="flex items-center gap-2 min-w-0 pr-2">
-                {renderPlayerBlock(match.p1, match.player1_tom_id, match.p1_display_record, p1Style, p1Penalties)}
+                {renderPlayerBlock(match.p1, match.player1_tom_id, match.p1_display_record, p1Style, p1Penalties, p1DeckChecks)}
                 {isFinished && winnerId === p1Id && !isTie && (
                     <Check className="w-4 h-4 text-green-500 shrink-0" />
                 )}
             </div>
 
             {/* Middle Status (VS / Tie Badge / Score / BYE) */}
-            <div className="flex justify-center items-center">
+            <div className="flex flex-col justify-center items-center gap-1">
+                {(match.time_extension_minutes ?? 0) > 0 && (
+                    <div className="flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 rounded-full px-2 py-0.5 whitespace-nowrap shadow-sm shadow-indigo-100/50 dark:shadow-none" title={`+${match.time_extension_minutes} minutes extension`}>
+                        <span className="text-[10px] font-bold tracking-wider flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" />
+                            +{match.time_extension_minutes}
+                        </span>
+                    </div>
+                )}
                 {match.outcome === 5 ? (
                     // BYE Badge
                     <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
@@ -222,7 +234,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
             <div className="flex items-center gap-2 min-w-0 pl-2">
                 {match.outcome !== 5 && (
                     <>
-                        {renderPlayerBlock(match.p2, match.player2_tom_id, match.p2_display_record, p2Style, p2Penalties)}
+                        {renderPlayerBlock(match.p2, match.player2_tom_id, match.p2_display_record, p2Style, p2Penalties, p2DeckChecks)}
                         {isFinished && winnerId === p2Id && !isTie && (
                             <Check className="w-4 h-4 text-green-500 shrink-0" />
                         )}

@@ -55,6 +55,7 @@ interface TournamentViewProps {
     myRegistrationStatus?: string | null;
     myWaitlistPosition?: number | null;
     penaltyCounts?: Record<string, number>;
+    deckCheckCounts?: Record<string, number>;
     deckList?: any;
 }
 
@@ -71,6 +72,7 @@ export default function TournamentView({
     myRegistrationStatus,
     myWaitlistPosition,
     penaltyCounts = {},
+    deckCheckCounts = {},
     deckList,
 
 }: TournamentViewProps) {
@@ -552,6 +554,8 @@ export default function TournamentView({
                                                                 }}
                                                                 p1Penalties={penaltyCounts[match.player1_tom_id || ""] || 0}
                                                                 p2Penalties={penaltyCounts[match.player2_tom_id || ""] || 0}
+                                                                p1DeckChecks={deckCheckCounts[match.player1_tom_id || ""] || 0}
+                                                                p2DeckChecks={deckCheckCounts[match.player2_tom_id || ""] || 0}
                                                             />
                                                         ))}
                                                     </div>

@@ -10,8 +10,11 @@ Work top-down. Items within each tier are ordered by priority.
 
 ### Tier 1 — 🟡 Quick Wins & Foundation (High Priority)
 
-(All Tier 1 tasks complete)
-
+- [ ] **[DB-001] Refactor Match Sync to Delta Upsert** (L) → [Spec 005](file:///c:/Users/litia/.gemini/antigravity/tcg-manager/docs/specs/005-delta-upsert-match-sync.md)
+  - Migrate away from wipe-and-rebuild to a strict Upsert architecture.
+  - Add composite `UNIQUE` index `(tournament_id, round_number, table_number)` to the `matches` table securely.
+  - Refactor TOM Sync API to `INSERT ON CONFLICT UPDATE` instead of `DELETE`.
+  - Implement batched, intelligent Garbage Collection (delete or tombstone ghost matches).
 
 ### Tier 2 — 🟡 Core UX Improvements
 
