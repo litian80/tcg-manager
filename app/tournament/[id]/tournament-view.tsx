@@ -540,7 +540,10 @@ export default function TournamentView({
                                                                 myPlayerId={myPlayerId}
                                                                 isJudge={isJudge} // Pass Judge Status
                                                                 onPlayerClick={(player) => {
-                                                                    setSelectedPlayer(player);
+                                                                    setSelectedPlayer({
+                                                                        ...player,
+                                                                        dbId: rosterPlayers?.find(rp => rp.id === player.id)?.dbId
+                                                                    });
                                                                     setPenaltyModalOpen(true);
                                                                 }}
                                                                 onExtensionClick={(matchId, currentExt) => {

@@ -504,7 +504,7 @@ export function JudgePlayerDetailModal({
                         </TabsContent>
 
                         <TabsContent value="deck" className="mt-0">
-                            <DeckDisplay tournamentId={tournamentId} playerId={player.id} />
+                            <DeckDisplay tournamentId={tournamentId} playerId={player.dbId || player.id} />
                         </TabsContent>
 
                         <TabsContent value="history" className="mt-0">

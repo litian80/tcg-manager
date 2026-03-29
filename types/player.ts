@@ -35,6 +35,7 @@ export interface RosterPlayer {
     registration_status?: string;
     division?: string | null;
     deck_list_status?: DeckListStatus;
+    dbId?: string;
 }
 
 export interface RosterCandidate {
