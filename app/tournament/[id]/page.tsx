@@ -259,7 +259,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 matches={allMatches}
                 currentRound={currentRound}
                 stats={stats}
-                userRole={userRole}
+                isJudge={canManageStaff || isAssignedJudge}
                 canManageStaff={canManageStaff}
                 rosterPlayers={rosterPlayers}
                 myPlayerId={profile?.pokemon_player_id}

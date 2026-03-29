@@ -48,7 +48,7 @@ interface TournamentViewProps {
     matches: Match[];
     currentRound: number;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
-    userRole?: Role;
+    isJudge: boolean;
     canManageStaff: boolean;
     rosterPlayers?: RosterPlayer[];
     myPlayerId?: string;
@@ -64,7 +64,7 @@ export default function TournamentView({
     matches,
     currentRound,
     stats,
-    userRole,
+    isJudge,
     canManageStaff,
     rosterPlayers = [],
     myPlayerId,
@@ -74,7 +74,7 @@ export default function TournamentView({
     deckList,
 
 }: TournamentViewProps) {
-    const canEditMatch = hasPermission(userRole, 'match.edit_result');
+    const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
     const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
     const [deckListState, setDeckListState] = useState(deckList);
@@ -126,7 +126,6 @@ export default function TournamentView({
     const [viewMode, setViewMode] = useState<'pairings' | 'standings' | 'roster'>('pairings');
 
     // Judge Actions Logic
-    const isJudge = hasPermission(userRole, 'match.edit_result');
     const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
     const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; tomId?: string; dbId?: string; name: string; record?: string } | null>(null);
 
