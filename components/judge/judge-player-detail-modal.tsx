@@ -327,7 +327,7 @@ export function JudgePlayerDetailModal({
                                         <span className="text-xs font-normal text-red-600/70">Warning, Game Loss, etc.</span>
                                     </Button>
 
-                                    {requiresDeckList && deckStatus !== 'online' && (
+                                    {requiresDeckList && deckStatus !== 'online' && !isLoading && (
                                         <Button
                                             variant="outline"
                                             size="lg"
@@ -339,7 +339,7 @@ export function JudgePlayerDetailModal({
                                             onClick={async () => {
                                                 setPaperLoading(true);
                                                 if (deckStatus === 'paper') {
-                                                    const res = await unmarkPaperDecklist(tournamentId, player.dbId || player.id);
+                                                    const res = await unmarkPaperDecklist(tournamentId, player.id);
                                                     if (res.error) toast.error(res.error);
                                                     else { 
                                                         toast.success("Paper mark removed"); 
@@ -347,7 +347,7 @@ export function JudgePlayerDetailModal({
                                                         refreshData(); 
                                                     }
                                                 } else {
-                                                    const res = await markPaperDecklist(tournamentId, player.dbId || player.id);
+                                                    const res = await markPaperDecklist(tournamentId, player.id);
                                                     if (res.error) toast.error(res.error);
                                                     else { 
                                                         toast.success("Paper decklist marked"); 
@@ -504,7 +504,7 @@ export function JudgePlayerDetailModal({
                         </TabsContent>
 
                         <TabsContent value="deck" className="mt-0">
-                            <DeckDisplay tournamentId={tournamentId} playerId={player.dbId || player.id} />
+                            <DeckDisplay tournamentId={tournamentId} playerId={player.id} />
                         </TabsContent>
 
                         <TabsContent value="history" className="mt-0">

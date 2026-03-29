@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -142,6 +143,8 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
         return { penalties: [], deckChecks: [], error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
     }
 
+    const adminClient = createAdminClient();
+
     // Fetch penalties, deck checks, and deck submission status in parallel
     const [penaltiesResult, checksResult, deckListResult] = await Promise.all([
         supabase
@@ -156,11 +159,11 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
             .eq('tournament_id', tournamentId)
             .eq('player_id', playerTomId)
             .order('check_time', { ascending: false }),
-        supabase
+        adminClient
             .from('deck_lists')
             .select('validation_status, raw_text, validation_errors')
             .eq('tournament_id', tournamentId)
-            .eq('player_id', playerDbId)
+            .eq('player_id', playerTomId)
             .maybeSingle()
     ]);
 
@@ -307,7 +310,9 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
         return { error: "Unauthorized: You must be a Judge, Organizer, or Admin for this tournament." };
     }
 
-    const { data: deckList, error } = await supabase
+    const adminClient = createAdminClient();
+
+    const { data: deckList, error } = await adminClient
         .from("deck_lists")
         .select(`
             id, raw_text, validation_status, submitted_at, validation_errors,

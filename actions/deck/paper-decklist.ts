@@ -67,7 +67,7 @@ export async function markPaperDecklist(
     }
 
     // 3. Check if an online decklist already exists
-    const { data: existingDeck } = await supabase
+    const { data: existingDeck } = await adminClient
         .from('deck_lists')
         .select('id, raw_text')
         .eq('tournament_id', tournamentId)
@@ -168,8 +168,10 @@ export async function unmarkPaperDecklist(
         return { error: "You are not authorized to manage decklists for this tournament." };
     }
 
+    const adminClient = createAdminClient();
+    
     // 3. Only delete if it's a paper submission
-    const { data: existingDeck } = await supabase
+    const { data: existingDeck } = await adminClient
         .from('deck_lists')
         .select('id, raw_text')
         .eq('tournament_id', tournamentId)
@@ -184,7 +186,6 @@ export async function unmarkPaperDecklist(
         return { error: "Cannot remove an online decklist submission." };
     }
 
-    const adminClient = createAdminClient();
     const { error: deleteError } = await adminClient
         .from('deck_lists')
         .delete()
