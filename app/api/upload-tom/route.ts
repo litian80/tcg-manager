@@ -282,29 +282,29 @@ export async function POST(req: NextRequest) {
                 .eq('tournament_id', tournamentId);
         }
 
-        // --- Step C: Matches ---
+        // --- Step C: Matches (Delta Upsert — DB-001) ---
         // <tournament><pods><pod>...<rounds><round>...</round></rounds>...</pod></pods>
 
-        // PRESERVE TIME EXTENSIONS (UX-007)
+        // Pre-read existing user-managed match data for preservation during upsert.
+        // Supabase upsert sets omitted columns to DEFAULT/NULL, so we must explicitly
+        // include time_extension_minutes in the payload to preserve judge-set values.
         const { data: existingMatches } = await supabase
             .from('matches')
-            .select('round_number, table_number, time_extension_minutes')
+            .select('round_number, table_number, division, time_extension_minutes')
             .eq('tournament_id', tournamentId);
 
         const extensionMap = new Map<string, number>();
         if (existingMatches) {
             existingMatches.forEach(m => {
                 if (m.time_extension_minutes) {
-                    extensionMap.set(`R${m.round_number}T${m.table_number}`, m.time_extension_minutes);
+                    extensionMap.set(`${m.round_number}-${m.table_number}-${m.division}`, m.time_extension_minutes);
                 }
             });
         }
 
-        await supabase.from('matches').delete().eq('tournament_id', tournamentId);
-
         const pods = asArray(tournamentRoot.pods?.pod);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const matchesToInsert: any[] = []; // Explicit any for Supabase insert payload flexibility or defining a proper MatchInsert interface
+        const matchesToUpsert: any[] = [];
         let maxRoundNumber = 0;
 
         // Global stats tracker for this tournament parse
@@ -446,7 +446,7 @@ export async function POST(req: NextRequest) {
                         return;
                     }
 
-                    matchesToInsert.push({
+                    matchesToUpsert.push({
                         tournament_id: tournamentId,
                         round_number: roundNumber,
                         table_number: parseInt(m.tablenumber?.toString() || '0'),
@@ -458,21 +458,47 @@ export async function POST(req: NextRequest) {
                         division: division,
                         p1_display_record: p1Display,
                         p2_display_record: p2Display,
-                        time_extension_minutes: extensionMap.get(`R${roundNumber}T${parseInt(m.tablenumber?.toString() || '0')}`) || null
+                        // Preserve judge-set time extensions from pre-read (app-managed field)
+                        time_extension_minutes: extensionMap.get(`${roundNumber}-${parseInt(m.tablenumber?.toString() || '0')}-${division}`) || 0
                     });
                 });
             });
         });
 
-        if (matchesToInsert.length > 0) {
+        if (matchesToUpsert.length > 0) {
             const { error: matchError } = await supabase
                 .from('matches')
-                .insert(matchesToInsert);
+                .upsert(matchesToUpsert, {
+                    onConflict: 'tournament_id,round_number,table_number,division',
+                    ignoreDuplicates: false
+                });
 
             if (matchError) {
-                console.error('Error inserting matches:', matchError);
-                return NextResponse.json({ error: 'Failed to insert matches', details: matchError }, { status: 500 });
+                console.error('Error upserting matches:', matchError);
+                return NextResponse.json({ error: 'Failed to upsert matches', details: matchError }, { status: 500 });
             }
+
+            // Garbage Collection: Remove orphaned matches no longer in TOM XML
+            const validMatchKeys = new Set(
+                matchesToUpsert.map((m: any) => `${m.round_number}-${m.table_number}-${m.division}`)
+            );
+
+            const { data: allDbMatches } = await supabase
+                .from('matches')
+                .select('id, round_number, table_number, division')
+                .eq('tournament_id', tournamentId);
+
+            const orphanIds = (allDbMatches || [])
+                .filter((m: any) => !validMatchKeys.has(`${m.round_number}-${m.table_number}-${m.division}`))
+                .map((m: any) => m.id);
+
+            if (orphanIds.length > 0) {
+                console.log(`GC: Removing ${orphanIds.length} orphaned matches for tournament ${tournamentId}`);
+                await supabase.from('matches').delete().in('id', orphanIds);
+            }
+        } else {
+            // No matches in XML — clean up all existing matches for this tournament
+            await supabase.from('matches').delete().eq('tournament_id', tournamentId);
         }
 
         // Update total rounds if we found some
