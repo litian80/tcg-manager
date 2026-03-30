@@ -38,11 +38,10 @@ Open [http://localhost:3000](http://localhost:3000).
 Copy `.env.local.example` to `.env.local` and configure:
 - `NEXT_PUBLIC_SUPABASE_URL` — Your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Your Supabase anon key
-- `DEEPSEEK_API_KEY` — (Optional) DeepSeek Reasoner API key for agent consulting
 
 ### Deployment
 ```bash
-# Uses /deploy workflow: git add, commit, push → Vercel auto-deploys
+# Push to main → Vercel auto-deploys
 git add . && git commit -m "description" && git push
 ```
 
@@ -60,20 +59,8 @@ components/     → React components (grouped by feature)
 lib/            → Auth, RBAC, types, utilities
 hooks/          → Custom React hooks
 utils/supabase/ → Supabase client factories & types
-db/             → SQL (schema, fixes, features, security)
-docs/           → User manual, decisions, specs, UAT plan
-scripts/        → Verification & debug scripts
-tools/          → TDF analysis, data scanners
-Cards/          → Local card database (gitignored)
-TOMfiles/       → Sample TDF files (gitignored)
+supabase/       → Migrations & local dev config
 ```
-
-## Documentation
-
-- [Decision Log](docs/DECISIONS.md) — Product & architecture decisions
-- [Backlog](docs/BACKLOG.md) — Prioritised work items & UX improvements
-- [User Manual](docs/USER_MANUAL.md) — End-user guide for organisers and players
-- [UAT Plan](docs/UAT_PLAN.md) — Acceptance test cases
 
 ## Tech Stack
 
@@ -82,3 +69,4 @@ TOMfiles/       → Sample TDF files (gitignored)
 - **Styling**: Tailwind CSS 4 + shadcn/ui
 - **Deployment**: Vercel
 - **File Sync**: TOM ↔ Web via `.tdf` files
+

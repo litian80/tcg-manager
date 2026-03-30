@@ -45,7 +45,7 @@ __pycache__/
 *.pyc
 
 # generated reports
-/tools/output/
+/tools/
 
 # sensitive and large data
 /.agent/
@@ -53,22 +53,37 @@ __pycache__/
 /TOMfiles/
 /Cards/
 
-# schema dumps (use db/schema/ as source of truth)
+# schema dumps (regenerated from live DB)
 /schema.json
 /prod_simplified_schema.txt
 
-# local dev scripts and artifacts
+# local dev artifacts
 *.log
 lint*.json
 lint*.txt
 /tmp/
 
 # debug/test scripts (not part of the app)
-/scripts/
-/tools/
-/db/schema/
+# NOTE: scripts/lint-structure.js is EXCLUDED — CI depends on it (npm run lint:structure)
+/scripts/*
+!/scripts/lint-structure.js
 test-queries.ts
 
-# reference docs (not app-functional)
-docs/*.pdf
-docs/sample-tournament.xml
+# historical SQL (canonical history lives in supabase/migrations/)
+/db/features/
+/db/fixes/
+/db/security/
+/db/schema/
+
+# documentation (not app-functional, keep README.md for GitHub)
+/docs/
+
+# editor/workspace config
+*.code-workspace
+
+# unused default Next.js scaffold assets (not referenced by any code)
+public/file.svg
+public/globe.svg
+public/next.svg
+public/vercel.svg
+public/window.svg
