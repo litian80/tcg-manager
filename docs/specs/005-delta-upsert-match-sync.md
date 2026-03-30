@@ -3,7 +3,7 @@
 > Origin: DeepSeek Reasoner Architectural Evaluation (March 2026)
 
 ## Overview
-Status: **Approved for Backlog**
+Status: **Implemented** (March 31, 2026)
 Scope: Match Syncing (`app/api/upload-tom/route.ts`)
 
 This plan details the transition from the current "Wipe and Rebuild" match syncing methodology to a "Delta Upsert" architecture, guaranteeing protection for match UUID foreign-keys (like `mini_games`) and preventing Real-time UI connection flickering across the TCG Manager ecosystem.

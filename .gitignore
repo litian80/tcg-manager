@@ -62,3 +62,13 @@ __pycache__/
 lint*.json
 lint*.txt
 /tmp/
+
+# debug/test scripts (not part of the app)
+/scripts/
+/tools/
+/db/schema/
+test-queries.ts
+
+# reference docs (not app-functional)
+docs/*.pdf
+docs/sample-tournament.xml

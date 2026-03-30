@@ -103,6 +103,24 @@ Each decision has:
 
 ---
 
+## Match Sync Architecture
+
+### DEC-009: Delta Upsert for Match Syncing (DB-001)
+- **Date**: 2026-03-31
+- **Status**: DECIDED
+- **Context**: The original match sync implementation used a wipe-and-rebuild strategy (DELETE all + INSERT), which destroyed match UUIDs, cascaded FK deletes to `mini_games` (Connect Four), lost judge-set `time_extension_minutes`, and caused Realtime UI flicker.
+- **Decision**: Replaced with a delta upsert architecture:
+  - `UNIQUE(tournament_id, round_number, table_number, division)` constraint on `matches`
+  - Supabase `.upsert()` with `onConflict` replaces DELETE+INSERT
+  - Pre-read + merge pattern preserves `time_extension_minutes` (required because Supabase upsert NULLs omitted columns)
+  - Garbage collection deletes orphaned matches (hard delete, not tombstone)
+- **Rationale**: 
+  - `division` is required in the constraint because TOM assigns table numbers per pod — empirically verified with real tournament data (Jan 2026 CMWC shows table overlap across divisions).
+  - Hard delete for orphans (not tombstone) because matches are fully re-derivable from TOM XML.
+  - No transaction wrapping needed — failure mode is benign (orphans remain) and self-healing on next sync.
+
+---
+
 <!-- 
 Template for new decisions:
 
