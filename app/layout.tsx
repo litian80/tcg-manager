@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TCG Tournament Manager",
-  description: "Manage your TCG tournaments with ease",
+  title: "BracketOps | Tournament Operations",
+  description: "Manage your competitive brackets and tournaments with stable, unyielding precision.",
 };
 
 export default async function RootLayout({

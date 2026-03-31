@@ -76,13 +76,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-5xl mx-auto space-y-8">
-        <header className="flex items-center justify-between border-b pb-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">TCG Manager</h1>
-            <p className="text-muted-foreground">Tournament Management System</p>
-          </div>
-        </header>
-
         {/* Admin gets exclusive system view */}
         {userRole === 'admin' ? (
           <AdminView />
@@ -168,9 +161,9 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
     <div className="space-y-12">
       {!isAuth && (
         <section className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col items-center text-center space-y-4">
-          <h2 className="text-2xl font-bold">Welcome to TCG Manager</h2>
+          <h2 className="text-2xl font-bold">Welcome to BracketOps</h2>
           <p className="text-muted-foreground max-w-lg">
-            Find and register for Pokémon TCG tournaments, manage your decklists, and track your performance.
+            Find and register for tournaments, manage your rosters, and track your performance with stable precision.
           </p>
           <Link href="/login" className="px-6 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors">
             Sign In to Register
