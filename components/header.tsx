@@ -27,7 +27,7 @@ export function Header({ initialUser }: { initialUser: User | null }) {
                 <Link href="/" className="flex items-center gap-2">
                     <div className="relative h-8 w-8">
                         <Image
-                            src="/logo_v2.png"
+                            src="/logo_v3.png"
                             alt="TCG Manager Logo"
                             fill
                             className="object-contain"
