@@ -33,7 +33,7 @@ export default function LoginPage() {
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                         <Trophy className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">Welcome to TCG Manager</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Welcome to BracketOps</CardTitle>
                     <CardDescription>
                         Sign in to access your profile and tournaments.
                     </CardDescription>

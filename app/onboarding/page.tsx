@@ -36,7 +36,7 @@ export default function OnboardingPage() {
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
             <Card className="w-full max-w-md">
                 <CardHeader>
-                    <CardTitle>Welcome to TCG Manager</CardTitle>
+                    <CardTitle>Welcome to BracketOps</CardTitle>
                     <CardDescription>
                         Please complete your profile to continue. We need your Player ID and Birth Year for tournament reporting.
                     </CardDescription>

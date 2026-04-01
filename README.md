@@ -1,10 +1,10 @@
-# TCG Manager
+# BracketOps
 
 A modern tournament management companion app for Pokémon TCG events. Built with **Next.js 16**, **Supabase**, and **Tailwind CSS 4**, deployed on **Vercel**.
 
 ## What It Does
 
-TCG Manager serves as a **live visibility layer** and **roster management tool** that works alongside the official Tournament Operations Manager (TOM) software:
+BracketOps serves as a **live visibility layer** and **roster management tool** that works alongside the official Tournament Operations Manager (TOM) software:
 
 - **Pre-Tournament**: Player registration, roster building, deck list submission, TDF file generation
 - **During Tournament**: Live pairings, standings (auto-synced from TOM), penalty tracking, deck checks

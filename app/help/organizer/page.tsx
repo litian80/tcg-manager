@@ -7,7 +7,7 @@ function EnglishManual() {
   return (
     <div className="space-y-8 text-[#0f172a] dark:text-[#f8fafc]">
       <div className="bg-muted/50 border rounded-xl p-6 shadow-sm text-lg leading-relaxed">
-        Welcome to <span className="font-semibold text-primary">TCG Manager</span>, a companion app for running Pokémon TCG tournaments. This platform functions as a player registration portal, roster management tool, and live display layer that works alongside the official Tournament Operations Manager (TOM) software.
+        Welcome to <span className="font-semibold text-primary">BracketOps</span>, a companion app for running Pokémon TCG tournaments. This platform functions as a player registration portal, roster management tool, and live display layer that works alongside the official Tournament Operations Manager (TOM) software.
       </div>
 
       <section>
@@ -142,7 +142,7 @@ function ChineseManual() {
   return (
     <div className="space-y-8 text-[#0f172a] dark:text-[#f8fafc]">
       <div className="bg-muted/50 border rounded-xl p-6 shadow-sm text-lg leading-relaxed">
-        欢迎使用 <span className="font-semibold text-primary">TCG Manager</span>，这是用于举办 Pokémon TCG 赛事的辅助应用。本平台提供玩家报名、在线收表、名单管理以及赛况展示功能，并与官方的 <strong>TOM (Tournament Operations Manager)</strong> 软件协同工作。
+        欢迎使用 <span className="font-semibold text-primary">BracketOps</span>，这是用于举办 Pokémon TCG 赛事的辅助应用。本平台提供玩家报名、在线收表、名单管理以及赛况展示功能，并与官方的 <strong>TOM (Tournament Operations Manager)</strong> 软件协同工作。
       </div>
 
       <section>
