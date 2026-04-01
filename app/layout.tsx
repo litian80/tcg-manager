@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BracketOps | Tournament Operations",
   description: "Manage your competitive brackets and tournaments with stable, unyielding precision.",
+  verification: {
+    google: "v0OAAwIL-Bgr57kZRGV--9ZdTt5MnGM_ssJ6vCkY6WU",
+  },
 };
 
 export default async function RootLayout({
