@@ -91,6 +91,14 @@ export default async function Home() {
         )}
 
       </div>
+      
+      {/* Simple Footer with required Privacy Policy link for Google Verification */}
+      <footer className="max-w-5xl mx-auto mt-16 pt-8 pb-4 border-t text-center text-sm text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} BracketOps</p>
+        <div className="mt-2 space-x-4">
+           <Link href="/privacy" className="hover:underline hover:text-foreground transition-colors">Privacy Policy</Link>
+        </div>
+      </footer>
     </main>
   );
 }
