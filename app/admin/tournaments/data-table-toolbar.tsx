@@ -11,7 +11,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { DataTableFacetedFilter } from './data-table-faceted-filter' // We need to create this or inline it
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -22,38 +21,68 @@ export function DataTableToolbar<TData>({
 }: DataTableToolbarProps<TData>) {
     const isFiltered = table.getState().columnFilters.length > 0
 
+    // Derive the current single-select value from the array-based column filter
+    const statusFilter = table.getColumn('status')?.getFilterValue() as string[] | undefined
+    const statusValue = statusFilter?.length === 1 ? statusFilter[0] : (statusFilter?.length ? 'custom' : 'all')
+
+    const publishedFilter = table.getColumn('is_published')?.getFilterValue() as string[] | undefined
+    const publishedValue = publishedFilter?.length === 1 ? publishedFilter[0] : (publishedFilter?.length ? 'custom' : 'all')
+
     return (
-        <div className="flex items-center justify-between">
-            <div className="flex flex-1 items-center space-x-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-1 flex-wrap items-center gap-2">
                 <Input
-                    placeholder="Filter tournaments..."
+                    placeholder="Search tournaments..."
                     value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
                     onChange={(event) =>
                         table.getColumn('name')?.setFilterValue(event.target.value)
                     }
-                    className="h-8 w-[150px] lg:w-[250px]"
+                    className="h-8 w-[180px] lg:w-[250px]"
                 />
 
                 {table.getColumn('status') && (
-                    <DataTableFacetedFilter
-                        column={table.getColumn('status')}
-                        title="Status"
-                        options={[
-                            { label: 'Live', value: 'running' },
-                            { label: 'Completed', value: 'completed' },
-                        ]}
-                    />
+                    <Select
+                        value={statusValue}
+                        onValueChange={(value) => {
+                            if (value === 'all') {
+                                table.getColumn('status')?.setFilterValue(undefined)
+                            } else {
+                                table.getColumn('status')?.setFilterValue([value])
+                            }
+                        }}
+                    >
+                        <SelectTrigger className="h-8 w-[140px]">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="running">🟢 Live</SelectItem>
+                            <SelectItem value="completed">✅ Completed</SelectItem>
+                            <SelectItem value="not_started">⏳ Not Started</SelectItem>
+                        </SelectContent>
+                    </Select>
                 )}
 
                 {table.getColumn('is_published') && (
-                    <DataTableFacetedFilter
-                        column={table.getColumn('is_published')}
-                        title="Published"
-                        options={[
-                            { label: 'Published', value: 'true' },
-                            { label: 'Hidden', value: 'false' },
-                        ]}
-                    />
+                    <Select
+                        value={publishedValue}
+                        onValueChange={(value) => {
+                            if (value === 'all') {
+                                table.getColumn('is_published')?.setFilterValue(undefined)
+                            } else {
+                                table.getColumn('is_published')?.setFilterValue([value])
+                            }
+                        }}
+                    >
+                        <SelectTrigger className="h-8 w-[140px]">
+                            <SelectValue placeholder="Visibility" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Visibility</SelectItem>
+                            <SelectItem value="true">📢 Published</SelectItem>
+                            <SelectItem value="false">🔒 Hidden</SelectItem>
+                        </SelectContent>
+                    </Select>
                 )}
 
                 {isFiltered && (
@@ -66,6 +95,11 @@ export function DataTableToolbar<TData>({
                         <X className="ml-2 h-4 w-4" />
                     </Button>
                 )}
+            </div>
+
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+                {table.getFilteredRowModel().rows.length} of{' '}
+                {table.getCoreRowModel().rows.length} tournament(s)
             </div>
         </div>
     )

@@ -2,13 +2,9 @@ import { Database } from '@/utils/supabase/database.types';
 
 export type Tournament = Database['public']['Tables']['tournaments']['Row'];
 
-export interface ExtendedTournament extends Tournament {
-    tournament_mode?: string | null;
-    requires_deck_list?: boolean | null;
-    deck_submission_cutoff_hours?: number | null;
-    deck_list_submission_deadline?: string | null;
-    start_time?: string | null;
-};
+// All ExtendedTournament fields now exist on the base Tournament Row type.
+// Kept as an alias for backwards compatibility with existing consumers.
+export type ExtendedTournament = Tournament;
 
 export type Division = "junior" | "senior" | "master";
 

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getAllTournaments } from '@/actions/admin/tournaments'
 import { DataTable } from './data-table'
 import { columns } from './columns'
@@ -38,7 +39,9 @@ export default async function AdminTournamentsPage() {
                 </div>
             </div>
             <div className="hidden h-full flex-1 flex-col space-y-8 md:flex">
-                <DataTable data={tournaments || []} columns={columns} />
+                <Suspense fallback={<div className="h-24 flex items-center justify-center text-muted-foreground">Loading filters…</div>}>
+                    <DataTable data={tournaments || []} columns={columns} />
+                </Suspense>
             </div>
         </div>
     )
