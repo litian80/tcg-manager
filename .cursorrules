@@ -1,0 +1,12 @@
+# TCG Manager - AI Workspace Behavioral Constraints
+
+## 1. Zero-Assumption Validation Rule
+When asked to investigate or modify the legality, rotation status, or characteristics of any Pokémon TCG card, the AI **MUST NOT** accept user assumptions, community colloquialisms, or its own pre-trained knowledge as ground truth.
+
+**Protocol:**
+1. Execute a raw database query against the local live database (or dataset) to fetch the objective characteristics of the card (e.g. `regulation_mark`, `equivalency_members`).
+2. If the user's assertion contradicts the queried data (e.g., claiming a card has rotated when it hasn't, or claiming it is evergreen when the database lacks the supporting `regulation_mark`), **halt**.
+3. Output the raw data query securely to the user as mathematical proof and refuse to hardcode bypasses, "evergreen hacks," or manual overrides unless explicitly commanded by the user with the phrase "Proceed with manual override."
+
+## 2. No Speculative Hacking
+Do not implement logic based on upcoming sets or "expected future prints" (e.g., Japanese subset releases that haven't synchronized to the local database yet). The validation engine must represent the exact structural state of the local database at the point in time of execution.

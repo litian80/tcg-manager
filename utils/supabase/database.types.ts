@@ -12,33 +12,58 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
+      cards: {
+        Row: {
+          card_number: number
+          created_at: string
+          id: string
+          image_status: number | null
+          image_url: string | null
+          link: string | null
+          name: string | null
+          primary_category: string | null
+          regulation_mark: string | null
+          secondary_category: string | null
+          set_id: string
+        }
+        Insert: {
+          card_number: number
+          created_at?: string
+          id?: string
+          image_status?: number | null
+          image_url?: string | null
+          link?: string | null
+          name?: string | null
+          primary_category?: string | null
+          regulation_mark?: string | null
+          secondary_category?: string | null
+          set_id: string
+        }
+        Update: {
+          card_number?: number
+          created_at?: string
+          id?: string
+          image_status?: number | null
+          image_url?: string | null
+          link?: string | null
+          name?: string | null
+          primary_category?: string | null
+          regulation_mark?: string | null
+          secondary_category?: string | null
+          set_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deck_checks: {
         Row: {
           check_time: string | null
@@ -73,6 +98,140 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deck_list_cards: {
+        Row: {
+          card_id: string
+          category: string | null
+          deck_list_id: string
+          id: string
+          quantity: number
+        }
+        Insert: {
+          card_id: string
+          category?: string | null
+          deck_list_id: string
+          id?: string
+          quantity: number
+        }
+        Update: {
+          card_id?: string
+          category?: string | null
+          deck_list_id?: string
+          id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deck_list_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deck_list_cards_deck_list_id_fkey"
+            columns: ["deck_list_id"]
+            isOneToOne: false
+            referencedRelation: "deck_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deck_lists: {
+        Row: {
+          id: string
+          player_id: string
+          raw_text: string
+          submitted_at: string | null
+          tournament_id: string
+          validation_errors: Json | null
+          validation_status: string | null
+        }
+        Insert: {
+          id?: string
+          player_id: string
+          raw_text: string
+          submitted_at?: string | null
+          tournament_id: string
+          validation_errors?: Json | null
+          validation_status?: string | null
+        }
+        Update: {
+          id?: string
+          player_id?: string
+          raw_text?: string
+          submitted_at?: string | null
+          tournament_id?: string
+          validation_errors?: Json | null
+          validation_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deck_lists_tournament_id_player_id_fkey"
+            columns: ["tournament_id", "player_id"]
+            isOneToOne: true
+            referencedRelation: "tournament_players"
+            referencedColumns: ["tournament_id", "player_id"]
+          },
+        ]
+      }
+      equivalency_groups: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          notes: string | null
+          source: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          notes?: string | null
+          source?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          notes?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
+      equivalency_members: {
+        Row: {
+          card_id: string
+          confidence: number | null
+          group_id: number
+        }
+        Insert: {
+          card_id: string
+          confidence?: number | null
+          group_id: number
+        }
+        Update: {
+          card_id?: string
+          confidence?: number | null
+          group_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equivalency_members_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equivalency_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "equivalency_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -293,6 +452,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sets: {
+        Row: {
+          card_count: number | null
+          code: string
+          created_at: string
+          era: string | null
+          id: string
+          link: string | null
+          name: string
+          release_date: string | null
+        }
+        Insert: {
+          card_count?: number | null
+          code: string
+          created_at?: string
+          era?: string | null
+          id?: string
+          link?: string | null
+          name: string
+          release_date?: string | null
+        }
+        Update: {
+          card_count?: number | null
+          code?: string
+          created_at?: string
+          era?: string | null
+          id?: string
+          link?: string | null
+          name?: string
+          release_date?: string | null
+        }
+        Relationships: []
+      }
       tournament_judges: {
         Row: {
           assigned_at: string | null
@@ -328,6 +520,7 @@ export type Database = {
       }
       tournament_players: {
         Row: {
+          created_at: string
           division: string | null
           losses: number | null
           player_id: string
@@ -339,6 +532,7 @@ export type Database = {
           wins: number | null
         }
         Insert: {
+          created_at?: string
           division?: string | null
           losses?: number | null
           player_id: string
@@ -350,6 +544,7 @@ export type Database = {
           wins?: number | null
         }
         Update: {
+          created_at?: string
           division?: string | null
           losses?: number | null
           player_id?: string
@@ -386,6 +581,9 @@ export type Database = {
           country: string | null
           created_at: string
           date: string
+          deck_list_submission_deadline: string | null
+          deck_size: number | null
+          deck_submission_cutoff_hours: number | null
           details: string | null
           fee_juniors: string | null
           fee_masters: string | null
@@ -393,7 +591,6 @@ export type Database = {
           id: string
           is_published: boolean | null
           juniors_birth_year_max: number | null
-          masters_birth_year_min: number | null
           name: string
           organizer_popid: string | null
           parsed_data: Json | null
@@ -402,10 +599,14 @@ export type Database = {
           registration_closes_at: string | null
           registration_open: boolean | null
           registration_opens_at: string | null
+          requires_deck_list: boolean | null
           seniors_birth_year_max: number | null
+          sideboard_size: number | null
+          start_time: string | null
           status: string
           tom_uid: string | null
           total_rounds: number
+          tournament_mode: string
           use_payment_processor: boolean | null
         }
         Insert: {
@@ -416,6 +617,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           date: string
+          deck_list_submission_deadline?: string | null
+          deck_size?: number | null
+          deck_submission_cutoff_hours?: number | null
           details?: string | null
           fee_juniors?: string | null
           fee_masters?: string | null
@@ -423,7 +627,6 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
-          masters_birth_year_min?: number | null
           name: string
           organizer_popid?: string | null
           parsed_data?: Json | null
@@ -432,10 +635,14 @@ export type Database = {
           registration_closes_at?: string | null
           registration_open?: boolean | null
           registration_opens_at?: string | null
+          requires_deck_list?: boolean | null
           seniors_birth_year_max?: number | null
+          sideboard_size?: number | null
+          start_time?: string | null
           status: string
           tom_uid?: string | null
           total_rounds: number
+          tournament_mode?: string
           use_payment_processor?: boolean | null
         }
         Update: {
@@ -446,6 +653,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           date?: string
+          deck_list_submission_deadline?: string | null
+          deck_size?: number | null
+          deck_submission_cutoff_hours?: number | null
           details?: string | null
           fee_juniors?: string | null
           fee_masters?: string | null
@@ -453,7 +663,6 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
-          masters_birth_year_min?: number | null
           name?: string
           organizer_popid?: string | null
           parsed_data?: Json | null
@@ -462,10 +671,14 @@ export type Database = {
           registration_closes_at?: string | null
           registration_open?: boolean | null
           registration_opens_at?: string | null
+          requires_deck_list?: boolean | null
           seniors_birth_year_max?: number | null
+          sideboard_size?: number | null
+          start_time?: string | null
           status?: string
           tom_uid?: string | null
           total_rounds?: number
+          tournament_mode?: string
           use_payment_processor?: boolean | null
         }
         Relationships: []
@@ -497,6 +710,9 @@ export type Database = {
           country: string | null
           created_at: string
           date: string
+          deck_list_submission_deadline: string | null
+          deck_size: number | null
+          deck_submission_cutoff_hours: number | null
           details: string | null
           fee_juniors: string | null
           fee_masters: string | null
@@ -504,7 +720,6 @@ export type Database = {
           id: string
           is_published: boolean | null
           juniors_birth_year_max: number | null
-          masters_birth_year_min: number | null
           name: string
           organizer_popid: string | null
           parsed_data: Json | null
@@ -513,10 +728,14 @@ export type Database = {
           registration_closes_at: string | null
           registration_open: boolean | null
           registration_opens_at: string | null
+          requires_deck_list: boolean | null
           seniors_birth_year_max: number | null
+          sideboard_size: number | null
+          start_time: string | null
           status: string
           tom_uid: string | null
           total_rounds: number
+          tournament_mode: string
           use_payment_processor: boolean | null
         }[]
         SetofOptions: {
@@ -654,9 +873,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["admin", "organizer", "judge", "user"],

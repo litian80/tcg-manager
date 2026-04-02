@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { parseDeckList, normalizeCardName } from "@/utils/deck-validator";
+import { parseDeckList, normalizeCardName, isRegulationMarkLegal, isSetExcluded } from "@/utils/deck-validator";
 import type { DeckParseResult } from "@/types/deck";
 
 export interface ValidationResult {
@@ -116,13 +116,8 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
 
                 for (const card of validPokemonCards) {
                     const setId = setMap.get(card.set)!;
-                    const numericValue = parseInt(card.number, 10);
-                    
-                    if (isNaN(numericValue)) {
-                        validationErrors.push(`Non-numeric card number "${card.number}" for "${card.name}" is not supported.`);
-                        continue;
-                    }
-                    dbFilters.push(`and(set_id.eq.${setId},card_number.eq.${numericValue})`);
+                    const escapedNumber = card.number.replace(/"/g, '""');
+                    dbFilters.push(`and(set_id.eq.${setId},card_number.eq."${escapedNumber}")`);
                 }
 
                 if (dbFilters.length > 0) {
@@ -134,6 +129,7 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
                             card_number,
                             set_id,
                             primary_category,
+                            regulation_mark,
                             equivalency_members(group_id)
                         `)
                         .or(dbFilters.join(','));
@@ -182,6 +178,7 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
                     id, 
                     name, 
                     primary_category,
+                    regulation_mark,
                     equivalency_members(group_id)
                 `)
                 .or(uniqueNames.map(name => `name.ilike."${name.replace(/"/g, '""')}"`).join(','));
@@ -222,6 +219,101 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
         if (validationErrors.length > 0) {
             result.isValid = false;
             result.errors.push(...validationErrors);
+        }
+
+        // New Rotation / Standard Format Validation Logic
+        let tournamentDate = new Date();
+        if (tournamentId) {
+            const { data: tourney } = await supabase.from('tournaments').select('date').eq('id', tournamentId).single();
+            if (tourney?.date) {
+                tournamentDate = new Date(tourney.date);
+            }
+        }
+
+        const cardsNeedingReprintCheck: any[] = [];
+
+        for (const validated of validatedCards) {
+            if (validated.parsed.isBasicEnergy) continue;
+
+            const { dbCard, setCode } = validated;
+
+            if (isSetExcluded(setCode, tournamentDate)) {
+                result.isValid = false;
+                result.errors.push(`Cards from set "${setCode}" are not legal for this tournament date.`);
+                continue;
+            }
+
+            if (!isRegulationMarkLegal(dbCard.regulation_mark, tournamentDate)) {
+                cardsNeedingReprintCheck.push(validated);
+            }
+        }
+
+        if (cardsNeedingReprintCheck.length > 0) {
+            const groupIdsToCheck: string[] = [];
+            const namesToCheck: string[] = [];
+
+            for (const validated of cardsNeedingReprintCheck) {
+                const { dbCard, parsed } = validated;
+                const groupId = dbCard.equivalency_members?.[0]?.group_id;
+                if (groupId) {
+                    groupIdsToCheck.push(groupId);
+                }
+                
+                // Add name for reprint checking if it's not a Pokemon (and not basic energy)
+                if (!parsed.isBasicEnergy && dbCard.primary_category !== 'Pokemon' && dbCard.primary_category !== 'Pokémon') {
+                    namesToCheck.push(dbCard.name);
+                }
+            }
+
+            const legalGroupIds = new Set<string>();
+            const legalNames = new Set<string>();
+
+            if (groupIdsToCheck.length > 0) {
+                const { data: memberCards } = await supabase
+                    .from('equivalency_members')
+                    .select('group_id, cards(regulation_mark)')
+                    .in('group_id', groupIdsToCheck);
+                
+                memberCards?.forEach(mc => {
+                    const mark = (mc.cards as any)?.regulation_mark;
+                    if (isRegulationMarkLegal(mark, tournamentDate)) {
+                        legalGroupIds.add(String(mc.group_id));
+                    }
+                });
+            }
+
+            if (namesToCheck.length > 0) {
+                const { data: nameCards } = await supabase
+                    .from('cards')
+                    .select('name, regulation_mark')
+                    .in('name', namesToCheck);
+
+                nameCards?.forEach(nc => {
+                    if (isRegulationMarkLegal(nc.regulation_mark, tournamentDate)) {
+                        legalNames.add(normalizeCardName(nc.name).toLowerCase());
+                    }
+                });
+            }
+
+            for (const validated of cardsNeedingReprintCheck) {
+                const { dbCard, parsed } = validated;
+                const groupId = dbCard.equivalency_members?.[0]?.group_id;
+                
+                let hasLegalReprint = false;
+                if (groupId && legalGroupIds.has(String(groupId))) {
+                    hasLegalReprint = true;
+                } else if (!groupId && dbCard.primary_category !== 'Pokemon' && dbCard.primary_category !== 'Pokémon' && legalNames.has(normalizeCardName(dbCard.name).toLowerCase())) {
+                    hasLegalReprint = true;
+                }
+
+                if (!hasLegalReprint) {
+                    result.isValid = false;
+                    const reference = parsed.set && parsed.set !== "N/A" 
+                        ? `${parsed.name} (${parsed.set} ${parsed.number})` 
+                        : parsed.name;
+                    result.errors.push(`Not Standard Legal: ${reference}`);
+                }
+            }
         }
 
         // If no cards validated successfully, return early
@@ -266,7 +358,10 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
             // ACE SPEC detection
             if (lowName.includes("ace spec") || 
                 ["prime catcher", "master ball", "computer search", "dowsing machine", 
-                 "maximum belt", "life dew", "gold potion"].some(name => lowName.includes(name))) {
+                 "maximum belt", "life dew", "gold potion", "hero's cape", "reboot pod",
+                 "awakening drum", "neo upper energy", "legacy energy", "secret box",
+                 "survival brace", "hyper aroma", "unfair stamp", "grand tree", 
+                 "pokévital a", "brilliant search", "scoop up cyclone", "rock guard"].some(name => lowName.includes(name))) {
                 aceSpecCount += parsed.qty;
             }
 

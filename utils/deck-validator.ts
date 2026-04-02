@@ -311,3 +311,45 @@ export function sortCards(cards: ParsedCard[], category: 'pokemon' | 'trainer' |
         return a.name.localeCompare(b.name);
     });
 }
+
+/**
+ * Checks if a card's regulation mark is legal for standard format 
+ * based on the tournament date.
+ */
+export function isRegulationMarkLegal(
+    regulationMark: string | null | undefined,
+    tournamentDate: Date
+): boolean {
+    if (!regulationMark) return false;
+    
+    const mark = regulationMark.trim().toUpperCase();
+    
+    // Rotation on April 10, 2026
+    const rotationDate = new Date("2026-04-10T00:00:00Z"); // UTC or local doesn't matter strictly, but lets assume UTC midnight.
+    
+    if (tournamentDate >= rotationDate) {
+        // H or newer
+        return mark >= 'H';
+    } else {
+        // G or newer
+        return mark >= 'G';
+    }
+}
+
+/**
+ * Checks if a set is excluded explicitly based on standard format release dates.
+ */
+export function isSetExcluded(
+    setCode: string | undefined | null,
+    tournamentDate: Date
+): boolean {
+    if (!setCode) return false;
+    
+    const rotationDate = new Date("2026-04-10T00:00:00Z");
+    if (tournamentDate < rotationDate) {
+        // Exclude POR set prior to April 10
+        if (setCode.toUpperCase() === 'POR') return true;
+    }
+    return false;
+}
+
