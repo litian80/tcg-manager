@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'organizer' | 'judge' | 'user';
+export type Role = 'admin' | 'organizer' | 'user';
 
 export type Permission =
     | 'tom.upload'        // Can upload TOM files
@@ -11,7 +11,7 @@ export type Permission =
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     admin: ['tom.upload', 'judge.view_panel', 'match.edit_result', 'user.manage', 'profile.view_all', 'tournament.manage'],
     organizer: ['tom.upload', 'judge.view_panel', 'match.edit_result'],
-    judge: ['judge.view_panel', 'match.edit_result'],
+
     user: []
 };
 

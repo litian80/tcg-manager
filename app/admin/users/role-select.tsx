@@ -50,7 +50,6 @@ export function RoleSelect({ userId, currentRole, disabled }: RoleSelectProps) {
                 <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="organizer">Organiser</SelectItem>
-                    <SelectItem value="judge">Judge</SelectItem>
                     <SelectItem value="user">User</SelectItem>
                 </SelectContent>
             </Select>

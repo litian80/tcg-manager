@@ -122,7 +122,7 @@ export function StaffManager({ tournamentId, judges }: StaffManagerProps) {
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">{user.email}</span>
                                             </div>
-                                            {user.role === 'judge' || user.role === 'admin' || user.role === 'organizer' ? (
+                                            {user.role === 'admin' || user.role === 'organizer' ? (
                                                 <ShieldCheck className="ml-auto h-4 w-4 text-green-500" />
                                             ) : null}
                                         </CommandItem>

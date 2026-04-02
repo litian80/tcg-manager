@@ -120,7 +120,6 @@ export function UserRoleTable({ initialUsers }: { initialUsers: UserProfile[] })
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="judge">Judge</SelectItem>
                         <SelectItem value="organizer">Organiser</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>

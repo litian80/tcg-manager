@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { Role } from "@/lib/rbac";
 import { sanitizeSearchQuery } from "@/lib/utils";
@@ -156,30 +155,6 @@ export async function addJudge(tournamentId: string, targetUserId: string): Prom
             } else {
                 console.error("Error adding judge:", insertError);
                 return { error: "Failed to add judge" };
-            }
-        }
-
-        // 3. Role Promotion (Admin Client required)
-        const adminClient = createAdminClient();
-
-        const { data: targetProfile, error: targetError } = await adminClient
-            .from("profiles")
-            .select("role")
-            .eq("id", targetUserId)
-            .single();
-
-        if (targetError || !targetProfile) {
-            console.error("Error fetching target profile for role check:", targetError);
-        } else {
-            if (targetProfile.role === "user") {
-                const { error: updateError } = await adminClient
-                    .from("profiles")
-                    .update({ role: "judge" })
-                    .eq("id", targetUserId);
-
-                if (updateError) {
-                    console.error("Error promoting user role:", updateError);
-                }
             }
         }
 

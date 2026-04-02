@@ -21,15 +21,14 @@ describe('ROLE_PERMISSIONS', () => {
     expect(orgPerms).not.toContain('user.manage')
   })
 
-  it('judge can view panel and edit results', () => {
-    const judgePerms = ROLE_PERMISSIONS.judge
-    expect(judgePerms).toContain('judge.view_panel')
-    expect(judgePerms).toContain('match.edit_result')
-    expect(judgePerms).not.toContain('tom.upload')
-  })
-
   it('user has no permissions', () => {
     expect(ROLE_PERMISSIONS.user).toHaveLength(0)
+  })
+
+  it('judge is not a valid user-level role', () => {
+    // Judge was removed from user-level roles — it is now purely
+    // a tournament-level assignment via the tournament_judges table
+    expect('judge' in ROLE_PERMISSIONS).toBe(false)
   })
 })
 
@@ -37,12 +36,10 @@ describe('hasPermission', () => {
   it('returns true when role has the permission', () => {
     expect(hasPermission('admin', 'user.manage')).toBe(true)
     expect(hasPermission('organizer', 'tom.upload')).toBe(true)
-    expect(hasPermission('judge', 'judge.view_panel')).toBe(true)
   })
 
   it('returns false when role lacks the permission', () => {
     expect(hasPermission('user', 'tom.upload')).toBe(false)
-    expect(hasPermission('judge', 'tom.upload')).toBe(false)
     expect(hasPermission('organizer', 'user.manage')).toBe(false)
   })
 

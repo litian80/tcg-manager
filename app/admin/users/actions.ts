@@ -8,7 +8,7 @@ import { safeAction, type ActionResult } from '@/lib/safe-action'
 
 import { z } from 'zod'
 
-const RoleSchema = z.enum(['admin', 'organizer', 'judge', 'user'])
+const RoleSchema = z.enum(['admin', 'organizer', 'user'])
 export type AppRole = z.infer<typeof RoleSchema>
 
 export async function searchUsers(query: string) {

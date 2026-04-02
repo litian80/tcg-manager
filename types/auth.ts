@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'organizer' | 'judge' | 'user';
+export type Role = 'admin' | 'organizer' | 'user';
 
 export type Permission =
     | 'tom.upload'        // Can upload TOM files
