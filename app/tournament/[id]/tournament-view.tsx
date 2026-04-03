@@ -56,6 +56,8 @@ interface TournamentViewProps {
     myPlayerId?: string;
     myRegistrationStatus?: string | null;
     myWaitlistPosition?: number | null;
+    myPaymentUrl?: string | null;
+    myPaymentPendingSince?: string | null;
     penaltyCounts?: Record<string, number>;
     deckCheckCounts?: Record<string, number>;
     deckList?: any;
@@ -75,6 +77,8 @@ export default function TournamentView({
     myPlayerId,
     myRegistrationStatus,
     myWaitlistPosition,
+    myPaymentUrl,
+    myPaymentPendingSince,
     penaltyCounts = {},
     deckCheckCounts = {},
     deckList,
@@ -401,6 +405,8 @@ export default function TournamentView({
                                 opensAt={tournament.registration_opens_at}
                                 closesAt={tournament.registration_closes_at}
                                 lockedDown={tomStage >= 3}
+                                paymentUrl={myPaymentUrl}
+                                paymentPendingSince={myPaymentPendingSince}
                             />
                         </div>
                     )}

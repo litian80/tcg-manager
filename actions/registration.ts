@@ -2,6 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
+import { buildPaymentRedirectUrl } from "@/utils/payment";
 
 export type Division = "junior" | "senior" | "master";
 
@@ -150,7 +152,15 @@ export async function registerPlayer(tournamentId: string) {
 
     const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
     const capacityCheck = await checkDivisionCapacity(tournamentId, division);
-    const status = capacityCheck.available ? "registered" : "waitlisted";
+
+    // Determine if payment is required
+    const paymentRequired = tournament.payment_required && tournament.payment_url;
+    const status = paymentRequired
+      ? "pending_payment"
+      : (capacityCheck.available ? "registered" : "waitlisted");
+
+    // Generate payment callback token if needed
+    const callbackToken = paymentRequired ? randomUUID() : null;
 
     let playerId: string | null = null;
     const { data: existingPlayer } = await supabase
@@ -195,6 +205,15 @@ export async function registerPlayer(tournamentId: string) {
       .eq("player_id", profile.pokemon_player_id)
       .maybeSingle();
 
+    // Build the insert/update payload
+    const registrationData: Record<string, unknown> = {
+      registration_status: status,
+      ...(paymentRequired ? {
+        payment_callback_token: callbackToken,
+        payment_pending_since: new Date().toISOString(),
+      } : {}),
+    };
+
     if (existingReg) {
         if (existingReg.registration_status !== 'withdrawn' && existingReg.registration_status !== 'cancelled') {
             return { error: "You are already registered or on the waitlist." };
@@ -203,20 +222,20 @@ export async function registerPlayer(tournamentId: string) {
         // Update existing withdrawn/cancelled record to active
         const { error: updateError } = await supabase
             .from("tournament_players")
-            .update({ registration_status: status })
+            .update(registrationData)
             .eq("tournament_id", tournamentId)
             .eq("player_id", profile.pokemon_player_id);
             
         if (updateError) return { error: "Failed to update registration status." };
     } else {
-        // Create new registration record (assuming player_id references tom_player_id, despite the name)
+        // Create new registration record
         const { error: insertError } = await supabase
           .from("tournament_players")
           .insert({
             tournament_id: tournamentId,
             player_id: profile.pokemon_player_id,
             division: division,
-            registration_status: status
+            ...registrationData,
           });
 
         if (insertError) {
@@ -226,6 +245,20 @@ export async function registerPlayer(tournamentId: string) {
     }
 
     revalidatePath(`/tournaments/${tournamentId}`);
+
+    // Payment required: build redirect URL and return it
+    if (paymentRequired && callbackToken) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const paymentUrl = buildPaymentRedirectUrl(tournament.payment_url!, {
+        player_name: `${profile.first_name} ${profile.last_name}`,
+        player_id: profile.pokemon_player_id,
+        tournament_id: tournamentId,
+        division,
+        callback_token: callbackToken,
+        return_url: `${siteUrl}/tournament/${tournamentId}/payment-status?token=${callbackToken}`,
+      });
+      return { success: true, status: 'pending_payment', paymentUrl };
+    }
     
     // If they got waitlisted, calculate what position they are
     if (status === "waitlisted") {
@@ -260,7 +293,11 @@ export async function withdrawPlayer(tournamentId: string) {
 
     const { error: updateError } = await supabase
       .from("tournament_players")
-      .update({ registration_status: "withdrawn" })
+      .update({
+        registration_status: "withdrawn",
+        payment_callback_token: null,
+        payment_pending_since: null,
+      })
       .eq("tournament_id", tournamentId)
       .eq("player_id", profile.pokemon_player_id);
 

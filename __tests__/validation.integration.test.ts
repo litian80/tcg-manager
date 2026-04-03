@@ -7,7 +7,7 @@ dotenv.config({ path: '.env.local' });
 
 describe('Validation Integration Tests', () => {
     // We assume the DB contains the Professor's Research up to 'G' block
-    it('rejects Professor\\'s Research for post-rotation 2026 format (H-on)', async () => {
+    it("rejects Professor's Research for post-rotation 2026 format (H-on)", async () => {
         const deck = `Trainer: 4\n4 Professor's Research`;
         // Since we don't have a tournament ID to pass easily, we can spoof a date if needed,
         // but the code hardcodes the post-rotation block logic inside validation.ts:

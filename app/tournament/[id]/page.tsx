@@ -66,13 +66,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // 3. Fetch user's registration status and deck list in parallel if user has profile
     let myRegistrationStatus: string | null = null;
     let myWaitlistPosition: number | null = null;
+    let myPaymentUrl: string | null = null;
+    let myPaymentPendingSince: string | null = null;
     let deckList: any = null;
     
     if (profile?.pokemon_player_id) {
         const [registrationData, deckListData] = await Promise.all([
             supabase
                 .from("tournament_players")
-                .select("registration_status, created_at, division")
+                .select("registration_status, created_at, division, payment_callback_token, payment_pending_since")
                 .eq("tournament_id", id)
                 .eq("player_id", profile.pokemon_player_id)
                 .maybeSingle(),
@@ -87,7 +89,21 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         ]);
 
     myRegistrationStatus = registrationData.data?.registration_status || null;
+    myPaymentPendingSince = registrationData.data?.payment_pending_since || null;
     deckList = deckListData.data || null;
+
+    // If pending_payment and the tournament has a payment URL, reconstruct the redirect URL
+    if (myRegistrationStatus === 'pending_payment' && 
+        registrationData.data?.payment_callback_token && 
+        tournamentRecord.payment_url) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const baseUrl = new URL(tournamentRecord.payment_url);
+      baseUrl.searchParams.set('player_name', `${profile?.pokemon_player_id}`);
+      baseUrl.searchParams.set('tournament_id', id);
+      baseUrl.searchParams.set('callback_token', registrationData.data.payment_callback_token);
+      baseUrl.searchParams.set('return_url', `${siteUrl}/tournament/${id}/payment-status?token=${registrationData.data.payment_callback_token}`);
+      myPaymentUrl = baseUrl.toString();
+    }
     
     // Calculate waitlist position if applicable
     if (myRegistrationStatus === 'waitlisted' && registrationData.data?.division && registrationData.data?.created_at) {
@@ -303,6 +319,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 myPlayerId={profile?.pokemon_player_id}
                 myRegistrationStatus={myRegistrationStatus}
                 myWaitlistPosition={myWaitlistPosition}
+                myPaymentUrl={myPaymentUrl}
+                myPaymentPendingSince={myPaymentPendingSince}
                 penaltyCounts={penaltyCounts}
                 deckCheckCounts={deckCheckCounts}
                 deckList={deckList}

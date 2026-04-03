@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -538,6 +538,8 @@ export type Database = {
           created_at: string
           division: string | null
           losses: number | null
+          payment_callback_token: string | null
+          payment_pending_since: string | null
           player_id: string
           points: number | null
           rank: number | null
@@ -550,6 +552,8 @@ export type Database = {
           created_at?: string
           division?: string | null
           losses?: number | null
+          payment_callback_token?: string | null
+          payment_pending_since?: string | null
           player_id: string
           points?: number | null
           rank?: number | null
@@ -562,6 +566,8 @@ export type Database = {
           created_at?: string
           division?: string | null
           losses?: number | null
+          payment_callback_token?: string | null
+          payment_pending_since?: string | null
           player_id?: string
           points?: number | null
           rank?: number | null
@@ -610,6 +616,9 @@ export type Database = {
           name: string
           organizer_popid: string | null
           parsed_data: Json | null
+          payment_required: boolean | null
+          payment_url: string | null
+          payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
           registration_closes_at: string | null
@@ -623,7 +632,6 @@ export type Database = {
           tom_uid: string | null
           total_rounds: number
           tournament_mode: string
-          use_payment_processor: boolean | null
         }
         Insert: {
           allow_online_match_reporting?: boolean | null
@@ -647,6 +655,9 @@ export type Database = {
           name: string
           organizer_popid?: string | null
           parsed_data?: Json | null
+          payment_required?: boolean | null
+          payment_url?: string | null
+          payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
           registration_closes_at?: string | null
@@ -660,7 +671,6 @@ export type Database = {
           tom_uid?: string | null
           total_rounds: number
           tournament_mode?: string
-          use_payment_processor?: boolean | null
         }
         Update: {
           allow_online_match_reporting?: boolean | null
@@ -684,6 +694,9 @@ export type Database = {
           name?: string
           organizer_popid?: string | null
           parsed_data?: Json | null
+          payment_required?: boolean | null
+          payment_url?: string | null
+          payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
           registration_closes_at?: string | null
@@ -697,7 +710,6 @@ export type Database = {
           tom_uid?: string | null
           total_rounds?: number
           tournament_mode?: string
-          use_payment_processor?: boolean | null
         }
         Relationships: []
       }
@@ -742,6 +754,9 @@ export type Database = {
           name: string
           organizer_popid: string | null
           parsed_data: Json | null
+          payment_required: boolean | null
+          payment_url: string | null
+          payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
           registration_closes_at: string | null
@@ -755,7 +770,6 @@ export type Database = {
           tom_uid: string | null
           total_rounds: number
           tournament_mode: string
-          use_payment_processor: boolean | null
         }[]
         SetofOptions: {
           from: "*"

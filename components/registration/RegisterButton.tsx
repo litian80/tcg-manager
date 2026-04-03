@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { registerPlayer, withdrawPlayer } from "@/actions/registration";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,8 @@ interface RegisterButtonProps {
     opensAt?: string | null;
     closesAt?: string | null;
     lockedDown?: boolean;
+    paymentUrl?: string | null;
+    paymentPendingSince?: string | null;
 }
 
 export function RegisterButton({ 
@@ -35,10 +37,13 @@ export function RegisterButton({
     registrationOpen, 
     opensAt, 
     closesAt,
-    lockedDown
+    lockedDown,
+    paymentUrl,
+    paymentPendingSince,
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
+    const [currentPaymentUrl, setCurrentPaymentUrl] = useState<string | null>(paymentUrl || null);
 
     const isRegistrationUpcoming = opensAt && new Date(opensAt) > new Date();
     const isRegistrationClosed = closesAt && new Date(closesAt) < new Date();
@@ -51,7 +56,11 @@ export function RegisterButton({
             if (result.error) {
                 toast.error(result.error);
             } else {
-                if (result.status === 'waitlisted') {
+                if (result.status === 'pending_payment' && result.paymentUrl) {
+                    toast.success("Registration started — complete payment to confirm your spot.");
+                    setCurrentPaymentUrl(result.paymentUrl);
+                    window.open(result.paymentUrl, '_blank');
+                } else if (result.status === 'waitlisted') {
                     toast.success("Added to waitlist!");
                 } else {
                     toast.success("Successfully registered!");
@@ -81,7 +90,54 @@ export function RegisterButton({
         }
     };
 
-    // Determine button state based on status
+    // Pending Payment state
+    if (status === 'pending_payment') {
+        return (
+            <div className="flex flex-col gap-2 w-full">
+                <Button disabled className="w-full bg-amber-600 text-white opacity-100 font-semibold border-amber-700">
+                    ⏳ Payment Pending
+                </Button>
+                {currentPaymentUrl && (
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => window.open(currentPaymentUrl, '_blank')}
+                    >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Complete Payment
+                    </Button>
+                )}
+                <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
+                            Cancel Registration
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel Registration?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will cancel your pending registration. You will need to re-register and complete payment again if you change your mind.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Keep Registration</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Cancel Registration
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                {paymentPendingSince && (
+                    <p className="text-xs text-center text-muted-foreground">
+                        Payment expires 24 hours after registration.
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    // Registered / Checked In state
     if (status === 'registered' || status === 'checked_in') {
         return (
             <div className="flex flex-col gap-2 w-full">

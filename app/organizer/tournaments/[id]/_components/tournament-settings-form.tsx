@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ExtendedTournament as Tournament } from "@/types/tournament";
 
@@ -32,6 +32,11 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [capMasters, setCapMasters] = useState(tournament.capacity_masters?.toString() || "0");
     const [jrMax, setJrMax] = useState(tournament.juniors_birth_year_max?.toString() || "");
     const [srMax, setSrMax] = useState(tournament.seniors_birth_year_max?.toString() || "");
+    
+    // Payment settings
+    const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
+    const [paymentUrl, setPaymentUrl] = useState(tournament.payment_url || "");
+    const [paymentWebhookSecret, setPaymentWebhookSecret] = useState(tournament.payment_webhook_secret || "");
     
     // For start time - split date and time
     const [startDate, setStartDate] = useState("");
@@ -127,6 +132,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 juniors_birth_year_max: jrMax ? parseInt(jrMax, 10) : null,
                 seniors_birth_year_max: srMax ? parseInt(srMax, 10) : null,
                 start_time: startTimeValue,
+                payment_required: paymentRequired,
+                payment_url: paymentRequired ? (paymentUrl || null) : null,
+                payment_webhook_secret: paymentRequired ? (paymentWebhookSecret || null) : null,
             })
             .eq("id", tournament.id);
 
@@ -348,6 +356,116 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                 <li>Master: Born before the Senior year</li>
                             </ul>
                         </div>
+                    </div>
+
+                    {/* Payment Settings Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium">💳 Payment Settings</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="payment_required" 
+                                checked={paymentRequired}
+                                onCheckedChange={(checked) => {
+                                    const isChecked = checked === true;
+                                    setPaymentRequired(isChecked);
+                                    // Auto-generate secret on first enable
+                                    if (isChecked && !paymentWebhookSecret) {
+                                        const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                                            .map(b => b.toString(16).padStart(2, '0')).join('');
+                                        setPaymentWebhookSecret(secret);
+                                    }
+                                }}
+                            />
+                            <Label htmlFor="payment_required">Require Payment for Registration</Label>
+                        </div>
+
+                        {paymentRequired && (
+                            <div className="space-y-4 pl-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_url">Payment URL</Label>
+                                    <Input
+                                        id="payment_url"
+                                        type="url"
+                                        placeholder="https://buy.stripe.com/your-link"
+                                        value={paymentUrl}
+                                        onChange={(e) => setPaymentUrl(e.target.value)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Players will be redirected here to pay. We&apos;ll append player details as query parameters automatically.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_webhook_secret">Webhook Secret</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="payment_webhook_secret"
+                                            type="text"
+                                            value={paymentWebhookSecret}
+                                            readOnly
+                                            className="font-mono text-xs bg-muted"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Copy to clipboard"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(paymentWebhookSecret);
+                                                toast.success("Secret copied to clipboard");
+                                            }}
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Regenerate secret"
+                                            onClick={() => {
+                                                const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                                                    .map(b => b.toString(16).padStart(2, '0')).join('');
+                                                setPaymentWebhookSecret(secret);
+                                                toast.info("New secret generated. Remember to save and update your payment system.");
+                                            }}
+                                        >
+                                            <RefreshCw className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Use this secret in your payment system to sign webhook callbacks.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Webhook Endpoint</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="text"
+                                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/payment`}
+                                            readOnly
+                                            className="font-mono text-xs bg-muted"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Copy endpoint"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/payment`);
+                                                toast.success("Endpoint copied to clipboard");
+                                            }}
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Configure your payment system to POST results to this URL.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
