@@ -130,6 +130,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 time_extension_minutes,
                 p1_display_record,
                 p2_display_record,
+                p1_reported_result,
+                p2_reported_result,
+                player1_win,
+                tie,
+                player2_win,
                 p1:players!player1_tom_id(first_name, last_name),
                 p2:players!player2_tom_id(first_name, last_name)
             `)

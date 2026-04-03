@@ -42,6 +42,7 @@ export async function createTournament(formData: FormData) {
 
     const registration_open = formData.get("registration_open") === "true" || formData.get("registration_open") === "on";
     const publish_roster = formData.get("publish_roster") === "true" || formData.get("publish_roster") === "on";
+    const allow_online_match_reporting = formData.get("allow_online_match_reporting") === "true" || formData.get("allow_online_match_reporting") === "on";
     const capacity_juniors = parseInt((formData.get("capacity_juniors") as string) || "0", 10);
     const capacity_seniors = parseInt((formData.get("capacity_seniors") as string) || "0", 10);
     const capacity_masters = parseInt((formData.get("capacity_masters") as string) || "0", 10);
@@ -135,6 +136,7 @@ export async function createTournament(formData: FormData) {
             is_published: false,
             registration_open,
             publish_roster,
+            allow_online_match_reporting,
             capacity_juniors,
             capacity_seniors,
             capacity_masters,

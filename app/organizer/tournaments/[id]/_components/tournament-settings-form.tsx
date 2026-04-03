@@ -24,6 +24,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
     const [registrationOpen, setRegistrationOpen] = useState(tournament.registration_open || false);
     const [publishRoster, setPublishRoster] = useState(tournament.publish_roster ?? true);
+    const [allowOnlineMatchReporting, setAllowOnlineMatchReporting] = useState(tournament.allow_online_match_reporting || false);
     const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
     const [deckSubmissionCutoffHours, setDeckSubmissionCutoffHours] = useState(tournament.deck_submission_cutoff_hours?.toString() || "1");
     const [capJuniors, setCapJuniors] = useState(tournament.capacity_juniors?.toString() || "0");
@@ -114,6 +115,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 ...(isAdmin ? { organizer_popid: organizerPopid || null } : {}),
                 registration_open: registrationOpen,
                 publish_roster: publishRoster,
+                allow_online_match_reporting: allowOnlineMatchReporting,
                 requires_deck_list: requiresDeckList,
                 deck_submission_cutoff_hours: cutoffHours,
                 deck_list_submission_deadline: deckListSubmissionDeadline,
@@ -224,6 +226,23 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         />
                         <p className="text-xs text-muted-foreground">
                             {isAdmin ? "Set the Player ID of the tournament organiser." : "The Player ID of the tournament organiser."}
+                        </p>
+                    </div>
+
+                    {/* Match Reporting Settings Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium">Match Reporting Settings</h3>
+                        
+                        <div className="flex items-center space-x-2 pb-2">
+                            <Checkbox 
+                                id="allow_online_match_reporting" 
+                                checked={allowOnlineMatchReporting}
+                                onCheckedChange={(checked) => setAllowOnlineMatchReporting(checked === true)}
+                            />
+                            <Label htmlFor="allow_online_match_reporting">Enable Online Match Result Reporting</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground -mt-3">
+                            When enabled, allows players to self-report match results from their player dashboard.
                         </p>
                     </div>
 

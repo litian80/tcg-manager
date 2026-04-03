@@ -2,15 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Check, Handshake, Gavel, Search, Clock } from "lucide-react";
+import { Check, Handshake, Gavel, Search, Clock, AlertOctagon, Ticket } from "lucide-react";
 import { type Match } from "@/types";
+import { getMatchReportingStatus } from "@/utils/match-reporting";
 import { useState, useEffect } from "react";
 
 import { useSecretTrigger } from "@/hooks/use-secret-trigger";
 import { createOrJoinGame } from "@/actions/minigame";
 import { toast } from "sonner";
 import { ConnectFourModal } from "./connect-four-modal";
-
+import Barcode from 'react-barcode';
 interface MatchCardProps {
     match: Match;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
@@ -165,14 +166,27 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
         );
     };
 
+    const reportingStatus = getMatchReportingStatus(match.p1_reported_result, match.p2_reported_result);
+    const isConfirmed = reportingStatus === 'confirmed';
+    const isConflict = reportingStatus === 'conflict';
+    const hasStatus = match.p1_reported_result || match.p2_reported_result;
+
+    let resultKey = null;
+    if (isConfirmed && !isFinished && isJudge) {
+        if (match.p1_reported_result === 'win') resultKey = match.player1_win;
+        else if (match.p1_reported_result === 'loss') resultKey = match.player2_win;
+        else if (match.p1_reported_result === 'tie') resultKey = match.tie;
+    }
+
     return (
-        <div
-            id={isMe ? "current-user-row" : undefined}
-            className={cn(
-                "grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 border-b py-2 px-4 transition-colors group",
-                isMe ? "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500 pl-3" : "hover:bg-muted/50"
-            )}
-        >
+        <div className={cn("flex flex-col border-b group transition-colors", isMe ? "" : "hover:bg-muted/50", resultKey && "bg-green-50/30 dark:bg-green-950/10")}>
+            <div
+                id={isMe ? "current-user-row" : undefined}
+                className={cn(
+                    "grid grid-cols-[3rem_minmax(0,1fr)_4rem_minmax(0,1fr)] items-center gap-2 py-2 px-4 transition-colors",
+                    isMe && "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-500 pl-3"
+                )}
+            >
             {/* Table Number */}
             <div className="font-bold text-center text-muted-foreground text-lg flex flex-col items-center justify-center gap-0.5">
                 <span>{match.table_number}</span>
@@ -254,6 +268,36 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
                     startPlayerId={match.outcome === 1 ? match.player2_tom_id! : (match.outcome === 2 ? match.player1_tom_id! : (match.player1_tom_id!))}
                     gameData={gameData}
                 />
+            )}
+            </div>
+
+            {/* Match Reporting Judge Info */}
+            {!isFinished && isJudge && hasStatus && (
+                <div className="px-4 pb-2 -mt-1 ml-12">
+                    {isConfirmed && resultKey && (
+                        <div className="flex flex-col items-center gap-1.5 mt-2 px-3 py-2 bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 shadow-sm max-w-fit">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold">
+                                <Ticket className="h-4 w-4" />
+                                <span>Confirmed result slip key</span>
+                            </div>
+                            <div className="bg-white px-2 pt-2 pb-0 mt-0.5 rounded shadow-sm overflow-hidden flex flex-col items-center">
+                                <Barcode value={resultKey} height={40} width={1.8} fontSize={14} margin={0} background="transparent" />
+                            </div>
+                        </div>
+                    )}
+                    {isConflict && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 text-xs font-semibold rounded-md border border-red-200 dark:border-red-800 animate-pulse shadow-sm">
+                            <AlertOctagon className="h-3.5 w-3.5" />
+                            Conflict! Players reported differing results.
+                        </div>
+                    )}
+                    {reportingStatus === 'pending_opponent' && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-500 text-xs font-medium rounded-md border border-amber-200/50 dark:border-amber-900/50">
+                            <Clock className="h-3 w-3" />
+                            One player reported. Waiting for opponent.
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );

@@ -52,6 +52,7 @@ __pycache__/
 /archive/
 /TOMfiles/
 /Cards/
+/TOMvsMatchSlip/
 
 # schema dumps (regenerated from live DB)
 /schema.json

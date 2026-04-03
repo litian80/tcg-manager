@@ -15,4 +15,10 @@ export interface Match {
     p1_display_record?: string;
     p2_display_record?: string;
     time_extension_minutes?: number;
+    player1_win?: string | null;
+    tie?: string | null;
+    player2_win?: string | null;
+    p1_reported_result?: string | null;
+    p2_reported_result?: string | null;
+    tournament_id?: string;
 }

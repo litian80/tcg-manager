@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Clock, FileWarning, SearchX, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MatchReportingPanel } from "@/components/tournament/match-reporting-panel";
+import { Button } from "@/components/ui/button";
 
 interface PlayerDashboardProps {
     tournamentName: string;
@@ -19,6 +22,7 @@ interface PlayerDashboardProps {
     isFinished?: boolean;
     tournamentStatus?: string;
     registrationStatus?: string | null;
+    allowOnlineReporting?: boolean;
 }
 
 export function PlayerDashboard({
@@ -33,35 +37,58 @@ export function PlayerDashboard({
     isDropped = false,
     isFinished = false,
     tournamentStatus = 'running',
-    registrationStatus = null
+    registrationStatus = null,
+    allowOnlineReporting = false
 }: PlayerDashboardProps) {
     // Determine the current match (if any)
     const currentMatch = myMatches.find(m => m.round_number === currentRound);
+
+    const isPlayer1 = currentMatch && currentMatch.player1_tom_id === myPlayerId;
+    const myReport = currentMatch ? (isPlayer1 ? currentMatch.p1_reported_result : currentMatch.p2_reported_result) : null;
 
     // Sort history matches descending
     const historyMatches = myMatches
         .filter(m => m.round_number < currentRound || m.is_finished)
         .sort((a, b) => b.round_number - a.round_number);
 
+    let currentMatchResultNode: React.ReactNode = null;
+    if (currentMatch && currentMatch.is_finished) {
+        let resultStr = "Completed";
+        let statusColor = "bg-muted text-muted-foreground border-muted-foreground/20";
+        
+        const isBye = currentMatch.player1_tom_id === 'BYE' || currentMatch.player2_tom_id === 'BYE';
+        if (currentMatch.winner_tom_id === myPlayerId || isBye) {
+            resultStr = "Win";
+            statusColor = "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20";
+        } else if (currentMatch.winner_tom_id === 'tie' || currentMatch.winner_tom_id === 'draw' || currentMatch.outcome === 3) {
+            resultStr = "Tie";
+            statusColor = "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20";
+        } else if (currentMatch.winner_tom_id) {
+            resultStr = "Loss";
+            statusColor = "bg-red-500/10 text-red-600 dark:text-red-500 border-red-500/20";
+        }
+
+        currentMatchResultNode = (
+            <Badge variant="outline" className={cn("ml-2 font-bold shadow-sm", statusColor)}>
+                {resultStr}
+            </Badge>
+        );
+    }
+
     return (
         <div className="space-y-6 pb-8 px-4 mt-4">
-            {/* Header Section */}
-            <div className="space-y-1">
-                <h2 className="text-2xl font-bold tracking-tight">Your Dashboard</h2>
-                <p className="text-muted-foreground text-sm">
-                    {playerName} • {tournamentName}
-                </p>
-            </div>
-
             {/* Current Match Section */}
             <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Current Pairing</h3>
                 {currentMatch ? (
-                    <Card className="border-2 border-primary/20 shadow-sm relative overflow-hidden bg-primary/5">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                    <>
+                        <Card className="border-2 border-primary/20 shadow-sm relative overflow-hidden bg-primary/5">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                         <CardHeader className="pb-2">
                             <CardTitle className="text-lg flex justify-between items-center">
-                                <span>Round {currentMatch.round_number}</span>
+                                <div className="flex items-center">
+                                    <span>Round {currentMatch.round_number}</span>
+                                    {currentMatchResultNode}
+                                </div>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -91,6 +118,30 @@ export function PlayerDashboard({
                             )}
                         </CardContent>
                     </Card>
+                    
+                    {allowOnlineReporting && currentMatch && currentMatch.player1_tom_id !== 'BYE' && currentMatch.player2_tom_id !== 'BYE' && !currentMatch.is_finished && (
+                        myReport ? (
+                            <div className="mt-4">
+                                <MatchReportingPanel match={currentMatch} myPlayerId={myPlayerId} />
+                            </div>
+                        ) : (
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button className="w-full mt-4" variant="outline" size="lg">
+                                        <Trophy className="mr-2 h-4 w-4" />
+                                        Report Match Result
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Match Result</DialogTitle>
+                                    </DialogHeader>
+                                    <MatchReportingPanel match={currentMatch} myPlayerId={myPlayerId} />
+                                </DialogContent>
+                            </Dialog>
+                        )
+                    )}
+                    </>
                 ) : (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">

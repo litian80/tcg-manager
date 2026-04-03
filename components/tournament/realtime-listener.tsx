@@ -30,6 +30,19 @@ export function RealtimeListener({ tournamentId }: RealtimeListenerProps) {
                     router.refresh();
                 }
             )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "matches",
+                    filter: `tournament_id=eq.${tournamentId}`,
+                },
+                (payload) => {
+                    console.log("Match updated:", payload);
+                    router.refresh();
+                }
+            )
             .subscribe();
 
         return () => {

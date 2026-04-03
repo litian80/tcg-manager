@@ -325,22 +325,56 @@ export async function POST(req: NextRequest) {
 
         // Pre-read existing user-managed match data for preservation during upsert.
         // Supabase upsert sets omitted columns to DEFAULT/NULL, so we must explicitly
-        // include time_extension_minutes in the payload to preserve judge-set values.
+        // include time_extension_minutes and generated match keys in the payload to preserve them.
         const { data: existingMatches } = await supabase
             .from('matches')
-            .select('round_number, table_number, division, time_extension_minutes')
+            .select('round_number, table_number, division, time_extension_minutes, player1_win, tie, player2_win')
             .eq('tournament_id', tournamentId);
 
-        const extensionMap = new Map<string, number>();
+        const existingMatchMap = new Map<string, any>();
         if (existingMatches) {
             existingMatches.forEach(m => {
-                if (m.time_extension_minutes) {
-                    extensionMap.set(`${m.round_number}-${m.table_number}-${m.division}`, m.time_extension_minutes);
-                }
+                existingMatchMap.set(`${m.round_number}-${m.table_number}-${m.division}`, {
+                    time_extension_minutes: m.time_extension_minutes,
+                    player1_win: m.player1_win,
+                    tie: m.tie,
+                    player2_win: m.player2_win
+                });
             });
         }
 
         const pods = asArray(tournamentRoot.pods?.pod);
+
+        // Calculate max table number for barcode zero-padding logic
+        let globalMaxTable = 0;
+        pods.forEach((pod: any) => {
+            const rounds = asArray(pod.rounds?.round);
+            rounds.forEach((r: any) => {
+                const matches = asArray(r.matches?.match);
+                matches.forEach((m: any) => {
+                    const tNum = parseInt(m.tablenumber?.toString() || '0');
+                    if (tNum > globalMaxTable) globalMaxTable = tNum;
+                });
+            });
+        });
+        const tablePadding = Math.max(1, Math.min(3, globalMaxTable.toString().length));
+
+        // TOM Match Slip Key Generator
+        const generateBracketOpsKey = (category: string, roundNumber: number, tableNumber: number, outcome: number) => {
+            const paddedTable = tableNumber.toString().padStart(tablePadding, '0');
+            const baseStr = `${category}${roundNumber}${paddedTable}${outcome}`;
+            let total = 0;
+            let isOdd = true;
+            for (const char of baseStr) {
+                const digit = parseInt(char);
+                const weight = isOdd ? 1 : 2;
+                total += digit * weight;
+                isOdd = !isOdd;
+            }
+            const checkDigit = (10 - (total % 10)) % 10;
+            return `${baseStr}${checkDigit}`;
+        };
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const matchesToUpsert: any[] = [];
         let maxRoundNumber = 0;
@@ -484,10 +518,25 @@ export async function POST(req: NextRequest) {
                         return;
                     }
 
+                    const tNum = parseInt(m.tablenumber?.toString() || '0');
+                    const matchKey = `${roundNumber}-${tNum}-${division}`;
+                    const existingData = existingMatchMap.get(matchKey) || {};
+
+                    // Generate Match Slip Keys if not present and not a Bye (outcome !== 5)
+                    let p1WinKey = existingData.player1_win || null;
+                    let tieKey = existingData.tie || null;
+                    let p2WinKey = existingData.player2_win || null;
+
+                    if (outcome !== 5) {
+                        if (!p1WinKey) p1WinKey = generateBracketOpsKey(category, roundNumber, tNum, 1);
+                        if (!tieKey) tieKey = generateBracketOpsKey(category, roundNumber, tNum, 2);
+                        if (!p2WinKey) p2WinKey = generateBracketOpsKey(category, roundNumber, tNum, 3);
+                    }
+
                     matchesToUpsert.push({
                         tournament_id: tournamentId,
                         round_number: roundNumber,
-                        table_number: parseInt(m.tablenumber?.toString() || '0'),
+                        table_number: tNum,
                         player1_tom_id: p1Id,
                         player2_tom_id: p2Id,
                         winner_tom_id: winnerId,
@@ -496,8 +545,11 @@ export async function POST(req: NextRequest) {
                         division: division,
                         p1_display_record: p1Display,
                         p2_display_record: p2Display,
+                        player1_win: p1WinKey,
+                        tie: tieKey,
+                        player2_win: p2WinKey,
                         // Preserve judge-set time extensions from pre-read (app-managed field)
-                        time_extension_minutes: extensionMap.get(`${roundNumber}-${parseInt(m.tablenumber?.toString() || '0')}-${division}`) || 0
+                        time_extension_minutes: existingData.time_extension_minutes || 0
                     });
                 });
             });

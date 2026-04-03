@@ -20,6 +20,7 @@ import { RegisterButton } from "@/components/registration/RegisterButton";
 import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
 import { toast } from "sonner";
 import type { ParsedCard } from "@/types/deck";
+import { getMatchReportingStatus } from "@/utils/match-reporting";
 
 /** Track the rendered height of an element via ResizeObserver. */
 function useStickyHeight() {
@@ -123,11 +124,30 @@ export default function TournamentView({
     const rounds = Array.from({ length: maxRound }, (_, i) => i + 1);
 
     const getRoundMatches = (round: number) => {
-        return divisionMatches.filter(m => m.round_number === round && (
+        const roundMatches = divisionMatches.filter(m => m.round_number === round && (
             !searchQuery ||
             (m.p1 ? `${m.p1.first_name} ${m.p1.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase()) ||
             (m.p2 ? `${m.p2.first_name} ${m.p2.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase())
         ));
+
+        // If judge and online reporting is allowed, sort confirmed results with barcodes to the top
+        if (isJudge && tournament.allow_online_match_reporting) {
+            roundMatches.sort((a, b) => {
+                const aStatus = getMatchReportingStatus(a.p1_reported_result, a.p2_reported_result);
+                const bStatus = getMatchReportingStatus(b.p1_reported_result, b.p2_reported_result);
+                
+                const aHasBarcode = aStatus === 'confirmed' && !a.is_finished;
+                const bHasBarcode = bStatus === 'confirmed' && !b.is_finished;
+                
+                if (aHasBarcode && !bHasBarcode) return -1;
+                if (!aHasBarcode && bHasBarcode) return 1;
+                
+                // Fallback to table number
+                return (a.table_number || 0) - (b.table_number || 0);
+            });
+        }
+
+        return roundMatches;
     };
 
     const isEnrolledPlayer = !!myPlayerId && (myRegistrationStatus === 'registered' || myRegistrationStatus === 'checked_in' || myRegistrationStatus === 'dropped' || myRegistrationStatus === 'finished');
@@ -504,6 +524,7 @@ export default function TournamentView({
                                 isFinished={myRegistrationStatus === 'finished'}
                                 tournamentStatus={tournament.status || 'running'}
                                 registrationStatus={myRegistrationStatus}
+                                allowOnlineReporting={tournament.allow_online_match_reporting ?? false}
                             />
                         ) : viewMode === 'standings' ? (
                             <div className="p-4">

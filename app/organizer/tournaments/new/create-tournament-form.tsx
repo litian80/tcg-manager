@@ -167,6 +167,12 @@ export function CreateTournamentForm({ userRole, userPopId }: CreateTournamentFo
                             <input type="hidden" name="publish_roster_fallback" value="false" />
                         </div>
 
+                        <div className="flex items-center space-x-2 pb-4">
+                            <Switch id="allow_online_match_reporting" name="allow_online_match_reporting" value="true" disabled={isPending} />
+                            <Label htmlFor="allow_online_match_reporting">Enable Online Match Result Reporting</Label>
+                            <input type="hidden" name="allow_online_match_reporting_fallback" value="false" />
+                        </div>
+
                         <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="capacity_juniors">Juniors Capacity</Label>
