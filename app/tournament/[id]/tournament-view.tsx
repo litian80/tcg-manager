@@ -41,6 +41,7 @@ function useStickyHeight() {
 }
 
 import { Match, ExtendedTournament as Tournament, RosterPlayer, MatchPlayer as Player } from '@/types'
+import { PlayerDashboard } from "@/components/tournament/player-dashboard"
 
 interface TournamentViewProps {
     tomStage: number;
@@ -57,6 +58,8 @@ interface TournamentViewProps {
     penaltyCounts?: Record<string, number>;
     deckCheckCounts?: Record<string, number>;
     deckList?: any;
+    myPenalties?: any[];
+    myDeckChecks?: any[];
 }
 
 export default function TournamentView({
@@ -74,7 +77,8 @@ export default function TournamentView({
     penaltyCounts = {},
     deckCheckCounts = {},
     deckList,
-
+    myPenalties = [],
+    myDeckChecks = [],
 }: TournamentViewProps) {
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
@@ -125,7 +129,9 @@ export default function TournamentView({
             (m.p2 ? `${m.p2.first_name} ${m.p2.last_name}`.toLowerCase() : "").includes(searchQuery.toLowerCase())
         ));
     };
-    const [viewMode, setViewMode] = useState<'pairings' | 'standings' | 'roster'>('pairings');
+
+    const isEnrolledPlayer = !!myPlayerId && (myRegistrationStatus === 'registered' || myRegistrationStatus === 'checked_in' || myRegistrationStatus === 'dropped' || myRegistrationStatus === 'finished');
+    const [viewMode, setViewMode] = useState<'dashboard' | 'pairings' | 'standings' | 'roster'>(isEnrolledPlayer ? 'dashboard' : 'pairings');
 
     // Judge Actions Logic
     const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
@@ -231,6 +237,71 @@ export default function TournamentView({
         // toast.success inside modal handled it, but we can do more here if needed
     };
 
+    const deckSubmissionElement = shouldShowDeckSubmission ? (
+        <div className="pt-2 space-y-2">
+            <Button
+                onClick={() => setIsDeckModalOpen(true)}
+                disabled={isDeadlinePassed}
+                variant={deckListState ? "outline" : "default"}
+                className={cn(
+                    "w-full justify-start gap-2",
+                    !isDeadlinePassed && timeLeft?.isCritical && !deckListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
+                    !isDeadlinePassed && timeLeft?.isWarning && !deckListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                )}
+            >
+                <ScrollText className="h-4 w-4" />
+                {deckSubmissionButtonText}
+                {isDeadlinePassed && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                        {isTournamentStarted ? "Tournament Started" : "Deadline Passed"}
+                    </span>
+                )}
+                {!isDeadlinePassed && !deckListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
+                    <span className={cn(
+                        "ml-auto flex items-center gap-1 text-xs",
+                        timeLeft.isCritical ? "text-destructive" : "text-amber-600"
+                    )}>
+                        <Clock className="h-3 w-3" />
+                        {timeLeft.hours}h {timeLeft.minutes}m
+                    </span>
+                )}
+            </Button>
+            
+            {/* Deadline Information */}
+            {memoizedDeadline && (
+                <div className="flex items-start gap-2 text-xs">
+                    <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="space-y-1">
+                        <p className="text-muted-foreground">
+                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `on ${isMounted ? memoizedDeadline.toLocaleDateString() : '...'} at ${isMounted ? memoizedDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}` : ''}
+                        </p>
+                        
+                        {timeLeft && !timeLeft.isPast && (
+                            <p className={cn(
+                                "font-medium",
+                                timeLeft.isCritical ? "text-destructive" : timeLeft.isWarning ? "text-amber-600" : "text-green-600"
+                            )}>
+                                {(timeLeft.isCritical || timeLeft.isWarning) ? (
+                                    <span className="flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        {timeLeft.hours === 0 
+                                            ? `${timeLeft.minutes}m ${timeLeft.seconds}s remaining`
+                                            : `${timeLeft.hours}h ${timeLeft.minutes}m remaining`
+                                        }
+                                    </span>
+                                ) : (
+                                    <span>
+                                        {timeLeft.hours} hours {timeLeft.minutes} minutes remaining
+                                    </span>
+                                )}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    ) : null;
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Sticky Header & Search */}
@@ -315,77 +386,29 @@ export default function TournamentView({
                     )}
 
                     {/* Deck Submission Button with Deadline Warning */}
-                    {shouldShowDeckSubmission && (
-                        <div className="pt-2 space-y-2">
-                            <Button
-                                onClick={() => setIsDeckModalOpen(true)}
-                                disabled={isDeadlinePassed}
-                                variant={deckListState ? "outline" : "default"}
-                                className={cn(
-                                    "w-full justify-start gap-2",
-                                    !isDeadlinePassed && timeLeft?.isCritical && !deckListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
-                                    !isDeadlinePassed && timeLeft?.isWarning && !deckListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-                                )}
-                            >
-                                <ScrollText className="h-4 w-4" />
-                                {deckSubmissionButtonText}
-                                {isDeadlinePassed && (
-                                    <span className="ml-auto text-xs text-muted-foreground">
-                                        {isTournamentStarted ? "Tournament Started" : "Deadline Passed"}
-                                    </span>
-                                )}
-                                {!isDeadlinePassed && !deckListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
-                                    <span className={cn(
-                                        "ml-auto flex items-center gap-1 text-xs",
-                                        timeLeft.isCritical ? "text-destructive" : "text-amber-600"
-                                    )}>
-                                        <Clock className="h-3 w-3" />
-                                        {timeLeft.hours}h {timeLeft.minutes}m
-                                    </span>
-                                )}
-                            </Button>
-                            
-                            {/* Deadline Information */}
-                            {memoizedDeadline && (
-                                <div className="flex items-start gap-2 text-xs">
-                                    <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
-                                    <div className="space-y-1">
-                                        <p className="text-muted-foreground">
-                                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `on ${isMounted ? memoizedDeadline.toLocaleDateString() : '...'} at ${isMounted ? memoizedDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}` : ''}
-                                        </p>
-                                        
-                                        {timeLeft && !timeLeft.isPast && (
-                                            <p className={cn(
-                                                "font-medium",
-                                                timeLeft.isCritical ? "text-destructive" : timeLeft.isWarning ? "text-amber-600" : "text-green-600"
-                                            )}>
-                                                {(timeLeft.isCritical || timeLeft.isWarning) ? (
-                                                    <span className="flex items-center gap-1">
-                                                        <AlertTriangle className="h-3 w-3" />
-                                                        {timeLeft.hours === 0 
-                                                            ? `${timeLeft.minutes}m ${timeLeft.seconds}s remaining`
-                                                            : `${timeLeft.hours}h ${timeLeft.minutes}m remaining`
-                                                        }
-                                                    </span>
-                                                ) : (
-                                                    <span>
-                                                        {timeLeft.hours} hours {timeLeft.minutes} minutes remaining
-                                                    </span>
-                                                )}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    {(!hasMatches || viewMode !== 'dashboard') && deckSubmissionElement}
 
-                    {/* View Toggle - Show to staff during active tournaments, or to everyone when completed */}
-                    {hasMatches && (tournament.status === 'completed' || isJudge || canManageStaff) && (
+                    {/* View Toggle - Show to staff, or to enrolled active players, or to everyone when completed */}
+                    {hasMatches && (tournament.status === 'completed' || isJudge || canManageStaff || isEnrolledPlayer) && (
                         <div className={cn(
                             "grid gap-1 p-1 bg-muted rounded-lg",
-                            (isJudge || canManageStaff) && tournament.requires_deck_list ? "grid-cols-3" : "grid-cols-2"
+                            isEnrolledPlayer && (isJudge || canManageStaff) && tournament.requires_deck_list ? "grid-cols-4" : 
+                            ((isJudge || canManageStaff) && tournament.requires_deck_list) || (isEnrolledPlayer && (isJudge || canManageStaff || tournament.status === 'completed')) ? "grid-cols-3" : 
+                            isEnrolledPlayer && tournament.status !== 'completed' && !isJudge && !canManageStaff ? "grid-cols-2" : "grid-cols-2"
                         )}>
+                            {isEnrolledPlayer && (
+                                <button
+                                    onClick={() => setViewMode('dashboard')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap",
+                                        viewMode === 'dashboard'
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    Dashboard
+                                </button>
+                            )}
                             <button
                                 onClick={() => setViewMode('pairings')}
                                 className={cn(
@@ -397,17 +420,19 @@ export default function TournamentView({
                             >
                                 Pairings
                             </button>
-                            <button
-                                onClick={() => setViewMode('standings')}
-                                className={cn(
-                                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                                    viewMode === 'standings'
-                                        ? "bg-background text-foreground shadow-sm"
-                                        : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                Standings
-                            </button>
+                            {(tournament.status === 'completed' || isJudge || canManageStaff) && (
+                                <button
+                                    onClick={() => setViewMode('standings')}
+                                    className={cn(
+                                        "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                                        viewMode === 'standings'
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    Standings
+                                </button>
+                            )}
                             {(isJudge || canManageStaff) && tournament.requires_deck_list && (
                                 <button
                                     onClick={() => setViewMode('roster')}
@@ -465,7 +490,22 @@ export default function TournamentView({
                     </div>
                 ) : (
                     <>
-                        {viewMode === 'standings' ? (
+                        {viewMode === 'dashboard' && isEnrolledPlayer ? (
+                            <PlayerDashboard
+                                tournamentName={tournament.name}
+                                playerName={rosterPlayers?.find(p => p.id === myPlayerId) ? `${rosterPlayers.find(p => p.id === myPlayerId)!.first_name} ${rosterPlayers.find(p => p.id === myPlayerId)!.last_name}` : 'Player'}
+                                myPlayerId={myPlayerId!}
+                                myMatches={matches.filter(m => m.player1_tom_id === myPlayerId || m.player2_tom_id === myPlayerId)}
+                                currentRound={currentRound}
+                                myPenalties={myPenalties}
+                                myDeckChecks={myDeckChecks}
+                                deckListStatusElement={deckSubmissionElement}
+                                isDropped={myRegistrationStatus === 'dropped'}
+                                isFinished={myRegistrationStatus === 'finished'}
+                                tournamentStatus={tournament.status || 'running'}
+                                registrationStatus={myRegistrationStatus}
+                            />
+                        ) : viewMode === 'standings' ? (
                             <div className="p-4">
                                 <StandingsView tournamentId={tournament.id} myPlayerId={myPlayerId} />
                             </div>

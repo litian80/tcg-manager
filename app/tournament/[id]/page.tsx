@@ -134,6 +134,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 p2:players!player2_tom_id(first_name, last_name)
             `)
             .eq("tournament_id", id),
+
         (isAssignedJudge || canManageStaff) ? 
             supabase
                 .from('player_penalties')
@@ -161,11 +162,6 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     const currentRound = matches.length > 0
         ? Math.max(...matches.map(m => m.round_number))
         : 1;
-
-    // Filter matches for the current round
-    // Note: We are now passing ALL matches to the view so the Tabs can handle filtering.
-    // We sort them by table number globally for consistency, though round-based sort happens in view.
-    const allMatches = matches.sort((a, b) => a.table_number - b.table_number);
 
     // Calculate stats for all players
     const stats: Record<string, { wins: number; losses: number; ties: number }> = {};
@@ -260,9 +256,28 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     }
 
+    // 7. Fetch the current player's detailed penalties and deck checks for the Dashboard
+    const [myPenaltiesRes, myDeckChecksRes] = profile?.pokemon_player_id ? await Promise.all([
+        supabase
+            .from('player_penalties')
+            .select('*')
+            .eq('tournament_id', id)
+            .eq('player_id', profile.pokemon_player_id),
+        supabase
+            .from('deck_checks')
+            .select('*')
+            .eq('tournament_id', id)
+            .eq('player_id', profile.pokemon_player_id)
+    ]) : [{ data: null }, { data: null }];
+
 
     const parsedData = tournamentRecord.parsed_data as { tom_stage?: number } | null;
     const tomStage = parsedData?.tom_stage ?? 1;
+
+    // Filter matches for the current round
+    // Note: We are now passing ALL matches to the view so the Tabs can handle filtering.
+    // We sort them by table number globally for consistency, though round-based sort happens in view.
+    const allMatches = matches.sort((a, b) => a.table_number - b.table_number);
 
     return (
         <>
@@ -286,7 +301,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 penaltyCounts={penaltyCounts}
                 deckCheckCounts={deckCheckCounts}
                 deckList={deckList}
-
+                myPenalties={myPenaltiesRes.data || []}
+                myDeckChecks={myDeckChecksRes.data || []}
             />
         </>
     );

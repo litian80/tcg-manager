@@ -218,6 +218,32 @@ export async function POST(req: NextRequest) {
             tournamentId = newTournament.id;
         }
 
+        // --- Pre-Step: Identify Player States ---
+        const dnfPlayerIds = new Set<string>();
+        const activePlayerIds = new Set<string>();
+        const finishedPlayerIds = new Set<string>();
+        let hasStandings = false;
+
+        if (standingsRoot) {
+            const standingsPods = asArray(standingsRoot.pod);
+            if (standingsPods.length > 0) hasStandings = true;
+            standingsPods.forEach((pod) => {
+                const podPlayers = asArray(pod.player);
+                podPlayers.forEach((p) => {
+                    if (p.id) {
+                        const idStr = p.id.toString();
+                        if (pod.type === 'dnf') {
+                            dnfPlayerIds.add(idStr);
+                        } else if (pod.type === 'finished') {
+                            finishedPlayerIds.add(idStr);
+                        } else {
+                            activePlayerIds.add(idStr);
+                        }
+                    }
+                });
+            });
+        }
+
         // --- Step B: Players ---
         // Sibling of `data`. <tournament><players><player>...</player></players></tournament>
         const playersRoot = tournamentRoot.players;
@@ -242,12 +268,24 @@ export async function POST(req: NextRequest) {
                 console.error(`Error syncing player ${userid}:`, playerError);
             }
 
+            // Determine registration_status
+            let regStatus = 'checked_in';
+            if (dnfPlayerIds.has(userid)) {
+                regStatus = 'dropped';
+            } else if (hasStandings) {
+                // If they are in active pods, they are still checked_in (playing)
+                // If they are ONLY in finished pods and NOT active pods, they are finished
+                if (!activePlayerIds.has(userid) && finishedPlayerIds.has(userid)) {
+                    regStatus = 'finished';
+                }
+            }
+
             // New logic: Collect for tournament_players index
-            // TOM is source of truth — if a player is in TOM, they are checked in
+            // TOM is source of truth — if a player is in TOM, they are checked in, unless overridden above
             tournamentPlayersToInsert.push({
                 tournament_id: tournamentId,
                 player_id: userid,
-                registration_status: 'checked_in'
+                registration_status: regStatus
             });
         }
 
