@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
+import { tryDispatchNotification } from "@/utils/webhook-helpers";
+import { createAdminClient } from "@/utils/supabase/server";
 
 export type Division = "junior" | "senior" | "master";
 
@@ -101,6 +103,38 @@ export async function getWaitlistPosition(
   return (count || 0) + 1;
 }
 
+export async function getQueuedPosition(
+  tournamentId: string,
+  playerId: string
+): Promise<number | null> {
+  const supabase = await createClient();
+
+  const { data: playerReg, error } = await supabase
+    .from("tournament_players")
+    .select("created_at")
+    .eq("tournament_id", tournamentId)
+    .eq("player_id", playerId)
+    .eq("registration_status", "queued")
+    .maybeSingle();
+
+  if (error || !playerReg || !playerReg.created_at) {
+    return null;
+  }
+
+  const { count, error: countError } = await supabase
+    .from("tournament_players")
+    .select("*", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+    .eq("registration_status", "queued")
+    .lt("created_at", playerReg.created_at);
+
+  if (countError) {
+    return null;
+  }
+
+  return (count || 0) + 1;
+}
+
 export async function registerPlayer(tournamentId: string) {
   try {
     const supabase = await createClient();
@@ -155,9 +189,13 @@ export async function registerPlayer(tournamentId: string) {
 
     // Determine if payment is required
     const paymentRequired = tournament.payment_required && tournament.payment_url;
-    const status = paymentRequired
-      ? "pending_payment"
-      : (capacityCheck.available ? "registered" : "waitlisted");
+    let status = "waitlisted";
+    
+    if (tournament.enable_queue) {
+      status = "queued";
+    } else if (capacityCheck.available) {
+      status = paymentRequired ? "pending_payment" : "registered";
+    }
 
     // Generate payment callback token if needed
     const callbackToken = paymentRequired ? randomUUID() : null;
@@ -206,9 +244,11 @@ export async function registerPlayer(tournamentId: string) {
       .maybeSingle();
 
     // Build the insert/update payload
+    const adminSupabase = await createAdminClient();
+    const isPaymentNext = status === "pending_payment";
     const registrationData: Record<string, unknown> = {
       registration_status: status,
-      ...(paymentRequired ? {
+      ...(isPaymentNext ? {
         payment_callback_token: callbackToken,
         payment_pending_since: new Date().toISOString(),
       } : {}),
@@ -219,8 +259,8 @@ export async function registerPlayer(tournamentId: string) {
             return { error: "You are already registered or on the waitlist." };
         }
         
-        // Update existing withdrawn/cancelled record to active
-        const { error: updateError } = await supabase
+        // Update existing withdrawn/cancelled record to active using admin client
+        const { error: updateError } = await adminSupabase
             .from("tournament_players")
             .update(registrationData)
             .eq("tournament_id", tournamentId)
@@ -228,8 +268,8 @@ export async function registerPlayer(tournamentId: string) {
             
         if (updateError) return { error: "Failed to update registration status." };
     } else {
-        // Create new registration record
-        const { error: insertError } = await supabase
+        // Create new registration record using admin client
+        const { error: insertError } = await adminSupabase
           .from("tournament_players")
           .insert({
             tournament_id: tournamentId,
@@ -246,8 +286,14 @@ export async function registerPlayer(tournamentId: string) {
 
     revalidatePath(`/tournaments/${tournamentId}`);
 
+    // If queued, return queue context and skip payment redirect/webhooks
+    if (status === "queued") {
+      const position = await getQueuedPosition(tournamentId, profile.pokemon_player_id);
+      return { success: true, status: 'queued', queuedPosition: position };
+    }
+
     // Payment required: build redirect URL and return it
-    if (paymentRequired && callbackToken) {
+    if (status === "pending_payment" && paymentRequired && callbackToken) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
       const paymentUrl = buildPaymentRedirectUrl(tournament.payment_url!, {
         player_name: `${profile.first_name} ${profile.last_name}`,
@@ -257,9 +303,19 @@ export async function registerPlayer(tournamentId: string) {
         callback_token: callbackToken,
         return_url: `${siteUrl}/tournament/${tournamentId}/payment-status?token=${callbackToken}`,
       });
+
+      // Fire payment.pending webhook (fire-and-forget)
+      tryDispatchNotification(supabase, tournamentId, 'payment.pending', profile.pokemon_player_id, { division })
+        .catch(() => {});
+
       return { success: true, status: 'pending_payment', paymentUrl };
     }
     
+    // Fire registration webhook (fire-and-forget)
+    const webhookEvent = status === 'waitlisted' ? 'registration.waitlisted' : 'registration.confirmed';
+    tryDispatchNotification(supabase, tournamentId, webhookEvent, profile.pokemon_player_id, { division })
+      .catch(() => {});
+
     // If they got waitlisted, calculate what position they are
     if (status === "waitlisted") {
       const waitlistPosition = await getWaitlistPosition(tournamentId, division, profile.pokemon_player_id);
@@ -304,6 +360,10 @@ export async function withdrawPlayer(tournamentId: string) {
     if (updateError) {
       return { error: "Failed to withdraw." };
     }
+
+    // Fire registration.withdrawn webhook (fire-and-forget)
+    tryDispatchNotification(supabase, tournamentId, 'registration.withdrawn', profile.pokemon_player_id)
+      .catch(() => {});
 
     revalidatePath(`/tournaments/${tournamentId}`);
     return { success: true };

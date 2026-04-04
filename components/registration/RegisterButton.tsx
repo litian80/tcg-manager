@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { registerPlayer, withdrawPlayer } from "@/actions/registration";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ interface RegisterButtonProps {
     lockedDown?: boolean;
     paymentUrl?: string | null;
     paymentPendingSince?: string | null;
+    playerId?: string | null;
 }
 
 export function RegisterButton({ 
@@ -40,10 +41,64 @@ export function RegisterButton({
     lockedDown,
     paymentUrl,
     paymentPendingSince,
+    playerId,
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
     const [currentPaymentUrl, setCurrentPaymentUrl] = useState<string | null>(paymentUrl || null);
+    
+    const [currentStatus, setCurrentStatus] = useState<string | null>(status || null);
+    const [currentPos, setCurrentPos] = useState<number | null>(waitlistPosition || null);
+
+    // Sync props to state
+    useEffect(() => {
+        setCurrentStatus(status || null);
+        if (waitlistPosition !== undefined) setCurrentPos(waitlistPosition);
+    }, [status, waitlistPosition]);
+
+    // Polling effect when queued
+    useEffect(() => {
+        if (currentStatus !== 'queued' || !playerId) return;
+
+        let pollInterval = 5000;
+        let timeoutId: NodeJS.Timeout;
+
+        const pollStatus = async () => {
+            try {
+                const res = await fetch(`/api/queue/status?t=${tournamentId}&p=${playerId}`);
+                if (!res.ok) throw new Error("Failed to fetch");
+                const data = await res.json();
+                
+                if (data.status) {
+                    if (currentStatus === 'queued' && data.status !== 'queued') {
+                        // Queue status changed (promoted or waitlisted), reload the page to get accurate server/payment states
+                        window.location.reload();
+                        return;
+                    }
+                    setCurrentStatus(data.status);
+                    setCurrentPos(data.position);
+                }
+
+                // Adaptive backoff logic
+                if (data.position && data.position > 50) {
+                    pollInterval = 15000;
+                } else if (data.position && data.position > 15) {
+                    pollInterval = 10000;
+                } else {
+                    pollInterval = 5000;
+                }
+
+            } catch (err) {
+                console.error("Queue polling error", err);
+            }
+            
+            timeoutId = setTimeout(pollStatus, pollInterval);
+        };
+
+        timeoutId = setTimeout(pollStatus, pollInterval);
+
+        return () => clearTimeout(timeoutId);
+    }, [currentStatus, tournamentId, playerId]);
 
     const isRegistrationUpcoming = opensAt && new Date(opensAt) > new Date();
     const isRegistrationClosed = closesAt && new Date(closesAt) < new Date();
@@ -59,11 +114,19 @@ export function RegisterButton({
                 if (result.status === 'pending_payment' && result.paymentUrl) {
                     toast.success("Registration started — complete payment to confirm your spot.");
                     setCurrentPaymentUrl(result.paymentUrl);
+                    setCurrentStatus('pending_payment');
                     window.open(result.paymentUrl, '_blank');
                 } else if (result.status === 'waitlisted') {
                     toast.success("Added to waitlist!");
+                    setCurrentStatus('waitlisted');
+                    if (result.waitlistPosition) setCurrentPos(result.waitlistPosition);
+                } else if (result.status === 'queued') {
+                    toast.success("You are in the queue. Please do not close this window.");
+                    setCurrentStatus('queued');
+                    if (result.queuedPosition) setCurrentPos(result.queuedPosition);
                 } else {
                     toast.success("Successfully registered!");
+                    setCurrentStatus('registered');
                 }
             }
         } catch (error) {
@@ -91,7 +154,7 @@ export function RegisterButton({
     };
 
     // Pending Payment state
-    if (status === 'pending_payment') {
+    if (currentStatus === 'pending_payment') {
         return (
             <div className="flex flex-col gap-2 w-full">
                 <Button disabled className="w-full bg-amber-600 text-white opacity-100 font-semibold border-amber-700">
@@ -138,11 +201,11 @@ export function RegisterButton({
     }
 
     // Registered / Checked In state
-    if (status === 'registered' || status === 'checked_in') {
+    if (currentStatus === 'registered' || currentStatus === 'checked_in') {
         return (
             <div className="flex flex-col gap-2 w-full">
                 <Button disabled className="w-full bg-green-600 text-white opacity-100 font-semibold border-green-700">
-                     {status === 'checked_in' ? 'Checked In' : 'Registered'}
+                     {currentStatus === 'checked_in' ? 'Checked In' : 'Registered'}
                 </Button>
                 {lockedDown ? (
                     <p className="text-xs text-center text-muted-foreground">
@@ -175,13 +238,13 @@ export function RegisterButton({
         );
     }
 
-    if (status === 'waitlisted') {
+    if (currentStatus === 'waitlisted') {
         return (
             <div className="flex flex-col gap-2 w-full">
                 <Button disabled variant="secondary" className="w-full opacity-100 font-semibold border-secondary flex flex-col items-center h-auto py-2">
                     <span>On Waitlist</span>
-                    {waitlistPosition !== undefined && waitlistPosition !== null && (
-                        <span className="text-xs font-normal opacity-80">Position: #{waitlistPosition}</span>
+                    {currentPos !== undefined && currentPos !== null && (
+                        <span className="text-xs font-normal opacity-80">Position: #{currentPos}</span>
                     )}
                 </Button>
                 {lockedDown ? (
@@ -215,7 +278,48 @@ export function RegisterButton({
         );
     }
 
-    if (status === 'cancelled') {
+    if (currentStatus === 'queued') {
+        return (
+            <div className="flex flex-col gap-2 w-full">
+                <Button disabled variant="secondary" className="w-full opacity-100 font-semibold border-secondary flex flex-col items-center h-auto py-2 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-primary/10 animate-pulse" />
+                    <span className="relative z-10 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> In Queue</span>
+                    {currentPos !== null && (
+                        <span className="relative z-10 text-xs font-normal opacity-80 mt-1">Position: {currentPos}</span>
+                    )}
+                </Button>
+                {lockedDown ? (
+                    <p className="text-xs text-center text-muted-foreground">
+                        Registration has closed. The queue is currently frozen.
+                    </p>
+                ) : (
+                    <AlertDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
+                                Leave Queue
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Leave Queue?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will remove you from the queue. You will lose your spot in line.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleWithdraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Leave Queue
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
+            </div>
+        );
+    }
+
+    if (currentStatus === 'cancelled') {
          return (
              <Button disabled variant="destructive" className="w-full font-semibold opacity-100 border-destructive">
                  Registration Cancelled
@@ -255,7 +359,7 @@ export function RegisterButton({
             className="w-full"
         >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {status === 'withdrawn' ? 'Re-Register' : 'Register'}
+            {currentStatus === 'withdrawn' ? 'Re-Register' : 'Register'}
         </Button>
     );
 }

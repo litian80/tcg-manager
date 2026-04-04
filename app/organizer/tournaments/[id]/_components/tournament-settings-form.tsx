@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Copy } from "lucide-react";
+import { Loader2, RefreshCw, Copy, Bell, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ExtendedTournament as Tournament } from "@/types/tournament";
+import { testNotificationWebhook } from "@/actions/webhook-actions";
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;
@@ -33,10 +34,21 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [jrMax, setJrMax] = useState(tournament.juniors_birth_year_max?.toString() || "");
     const [srMax, setSrMax] = useState(tournament.seniors_birth_year_max?.toString() || "");
     
+    // Queue settings
+    const [enableQueue, setEnableQueue] = useState(tournament.enable_queue || false);
+    const [queuePromotionWindow, setQueuePromotionWindow] = useState(tournament.queue_promotion_window_minutes?.toString() || "10");
+    const [queueBatchSize, setQueueBatchSize] = useState(tournament.queue_batch_size?.toString() || "10");
+    const [queuePaused, setQueuePaused] = useState(tournament.queue_paused || false);
+    
     // Payment settings
     const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
     const [paymentUrl, setPaymentUrl] = useState(tournament.payment_url || "");
     const [paymentWebhookSecret, setPaymentWebhookSecret] = useState(tournament.payment_webhook_secret || "");
+    
+    // Notification webhook settings
+    const [notificationWebhookUrl, setNotificationWebhookUrl] = useState(tournament.notification_webhook_url || "");
+    const [notificationWebhookSecret, setNotificationWebhookSecret] = useState(tournament.notification_webhook_secret || "");
+    const [isTestingWebhook, setIsTestingWebhook] = useState(false);
     
     // For start time - split date and time
     const [startDate, setStartDate] = useState("");
@@ -131,10 +143,16 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 capacity_masters: parseInt(capMasters || "0", 10),
                 juniors_birth_year_max: jrMax ? parseInt(jrMax, 10) : null,
                 seniors_birth_year_max: srMax ? parseInt(srMax, 10) : null,
+                enable_queue: enableQueue,
+                queue_promotion_window_minutes: parseInt(queuePromotionWindow || "10", 10),
+                queue_batch_size: parseInt(queueBatchSize || "10", 10),
+                queue_paused: queuePaused,
                 start_time: startTimeValue,
                 payment_required: paymentRequired,
                 payment_url: paymentRequired ? (paymentUrl || null) : null,
                 payment_webhook_secret: paymentRequired ? (paymentWebhookSecret || null) : null,
+                notification_webhook_url: notificationWebhookUrl || null,
+                notification_webhook_secret: notificationWebhookSecret || null,
             })
             .eq("id", tournament.id);
 
@@ -358,6 +376,63 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         </div>
                     </div>
 
+                    {/* Queue Settings Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium">Registration Queue Settings</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="enable_queue" 
+                                checked={enableQueue}
+                                onCheckedChange={(checked) => setEnableQueue(checked === true)}
+                            />
+                            <Label htmlFor="enable_queue">Enable Registration Queue (Recommended for high-demand events)</Label>
+                        </div>
+                        
+                        {enableQueue && (
+                            <div className="space-y-4 pl-6 border-l-2 ml-2 border-primary/20">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="queue_batch_size">Queue Batch Size</Label>
+                                        <Input
+                                            id="queue_batch_size"
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            value={queueBatchSize}
+                                            onChange={(e) => setQueueBatchSize(e.target.value)}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            How many players to promote to pending payment per minute. Try 10-20.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="queue_promotion_window">Checkout Window (Minutes)</Label>
+                                        <Input
+                                            id="queue_promotion_window"
+                                            type="number"
+                                            min="1"
+                                            max="60"
+                                            value={queuePromotionWindow}
+                                            onChange={(e) => setQueuePromotionWindow(e.target.value)}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            How long a promoted player has to pay before they lose their spot. 
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2 bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                                    <Checkbox 
+                                        id="queue_paused" 
+                                        checked={queuePaused}
+                                        onCheckedChange={(checked) => setQueuePaused(checked === true)}
+                                    />
+                                    <Label htmlFor="queue_paused" className="text-destructive font-semibold">Pause Queue Promotion (Emergency Stop)</Label>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Payment Settings Section */}
                     <div className="pt-4 border-t space-y-4">
                         <h3 className="text-lg font-medium">💳 Payment Settings</h3>
@@ -465,6 +540,124 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     </p>
                                 </div>
                             </div>
+                        )}
+                    </div>
+
+                    {/* Notification Webhooks Section */}
+                    <div className="pt-4 border-t space-y-4">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                            <Bell className="h-5 w-5" />
+                            Notification Webhooks
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            Receive JSON events when players register, submit decks, or complete payment.
+                            Connect to Mailchimp, Zapier, n8n, or any webhook-compatible tool.
+                        </p>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="notification_webhook_url">Webhook URL</Label>
+                            <Input
+                                id="notification_webhook_url"
+                                type="url"
+                                placeholder="https://hooks.zapier.com/hooks/catch/..."
+                                value={notificationWebhookUrl}
+                                onChange={(e) => {
+                                    setNotificationWebhookUrl(e.target.value);
+                                    // Auto-generate secret on first URL entry
+                                    if (e.target.value && !notificationWebhookSecret) {
+                                        const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                                            .map(b => b.toString(16).padStart(2, '0')).join('');
+                                        setNotificationWebhookSecret(secret);
+                                    }
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                We&apos;ll POST signed JSON events to this HTTPS endpoint.
+                            </p>
+                        </div>
+
+                        {notificationWebhookUrl && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="notification_webhook_secret">Webhook Secret</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="notification_webhook_secret"
+                                            type="text"
+                                            value={notificationWebhookSecret}
+                                            readOnly
+                                            className="font-mono text-xs bg-muted"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Copy to clipboard"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(notificationWebhookSecret);
+                                                toast.success("Secret copied to clipboard");
+                                            }}
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Regenerate secret"
+                                            onClick={() => {
+                                                const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                                                    .map(b => b.toString(16).padStart(2, '0')).join('');
+                                                setNotificationWebhookSecret(secret);
+                                                toast.info("New secret generated. Remember to save and update your endpoint.");
+                                            }}
+                                        >
+                                            <RefreshCw className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Use this secret to verify the X-Webhook-Signature header on incoming events.
+                                        Signature = HMAC-SHA256(timestamp + &quot;.&quot; + body).
+                                    </p>
+                                </div>
+
+                                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
+                                    <p className="font-medium mb-1">Events fired:</p>
+                                    <ul className="list-disc pl-5 space-y-0.5 text-xs font-mono">
+                                        <li>registration.confirmed / .waitlisted / .withdrawn</li>
+                                        <li>payment.pending / .confirmed</li>
+                                        <li>deck.submitted / .reminder</li>
+                                    </ul>
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isTestingWebhook || !notificationWebhookSecret}
+                                    onClick={async () => {
+                                        setIsTestingWebhook(true);
+                                        // Save first, then test
+                                        const result = await testNotificationWebhook(tournament.id);
+                                        if (result.success) {
+                                            toast.success(`Ping sent! Endpoint returned HTTP ${result.status}.`);
+                                        } else {
+                                            toast.error(result.error || "Test failed");
+                                        }
+                                        setIsTestingWebhook(false);
+                                    }}
+                                >
+                                    {isTestingWebhook ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Send className="mr-2 h-4 w-4" />
+                                    )}
+                                    Test Webhook
+                                </Button>
+                                <p className="text-xs text-muted-foreground -mt-2">
+                                    Sends a <code className="bg-muted px-1 rounded">ping</code> event to verify your endpoint. Save settings first.
+                                </p>
+                            </>
                         )}
                     </div>
                 </CardContent>

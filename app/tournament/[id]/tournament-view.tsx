@@ -407,6 +407,7 @@ export default function TournamentView({
                                 lockedDown={tomStage >= 3}
                                 paymentUrl={myPaymentUrl}
                                 paymentPendingSince={myPaymentPendingSince}
+                                playerId={myPlayerId}
                             />
                         </div>
                     )}

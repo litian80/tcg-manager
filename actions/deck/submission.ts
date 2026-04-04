@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { validateDeckListAction, ValidationResult } from "./validation";
 import { revalidatePath } from "next/cache";
+import { tryDispatchNotification } from "@/utils/webhook-helpers";
 
 export async function submitDeckAction(tournamentId: string, deckText: string): Promise<ValidationResult> {
     const supabase = await createClient();
@@ -166,6 +167,11 @@ export async function submitDeckAction(tournamentId: string, deckText: string): 
         }
 
         revalidatePath(`/tournament/${tournamentId}`);
+
+        // Fire deck.submitted webhook (fire-and-forget)
+        tryDispatchNotification(supabase, tournamentId, 'deck.submitted', playerId)
+          .catch(() => {});
+
         return { ...validation, isValid: true };
 
     } catch (err: any) {

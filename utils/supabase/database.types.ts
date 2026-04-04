@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -536,12 +536,14 @@ export type Database = {
       tournament_players: {
         Row: {
           created_at: string
+          deck_reminder_sent_at: string | null
           division: string | null
           losses: number | null
           payment_callback_token: string | null
           payment_pending_since: string | null
           player_id: string
           points: number | null
+          queue_promoted_at: string | null
           rank: number | null
           registration_status: string | null
           ties: number | null
@@ -550,12 +552,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deck_reminder_sent_at?: string | null
           division?: string | null
           losses?: number | null
           payment_callback_token?: string | null
           payment_pending_since?: string | null
           player_id: string
           points?: number | null
+          queue_promoted_at?: string | null
           rank?: number | null
           registration_status?: string | null
           ties?: number | null
@@ -564,12 +568,14 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deck_reminder_sent_at?: string | null
           division?: string | null
           losses?: number | null
           payment_callback_token?: string | null
           payment_pending_since?: string | null
           player_id?: string
           points?: number | null
+          queue_promoted_at?: string | null
           rank?: number | null
           registration_status?: string | null
           ties?: number | null
@@ -607,6 +613,7 @@ export type Database = {
           deck_size: number | null
           deck_submission_cutoff_hours: number | null
           details: string | null
+          enable_queue: boolean | null
           fee_juniors: string | null
           fee_masters: string | null
           fee_seniors: string | null
@@ -614,6 +621,8 @@ export type Database = {
           is_published: boolean | null
           juniors_birth_year_max: number | null
           name: string
+          notification_webhook_secret: string | null
+          notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
           payment_required: boolean | null
@@ -621,6 +630,9 @@ export type Database = {
           payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
+          queue_batch_size: number | null
+          queue_paused: boolean | null
+          queue_promotion_window_minutes: number | null
           registration_closes_at: string | null
           registration_open: boolean | null
           registration_opens_at: string | null
@@ -646,6 +658,7 @@ export type Database = {
           deck_size?: number | null
           deck_submission_cutoff_hours?: number | null
           details?: string | null
+          enable_queue?: boolean | null
           fee_juniors?: string | null
           fee_masters?: string | null
           fee_seniors?: string | null
@@ -653,6 +666,8 @@ export type Database = {
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
           name: string
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
           payment_required?: boolean | null
@@ -660,6 +675,9 @@ export type Database = {
           payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
+          queue_batch_size?: number | null
+          queue_paused?: boolean | null
+          queue_promotion_window_minutes?: number | null
           registration_closes_at?: string | null
           registration_open?: boolean | null
           registration_opens_at?: string | null
@@ -685,6 +703,7 @@ export type Database = {
           deck_size?: number | null
           deck_submission_cutoff_hours?: number | null
           details?: string | null
+          enable_queue?: boolean | null
           fee_juniors?: string | null
           fee_masters?: string | null
           fee_seniors?: string | null
@@ -692,6 +711,8 @@ export type Database = {
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
           name?: string
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
           payment_required?: boolean | null
@@ -699,6 +720,9 @@ export type Database = {
           payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
+          queue_batch_size?: number | null
+          queue_paused?: boolean | null
+          queue_promotion_window_minutes?: number | null
           registration_closes_at?: string | null
           registration_open?: boolean | null
           registration_opens_at?: string | null
@@ -745,6 +769,7 @@ export type Database = {
           deck_size: number | null
           deck_submission_cutoff_hours: number | null
           details: string | null
+          enable_queue: boolean | null
           fee_juniors: string | null
           fee_masters: string | null
           fee_seniors: string | null
@@ -752,6 +777,8 @@ export type Database = {
           is_published: boolean | null
           juniors_birth_year_max: number | null
           name: string
+          notification_webhook_secret: string | null
+          notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
           payment_required: boolean | null
@@ -759,6 +786,9 @@ export type Database = {
           payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
+          queue_batch_size: number | null
+          queue_paused: boolean | null
+          queue_promotion_window_minutes: number | null
           registration_closes_at: string | null
           registration_open: boolean | null
           registration_opens_at: string | null

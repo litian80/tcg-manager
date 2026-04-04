@@ -1,0 +1,689 @@
+## Reasoning
+We are implementing a registration queue system. The plan will follow the spec and integrate with the existing codebase.
+
+Key points from the spec:
+- Add a new registration status: 'queued'
+- Add queue settings to tournaments: enable_queue, queue_promotion_window_minutes, queue_batch_size
+- Add queue_promoted_at to tournament_players
+- Modify registration flow to handle queue mode
+- Implement queue processing (event-driven and periodic)
+- Handle promotion timeout
+- Update player UX to show queue position and real-time updates
+- Update organiser UX for queue management
+
+We must also consider the interaction with the payment flow (from Spec 006) and the new 'queued' status.
+
+Let's break down the tasks:
+
+1. Database Migrations:
+   - Update the `tournament_players` registration_status check constraint to include 'queued'
+   - Add columns to `tournaments`: enable_queue, queue_promotion_window_minutes, queue_batch_size
+   - Add column to `tournament_players`: queue_promoted_at
+
+2. Registration Flow in `actions/registration.ts`:
+   - When queue is enabled, the initial status should be 'queued' (instead of pending_payment or registered/waitlisted)
+   - Return queue position to the player
+   - We need a function to get queue position (similar to waitlist position)
+
+3. Queue Processing:
+   - Event-driven: after any event that frees capacity (withdrawal, payment confirmed, payment expired, manual promotion)
+   - Periodic: via pg_cron (every 30 seconds or so) as a safety net
+   - Process queue: for each division, promote the next N queued players (based on created_at) to either pending_payment (if payment required) or registered (if capacity available, otherwise waitlisted)
+
+4. Promotion Timeout:
+   - If a promoted player does not complete registration (by paying, if required, or by confirming registration) within the promotion window, their status becomes 'cancelled'
+   - This should be handled by a cron job (similar to payment expiry)
+
+5. Player UX:
+   - RegisterButton must handle the 'queued' state and show position
+   - Real-time updates: we can use Supabase Realtime or polling
+
+6. Organiser UX:
+   - Add queue settings to tournament settings form
+   - Create a queue management UI in the organiser dashboard
+
+7. Integration with Payment Flow:
+   - If queue and payment are both enabled, the flow is: queued -> pending_payment -> registered (or waitlisted if capacity is gone)
+   - If queue is enabled but payment is not, then: queued -> registered (or waitlisted)
+
+8. State Machine:
+   - We must handle the transitions carefully, especially when a promotion times out.
+
+Now, let's consider the existing `registerPlayer` function and how to modify it for queue mode.
+
+Current registration flow (without queue):
+- Check if registration is open
+- Check division capacity
+- If payment required, set status to 'pending_payment', else set to 'registered' or 'waitlisted'
+
+With queue enabled:
+- If queue is enabled, set status to 'queued' regardless of capacity or payment requirement.
+- However, we must check if the tournament has queue enabled and if the registration is open (same as before).
+
+We also need to consider the case where a player is already in the queue and tries to register again. We should prevent duplicate queue entries.
+
+We must also adjust the `withdrawPlayer` function to handle queue processing. When a player withdraws, we should trigger queue processing (or at least mark that the tournament has a slot free for the next in queue).
+
+Let's outline the modifications:
+
+1. In `registerPlayer`:
+   - Check if tournament has `enable_queue` set to true.
+   - If yes, set status to 'queued' and do not check capacity or payment requirement at this stage.
+   - Insert the player with status 'queued' and record the `created_at` (which will be used for queue position).
+   - Return the queue position.
+
+2. We need a new function `getQueuePosition` (similar to `getWaitlistPosition`).
+
+3. We need a function `processQueue` that will be called on events (withdrawal, payment confirmation, payment expiry, manual promotion) and also via cron.
+
+4. The `processQueue` function should:
+   - For each division in the tournament, check available capacity (considering registered, checked_in, and pending_payment players as taking up a slot? Note: pending_payment players are in a temporary state and have a time window to pay. Until they pay, they are not confirmed, but during the promotion window they are holding a spot.)
+   - According to the spec, when a player is promoted from the queue, they are given a spot (if capacity allows). So we must consider the capacity and the current number of active players (registered, checked_in, and pending_payment that are within the promotion window?).
+   - However, note that pending_payment players that are within the promotion window are holding a spot. If their promotion window expires, they are cancelled and the spot is freed.
+
+   So in `processQueue`, we should:
+   - For each division, count the number of players that are either 'registered', 'checked_in', or 'pending_payment' (with `queue_promoted_at` not null and within the promotion window). This is the current occupancy.
+   - The available slots are `capacity - current_occupancy`.
+   - If available slots > 0, then we can promote the next N (queue_batch_size) queued players (by created_at) for that division.
+
+5. When promoting a queued player:
+   - If the tournament requires payment, set status to 'pending_payment', set `queue_promoted_at` to now, and generate a payment callback token.
+   - If no payment required, set status to 'registered' (if capacity allows, otherwise 'waitlisted'? But note: we are only promoting if there is capacity, so it should be 'registered').
+
+6. We must also handle the case where a promoted player (now in pending_payment) does not pay within the promotion window. We already have a cron job for payment expiry (24 hours). Now we need to also consider the queue promotion window (which is shorter, 15 minutes by default). We should update the payment expiry cron job to also handle the queue promotion timeout.
+
+   Alternatively, we can have a separate cron job for queue promotion timeout. The spec suggests extending the payment expiry cron.
+
+7. We must update the `withdrawPlayer` function to trigger queue processing (or at least free up a slot for the queue). We can call `processQueue` after a withdrawal.
+
+8. We must update the payment callback (from Spec 006) to trigger queue processing when a payment is confirmed.
+
+Given the complexity, let's break down the implementation steps:
+
+Step 1: Database Migrations
+   - Write a migration SQL file to:
+        a. Update the check constraint for `tournament_players.registration_status` to include 'queued'.
+        b. Add the three new columns to `tournaments`.
+        c. Add `queue_promoted_at` to `tournament_players`.
+
+Step 2: Modify `actions/registration.ts`
+   - In `registerPlayer`, add a check for `tournament.enable_queue`. If true, set status to 'queued' and insert without checking capacity or payment requirement.
+   - Return the queue position for queued players.
+
+Step 3: Create a `utils/queue.ts` for queue-related functions:
+   - `getQueuePosition(tournamentId, division, playerId)`
+   - `processQueue(tournamentId)` - to process the queue for a given tournament (or all tournaments with queue enabled and registration open)
+
+Step 4: Set up event-driven queue processing:
+   - After withdrawal (in `withdrawPlayer`), call `processQueue` for the tournament.
+   - After payment confirmation (in the payment callback route), call `processQueue`.
+   - After payment expiry (in the cron job), call `processQueue` for the affected tournament.
+
+Step 5: Set up periodic queue processing with pg_cron (as a safety net).
+
+Step 6: Update the payment expiry cron job to also cancel queued promotions that have timed out (i.e., pending_payment with queue_promoted_at older than queue_promotion_window_minutes).
+
+Step 7: Update the RegisterButton component to handle the 'queued' state and show the queue position, and implement real-time updates (via polling or Supabase Realtime).
+
+Step 8: Update the tournament settings form to include queue settings.
+
+Step 9: Create organiser queue management UI.
+
+Now, let's note some technical ambiguities and questions:
+
+1. When a player is in the queue and the organiser disables the queue, what happens? Should the queue be cleared? Probably we should not allow disabling the queue while there are queued players, or we must clear the queue (set all queued to cancelled) when disabling.
+
+2. The spec says the queue is for high-demand events. What happens when registration is not open? The queue should only be active when registration is open. But what about the time between registration opening and the queue being enabled? We should only allow queue mode when registration is open.
+
+3. How do we handle the queue when the tournament is full? The queue should stop processing when the tournament is full (all divisions at capacity). But note that capacity might free up (withdrawals, payment timeouts). So the queue processing should stop when there are no available slots and no pending_payment slots that might time out.
+
+4. The queue processing function must be efficient. We should process one tournament at a time, and for each division, we should only promote up to the batch size.
+
+5. We must ensure that queue processing is idempotent and concurrent-safe. We don't want two processes to promote the same player.
+
+6. Real-time updates: We can use Supabase Realtime to notify the player when their queue position changes or when they are promoted. However, we must consider the load on the server. Alternatively, we can use polling every 5 seconds (as per spec). We need to decide which one to implement.
+
+7. The spec mentions a "Pause Queue" toggle for organisers. We need to add that column to `tournaments` (maybe `queue_paused`). Then, when processing the queue, we skip tournaments with `queue_paused` set to true.
+
+8. The spec also mentions "Clear Queue" button. This would set all queued players to 'cancelled'. We must be cautious because this is a destructive action.
+
+Given the complexity, I propose the following plan for the code:
+
+First, let's write the migration SQL:
+
+```sql
+-- Migration for registration queue system
+
+-- 1. Update tournament_players registration_status check constraint
+ALTER TABLE public.tournament_players DROP CONSTRAINT IF EXISTS tournament_players_registration_status_check;
+ALTER TABLE public.tournament_players ADD CONSTRAINT tournament_players_registration_status_check
+  CHECK (registration_status = ANY (ARRAY[
+    'registered'::text, 'waitlisted'::text, 'checked_in'::text,
+    'withdrawn'::text, 'cancelled'::text, 'pending_payment'::text, 'queued'::text
+  ]));
+
+-- 2. Add queue columns to tournaments
+ALTER TABLE public.tournaments
+  ADD COLUMN IF NOT EXISTS enable_queue BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS queue_promotion_window_minutes INTEGER DEFAULT 15,
+  ADD COLUMN IF NOT EXISTS queue_batch_size INTEGER DEFAULT 5,
+  ADD COLUMN IF NOT EXISTS queue_paused BOOLEAN DEFAULT false;
+
+-- 3. Add queue_promoted_at to tournament_players
+ALTER TABLE public.tournament_players
+  ADD COLUMN IF NOT EXISTS queue_promoted_at TIMESTAMPTZ;
+```
+
+Second, modify `registerPlayer`:
+
+We need to fetch the tournament's queue settings. If `enable_queue` is true, then set status to 'queued'. Otherwise, proceed as before.
+
+We also need to check if the player is already in the queue (or any other status). We already check for existing registration, but now we have to handle the case where they are already queued.
+
+Third, create `utils/queue.ts`:
+
+We'll write two main functions:
+
+```typescript
+// utils/queue.ts
+
+import { createClient } from '@/utils/supabase/server';
+
+export async function getQueuePosition(tournamentId: string, division: string, playerId: string): Promise<number | null> {
+  // Similar to waitlist position, but for queued status and using created_at
+}
+
+export async function processQueue(tournamentId: string) {
+  // Process the queue for the given tournament
+  // Steps:
+  // 1. Get tournament queue settings and capacity settings.
+  // 2. For each division, calculate available slots (considering registered, checked_in, and pending_payment within promotion window).
+  // 3. For each division, if available slots > 0, get the next N (queue_batch_size) queued players (ordered by created_at).
+  // 4. Promote each player:
+  //    a. If payment required, set status to 'pending_payment', generate token, set queue_promoted_at.
+  //    b. If no payment, set status to 'registered' (since we have capacity) and set queue_promoted_at? Actually, for non-payment, we don't need queue_promoted_at because they are immediately registered. But we might want to set it for tracking? The spec says set queue_promoted_at when promoted. So set it for both cases.
+  // 5. After promoting, revalidate paths and send notifications.
+}
+```
+
+Fourth, update `withdrawPlayer` to call `processQueue`:
+
+We can call `processQueue` after a successful withdrawal. However, note that `processQueue` is an async function and we don't want to block the withdrawal response. We can fire and forget, but we must be cautious about errors.
+
+Alternatively, we can trigger the queue processing via a serverless function or background job. But for simplicity, we can call it directly and let it run in the background (if we use a server action, we are already in a serverless environment, so we can await it).
+
+We must also update the payment callback route to call `processQueue` after a successful payment.
+
+Fifth, set up a cron job for periodic queue processing:
+
+We can schedule a cron job to run every 30 seconds (or every minute) that calls `processQueue` for all tournaments with `enable_queue = true` and `registration_open = true` and `queue_paused = false`.
+
+We can write a SQL function that processes the queue for all tournaments and then schedule it with pg_cron.
+
+Alternatively, we can create a Next.js API route that processes the queue and call it from a cron service (like a Vercel cron job). But the spec suggests using pg_cron.
+
+Given that we already use pg_cron for payment expiry, let's use pg_cron for queue processing too.
+
+We'll write a SQL function that processes the queue for a single tournament and then a cron job that runs every minute and processes all tournaments that meet the criteria.
+
+However, note that the queue processing logic is complex and might be better written in TypeScript. We can create a Next.js API route that runs the `processQueue` function and then call that API route from a cron job (like Vercel cron). This way, we keep the business logic in TypeScript.
+
+We have two options for the periodic processing:
+
+Option A: Write a SQL function and schedule with pg_cron.
+Option B: Write a Next.js API route and schedule with Vercel cron (or similar).
+
+Given the complexity of the promotion logic (including division capacity, payment requirement, etc.), I prefer Option B because we can reuse the TypeScript logic.
+
+But the spec mentions pg_cron. Let's follow the spec and use pg_cron if possible.
+
+We can write a PL/pgSQL function to process the queue. However, it might be complex and error-prone. Alternatively, we can create a simple SQL function that marks the next N players as pending_payment or registered, but we must check capacity and handle divisions.
+
+Given the time, I propose we start with event-driven processing and a simple periodic job that calls our TypeScript function via an HTTP endpoint. We can use pg_cron to make an HTTP request? That's not straightforward.
+
+Alternatively, we can set up a cron job on the server (like a node-cron) that runs our TypeScript function. But in a serverless environment, we might use Vercel cron jobs.
+
+Let's decide: We'll create an API route `POST /api/queue/process` that processes the queue for a given tournament (or all tournaments). Then, we set up a Vercel cron job to hit this endpoint every 30 seconds.
+
+But the spec says to use pg_cron. We are using Supabase, so we can use pg_cron to run SQL. We can write a SQL function that does the promotion. Let's draft the SQL for queue processing:
+
+We need to:
+1. For a given tournament, get the queue settings and division capacities.
+2. For each division, calculate available slots.
+3. Promote the next N queued players.
+
+This is a complex SQL query. We might break it down into a PL/pgSQL function.
+
+Given the complexity and the fact that we are already using TypeScript for business logic, I propose we use a hybrid approach:
+
+- Event-driven: Call `processQueue` from server actions (withdrawal, register) and payment callback.
+- Periodic: Create a Next.js API route that runs `processQueue` for all tournaments with queue enabled and registration open. Then, set up a Vercel cron job to hit this route every 30 seconds.
+
+We can also add a button in the organiser dashboard to manually trigger queue processing.
+
+Now, let's note some questions:
+
+1. How do we handle the promotion window for non-payment promotions? The spec says the player has a timed window to complete registration. But if no payment is required, then the registration is complete immediately upon promotion. So the promotion window is only for payment required? The spec says "give players a timed window to complete registration (and payment, if Spec 006 is active)". So if payment is not required, then upon promotion they are immediately registered. So the promotion window only applies to pending_payment.
+
+2. What happens if a player is promoted to pending_payment but the payment fails or times out? They are set to cancelled and the slot is freed for the next in queue.
+
+3. We must ensure that the queue is processed in a fair manner (FIFO) per division.
+
+4. We must also consider that a tournament might have multiple divisions, and each division has its own queue.
+
+5. The queue position is per division.
+
+Given the above, let's write the implementation plan.
+
+Implementation Plan:
+
+1. Run the migration SQL to add the necessary columns and update constraints.
+
+2. Modify `actions/registration.ts`:
+   - In `registerPlayer`, after fetching the tournament, check `tournament.enable_queue`.
+   - If true, set status to 'queued' and insert (or update if previously withdrawn/cancelled). Do not check capacity or payment requirement at this stage.
+   - Return the queue position (by calling `getQueuePosition`).
+
+3. Create `utils/queue.ts` with:
+   - `getQueuePosition`: counts queued players in the same division with earlier `created_at`.
+   - `processQueue`: 
+        a. Fetches tournament settings, division capacities.
+        b. For each division, calculate available slots (registered + checked_in + pending_payment with queue_promoted_at within the promotion window).
+        c. If available slots > 0, get the next `queue_batch_size` queued players (ordered by created_at) and promote them.
+        d. For each player, if tournament.payment_required, set to pending_payment and generate token. Otherwise, set to registered (if capacity allows, otherwise waitlisted? But note: we are only promoting if there is capacity, so it should be registered).
+        e. Set `queue_promoted_at` to now() for each promoted player.
+        f. Send notifications (webhooks) for the promotion.
+
+4. Update `withdrawPlayer` to call `processQueue` after withdrawing.
+
+5. Update the payment callback (from Spec 006) to call `processQueue` after confirming payment.
+
+6. Create a new cron job (or extend the existing payment expiry cron) to cancel pending_payment promotions that have exceeded the promotion window. We'll update the payment expiry cron to also handle queue promotion timeout.
+
+7. Create an API route `app/api/queue/process/route.ts` that can process the queue for a given tournament (or all tournaments). We'll use this for periodic processing.
+
+8. Set up a Vercel cron job to hit the above API route every 30 seconds.
+
+9. Update RegisterButton to show queue position and handle the queued state.
+
+10. Update tournament settings form to include queue settings.
+
+11. Create organiser queue management UI.
+
+Now, let's note some technical questions:
+
+Q1: How do we handle the promotion window for non-payment promotions? The spec says the player has a timed window to complete registration. But if no payment is required, then the registration is complete immediately upon promotion. So the promotion window is only for payment required? The spec says "give players a timed window to complete registration (and payment, if Spec 006 is active)". So if payment is not required, then upon promotion they are immediately registered. So the promotion window only applies to pending_payment.
+
+Q2: What happens if a player is promoted to pending_payment but the payment fails or times out? They are set to cancelled and the slot is freed for the next in queue.
+
+Q3: We must ensure that the queue is processed in a fair manner (FIFO) per division.
+
+Q4: We must also consider that a tournament might have multiple divisions, and each division has its own queue.
+
+Q5: The queue position is per division.
+
+Q6: How do we handle the queue when the tournament is full? The queue should stop processing when the tournament is full (all divisions at capacity). But note that capacity might free up (withdrawals, payment timeouts). So the queue processing should stop when there are no available slots and no pending_payment slots that might time out.
+
+Q7: How do we handle the queue when registration closes? We should stop processing the queue when registration is closed? Or should we process the queue until all queued players are handled? The spec doesn't say. We should probably process the queue until registration closes, but what about players who are queued when registration closes? They should be cancelled? Or should they be kept in the queue until registration reopens? We need to decide.
+
+Given the spec is for high-demand events, I think we should process the queue until registration closes. If registration closes and there are still queued players, they should be cancelled (or maybe set to waitlisted if there is a waitlist? But the queue is for registration, so if registration is closed, they cannot register). We'll follow the same rule as normal registration: if registration is closed, no new registrations and the queue should not be processed.
+
+In `processQueue`, we should check that the tournament's registration is open (and not closed) before processing.
+
+Now, let's write the code for `processQueue` in detail.
+
+We'll write it in TypeScript. We'll need to use Supabase client with admin privileges to update the records. We are already using a server client in `actions/registration.ts`. We can use the same pattern.
+
+We must be cautious about race conditions. We can use a transaction to ensure that we don't promote the same player twice.
+
+We'll write a function that processes the queue for a given tournament. We'll call it from event-driven triggers and from the periodic job.
+
+Let's outline the `processQueue` function:
+
+```typescript
+// utils/queue.ts
+
+import { createClient } from '@/utils/supabase/server';
+import { randomUUID } from 'crypto';
+import { buildPaymentRedirectUrl } from '@/utils/payment';
+import { tryDispatchNotification } from '@/utils/webhook-helpers';
+
+export async function processQueue(tournamentId: string) {
+  const supabase = await createClient();
+
+  // Fetch tournament with queue settings and division capacities
+  const { data: tournament, error: tError } = await supabase
+    .from('tournaments')
+    .select(`
+      *,
+      capacity_juniors,
+      capacity_seniors,
+      capacity_masters,
+      enable_queue,
+      queue_promotion_window_minutes,
+      queue_batch_size,
+      queue_paused,
+      payment_required,
+      payment_url,
+      registration_open,
+      registration_closes_at,
+      registration_opens_at
+    `)
+    .eq('id', tournamentId)
+    .single();
+
+  if (tError || !tournament) {
+    console.error('Tournament not found or error:', tError);
+    return;
+  }
+
+  // Check if queue is enabled and not paused, and registration is open
+  if (!tournament.enable_queue || tournament.queue_paused) {
+    return;
+  }
+
+  // Check registration open and not closed
+  if (!tournament.registration_open) {
+    return;
+  }
+
+  if (tournament.registration_opens_at && new Date(tournament.registration_opens_at) > new Date()) {
+    return;
+  }
+
+  if (tournament.registration_closes_at && new Date(tournament.registration_closes_at) < new Date()) {
+    return;
+  }
+
+  // Define divisions
+  const divisions = ['junior', 'senior', 'master'];
+
+  for (const division of divisions) {
+    const capacityColumn = `capacity_${division}s` as 'capacity_juniors' | 'capacity_seniors' | 'capacity_masters';
+    const capacity = tournament[capacityColumn] || 0;
+
+    // If capacity is 0, it's unlimited, so we can promote all queued players? But we have to be cautious.
+    // We'll treat 0 as unlimited, so we can promote without limit.
+
+    // Calculate current occupancy: registered, checked_in, and pending_payment (within promotion window)
+    const promotionWindow = tournament.queue_promotion_window_minutes || 15;
+    const { data: currentOccupants, error: ocError } = await supabase
+      .from('tournament_players')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('division', division)
+      .in('registration_status', ['registered', 'checked_in', 'pending_payment'])
+      .or(`and(registration_status.eq.pending_payment,queue_promoted_at.gte.${new Date(Date.now() - promotionWindow * 60000).toISOString()}),registration_status.in.(registered,checked_in)`);
+
+    if (ocError) {
+      console.error('Error fetching current occupants:', ocError);
+      continue;
+    }
+
+    const currentCount = currentOccupants.length;
+    const availableSlots = capacity === 0 ? 999999 : capacity - currentCount; // if unlimited, set a high number
+
+    if (availableSlots <= 0) {
+      continue;
+    }
+
+    // Get the next N queued players, where N = min(availableSlots, queue_batch_size)
+    const batchSize = tournament.queue_batch_size || 5;
+    const limit = Math.min(availableSlots, batchSize);
+
+    const { data: queuedPlayers, error: qError } = await supabase
+      .from('tournament_players')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .eq('division', division)
+      .eq('registration_status', 'queued')
+      .order('created_at', { ascending: true })
+      .limit(limit);
+
+    if (qError) {
+      console.error('Error fetching queued players:', qError);
+      continue;
+    }
+
+    // Promote each player
+    for (const player of queuedPlayers) {
+      let newStatus: string;
+      let callbackToken: string | null = null;
+
+      if (tournament.payment_required) {
+        newStatus = 'pending_payment';
+        callbackToken = randomUUID();
+      } else {
+        newStatus = 'registered';
+      }
+
+      const { error: updateError } = await supabase
+        .from('tournament_players')
+        .update({
+          registration_status: newStatus,
+          payment_callback_token: callbackToken,
+          queue_promoted_at: new Date().toISOString(),
+          ...(newStatus === 'pending_payment' ? { payment_pending_since: new Date().toISOString() } : {})
+        })
+        .eq('id', player.id);
+
+      if (updateError) {
+        console.error('Error promoting player:', updateError);
+        continue;
+      }
+
+      // Send notification
+      if (newStatus === 'pending_payment') {
+        // Build payment URL and send to player (how? We can send an email or in-app notification? The player is waiting on the page, so we should update the UI in real-time.)
+        // We can dispatch a webhook for the organiser, and the player's UI will update via real-time subscription.
+        tryDispatchNotification(supabase, tournamentId, 'payment.pending', player.player_id, { division })
+          .catch(() => {});
+      } else {
+        tryDispatchNotification(supabase, tournamentId, 'registration.confirmed', player.player_id, { division })
+          .catch(() => {});
+      }
+    }
+  }
+}
+```
+
+Note: The above `processQueue` function is a starting point. We must handle errors and edge cases.
+
+Also, note that we are using the same `tryDispatchNotification` for webhooks.
+
+Now, we must update the payment expiry cron to also cancel pending_payment promotions that have exceeded the promotion window (which is shorter than 24 hours). We'll update the existing cron job to:
+
+```sql
+-- Update the payment expiry cron to also handle queue promotion timeout
+
+SELECT cron.schedule(
+  'expire-pending-payments',
+  '0 * * * *',
+  $$
+    -- Cancel pending_payment that are older than 24 hours (original rule)
+    UPDATE public.tournament_players
+    SET registration_status = 'cancelled',
+        payment_callback_token = NULL,
+        payment_pending_since = NULL,
+        queue_promoted_at = NULL
+    WHERE registration_status = 'pending_payment'
+      AND payment_pending_since < NOW() - INTERVAL '24 hours';
+
+    -- Cancel pending_payment that were promoted from queue and have exceeded the promotion window (even if less than 24 hours)
+    UPDATE public.tournament_players
+    SET registration_status = 'cancelled',
+        payment_callback_token = NULL,
+        payment_pending_since = NULL,
+        queue_promoted_at = NULL
+    WHERE registration_status = 'pending_payment'
+      AND queue_promoted_at IS NOT NULL
+      AND queue_promoted_at < NOW() - (
+        SELECT (queue_promotion_window_minutes || ' minutes')::interval
+        FROM tournaments WHERE id = tournament_players.tournament_id
+      );
+  $$
+);
+```
+
+But note: the promotion window is per tournament (queue_promotion_window_minutes). We must join with the tournaments table to get the window.
+
+Alternatively, we can run two separate updates.
+
+Now, we must also consider that when a pending_payment is cancelled (by the cron job), we should process the queue again to fill the freed slot. We can trigger `processQueue` from the cron job? But we are in SQL. We can make an HTTP request from the cron job? Not easily.
+
+We can set up a trigger in the database that calls a function to process the queue when a player is updated to cancelled? But that's complex.
+
+Alternatively, we can rely on the periodic queue processing (every 30 seconds) to pick up the freed slots.
+
+Given the periodic queue processing will run every 30 seconds, it should be enough.
+
+Now, let's write the API route for queue processing:
+
+```typescript
+// app/api/queue/process/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+import { processQueue } from '@/utils/queue';
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Optionally, we can pass a tournamentId in the request body to process a specific tournament
+    const { tournamentId } = await request.json().catch(() => ({}));
+
+    if (tournamentId) {
+      await processQueue(tournamentId);
+    } else {
+      // Process all tournaments with queue enabled and registration open
+      const { data: tournaments, error } = await supabase
+        .from('tournaments')
+        .select('id')
+        .eq('enable_queue', true)
+        .eq('queue_paused', false)
+        .eq('registration_open', true)
+        .lte('registration_opens_at', new Date().toISOString())
+        .gte('registration_closes_at', new Date().toISOString());
+
+      if (error) {
+        console.error('Error fetching tournaments for queue processing:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
+
+      for (const tournament of tournaments) {
+        await processQueue(tournament.id);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Queue processing error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+```
+
+We can protect this route with a secret token if we want to call it from a cron job.
+
+Now, we set up a Vercel cron job to hit this endpoint every 30 seconds.
+
+Alternatively, we can use pg_cron to run a SQL function that does the queue processing, but as discussed, it's complex.
+
+Given the time, I propose we go with the TypeScript `processQueue` function and call it from event-driven triggers and a periodic API call.
+
+Now, let's update the `withdrawPlayer` function to call `processQueue`:
+
+```typescript
+// In withdrawPlayer, after updating the player to withdrawn:
+
+    // Fire registration.withdrawn webhook (fire-and-forget)
+    tryDispatchNotification(supabase, tournamentId, 'registration.withdrawn', profile.pokemon_player_id)
+      .catch(() => {});
+
+    // Process the queue to fill the freed slot
+    await processQueue(tournamentId);
+
+    revalidatePath(`/tournaments/${tournamentId}`);
+    return { success: true };
+```
+
+Similarly, in the payment callback (from Spec 006), after confirming the payment, we call `processQueue`.
+
+Now, let's update the RegisterButton to show the queue position and handle the queued state.
+
+We'll need to fetch the queue position for the player and display it. We can use a polling mechanism (every 5 seconds) when the player is in the queue.
+
+We can create a custom hook for polling the queue position.
+
+But note: we also need to handle the case when the player is promoted (status changes from queued to pending_payment or registered). We can poll the player's registration status.
+
+Alternatively, we can use Supabase Realtime to subscribe to changes in the `tournament_players` table for the player's record.
+
+Given the simplicity, we can start with polling.
+
+We'll update the RegisterButton to:
+
+- If the player is queued, show "In Queue — Position #X" and poll every 5 seconds to update the position and check if promoted.
+
+We'll create a function to fetch the player's registration status and queue position.
+
+We can add an endpoint `GET /api/queue/status?tournamentId=...` that returns the status and queue position for the current player.
+
+But we already have the player's registration status in the tournament data. We can get it from the server component and pass it to the RegisterButton.
+
+However, for real-time updates, we need to poll from the client.
+
+We can use a useEffect to poll the status when the player is queued.
+
+Let's write a simple plan for the RegisterButton:
+
+- When the player is queued, we start a timer that fetches the player's registration status and queue position every 5 seconds.
+- When the status changes, we update the button accordingly.
+
+We can fetch the data from an API route or directly from Supabase (if we expose the Supabase client to the client). We are currently using server actions, but for polling we can use a client-side Supabase query.
+
+We can create a client-side Supabase query to get the player's registration status and queue position.
+
+But note: the queue position requires counting other players, which might be expensive if done on the client. We should create an API endpoint for queue status.
+
+Let's create an API endpoint:
+
+```typescript
+// app/api/queue/status/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const tournamentId = searchParams.get('tournamentId');
+
+    if (!tournamentId) {
+      return NextResponse.json({ error: 'Missing tournamentId' }, { status: 400 });
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('pokemon_player_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    const { data: registration } = await supabase
+      .from('tournament_players')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .eq('player_id', profile.pokemon
+---
+## Output
