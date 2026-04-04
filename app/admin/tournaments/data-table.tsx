@@ -102,7 +102,7 @@ export function DataTable<TData, TValue>({
     const initialFilters = React.useMemo(() => {
         const fromUrl = parseSearchParams(searchParams)
         return fromUrl ?? DEFAULT_FILTERS
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps — intentionally run once on mount
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentionally run once on mount
 
     const [rowSelection, setRowSelection] = React.useState({})
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
