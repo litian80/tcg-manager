@@ -6,6 +6,8 @@ import { Match, ExtendedTournament as Tournament, RosterPlayer } from "@/types";
 import { Role } from "@/lib/rbac";
 import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
+import { buildPaymentRedirectUrl } from "@/utils/payment";
+import { calculatePlayerDivision, Division } from "@/actions/registration";
 
 interface Profile {
     role?: string;
@@ -69,6 +71,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     let myPaymentUrl: string | null = null;
     let myPaymentPendingSince: string | null = null;
     let deckList: any = null;
+    let myDivision: Division | null = null;
+    let myDivisionFee: number = 0;
     
     if (profile?.pokemon_player_id) {
         const [registrationData, deckListData] = await Promise.all([
@@ -92,17 +96,36 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     myPaymentPendingSince = registrationData.data?.payment_pending_since || null;
     deckList = deckListData.data || null;
 
-    // If pending_payment and the tournament has a payment URL, reconstruct the redirect URL
+    // REG-004: Compute player's division and fee for display
+    const profileBirthYear = (profile as any)?.birth_year;
+    if (registrationData.data?.division) {
+        myDivision = registrationData.data.division as Division;
+    } else if (profileBirthYear) {
+        try {
+            myDivision = await calculatePlayerDivision(profileBirthYear, id);
+        } catch { /* division calc failed, leave null */ }
+    }
+    if (myDivision) {
+        const feeColumnMap = { junior: 'fee_juniors', senior: 'fee_seniors', master: 'fee_masters' } as const;
+        myDivisionFee = parseFloat(tournamentRecord[feeColumnMap[myDivision]] as string) || 0;
+    }
+
+    // If pending_payment and the tournament has a payment URL, reconstruct the redirect URL (EC-16 fix)
     if (myRegistrationStatus === 'pending_payment' && 
         registrationData.data?.payment_callback_token && 
         tournamentRecord.payment_url) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      const baseUrl = new URL(tournamentRecord.payment_url);
-      baseUrl.searchParams.set('player_name', `${profile?.pokemon_player_id}`);
-      baseUrl.searchParams.set('tournament_id', id);
-      baseUrl.searchParams.set('callback_token', registrationData.data.payment_callback_token);
-      baseUrl.searchParams.set('return_url', `${siteUrl}/tournament/${id}/payment-status?token=${registrationData.data.payment_callback_token}`);
-      myPaymentUrl = baseUrl.toString();
+      const regDivision = registrationData.data.division || myDivision || 'master';
+      const regFee = parseFloat(tournamentRecord[`fee_${regDivision}s`] as string) || 0;
+      myPaymentUrl = buildPaymentRedirectUrl(tournamentRecord.payment_url, {
+        player_name: `${(profile as any)?.first_name || ''} ${(profile as any)?.last_name || ''}`.trim() || profile.pokemon_player_id,
+        player_id: profile.pokemon_player_id,
+        tournament_id: id,
+        division: regDivision,
+        callback_token: registrationData.data.payment_callback_token,
+        return_url: `${siteUrl}/tournament/${id}/payment-status?token=${registrationData.data.payment_callback_token}`,
+        ...(regFee > 0 ? { amount: regFee.toFixed(2) } : {}),
+      });
     }
     
     // Calculate waitlist position if applicable
@@ -321,6 +344,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 myWaitlistPosition={myWaitlistPosition}
                 myPaymentUrl={myPaymentUrl}
                 myPaymentPendingSince={myPaymentPendingSince}
+                myDivision={myDivision}
+                myDivisionFee={myDivisionFee}
                 penaltyCounts={penaltyCounts}
                 deckCheckCounts={deckCheckCounts}
                 deckList={deckList}

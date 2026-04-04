@@ -13,11 +13,14 @@ export function buildPaymentRedirectUrl(
     division: string;
     callback_token: string;
     return_url: string;
+    amount?: string;
   }
 ): string {
   const url = new URL(baseUrl);
   Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
+    if (value !== undefined) {
+      url.searchParams.set(key, value);
+    }
   });
   return url.toString();
 }

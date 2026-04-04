@@ -54,6 +54,11 @@ SELECT cron.schedule(
 );
 
 -- 7. Create safe queue processing RPC with transactional locks
+-- TODO [REG-004/EC-11]: This function uses the global tournament.payment_required flag
+-- to determine if promoted players need pending_payment status. When division-specific
+-- pricing is active and a division's fee is $0/null, the player should skip payment.
+-- Update this logic to read fee_juniors/fee_seniors/fee_masters per division when
+-- the queue system (REG-003) is fully activated.
 CREATE OR REPLACE FUNCTION public.process_tournament_queue(p_tournament_id UUID)
 RETURNS TABLE (
   player_id TEXT,

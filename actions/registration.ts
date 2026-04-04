@@ -186,8 +186,11 @@ export async function registerPlayer(tournamentId: string) {
 
     const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
 
-    // Determine if payment is required
-    const paymentRequired = !!(tournament.payment_required && tournament.payment_url);
+    // REG-004: Compute per-division fee and payment requirement
+    const feeColumnMap = { junior: 'fee_juniors', senior: 'fee_seniors', master: 'fee_masters' } as const;
+    const feeColumn = feeColumnMap[division];
+    const divisionFee = parseFloat((tournament as any)[feeColumn] as string) || 0;
+    const paymentRequired = !!(tournament.payment_required && tournament.payment_url && divisionFee > 0);
 
     // Generate payment callback token if needed
     const callbackToken = paymentRequired ? randomUUID() : null;
@@ -283,6 +286,7 @@ export async function registerPlayer(tournamentId: string) {
         division,
         callback_token: callbackToken,
         return_url: `${siteUrl}/tournament/${tournamentId}/payment-status?token=${callbackToken}`,
+        amount: divisionFee.toFixed(2),
       });
 
       // Fire payment.pending webhook (fire-and-forget)

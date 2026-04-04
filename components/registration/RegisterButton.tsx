@@ -29,6 +29,8 @@ interface RegisterButtonProps {
     paymentUrl?: string | null;
     paymentPendingSince?: string | null;
     playerId?: string | null;
+    fee?: number;
+    division?: string | null;
 }
 
 export function RegisterButton({ 
@@ -42,6 +44,8 @@ export function RegisterButton({
     paymentUrl,
     paymentPendingSince,
     playerId,
+    fee = 0,
+    division,
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
@@ -193,6 +197,7 @@ export function RegisterButton({
                 </AlertDialog>
                 {paymentPendingSince && (
                     <p className="text-xs text-center text-muted-foreground">
+                        {fee > 0 && <span className="block">Amount: ${fee.toFixed(2)}</span>}
                         Payment expires 24 hours after registration.
                     </p>
                 )}
@@ -352,6 +357,9 @@ export function RegisterButton({
         );
     }
 
+    // Compute fee label for register button
+    const feeLabel = fee > 0 ? ` ($${fee.toFixed(2)})` : (division ? ' (Free)' : '');
+
     return (
         <Button 
             onClick={handleRegister} 
@@ -359,7 +367,7 @@ export function RegisterButton({
             className="w-full"
         >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {currentStatus === 'withdrawn' ? 'Re-Register' : 'Register'}
+            {currentStatus === 'withdrawn' ? 'Re-Register' : 'Register'}{feeLabel}
         </Button>
     );
 }
