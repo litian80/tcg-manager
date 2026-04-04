@@ -515,7 +515,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     {(feeJuniors || feeSeniors) && !jrMax && !srMax && (
                                         <div className="flex items-start gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-600 dark:text-amber-400">
                                             <span className="mt-0.5">⚠️</span>
-                                            <span>You've set division-specific fees but haven't configured age boundaries (above). All players will be charged the Masters fee until boundaries are set.</span>
+                                            <span>You&apos;ve set division-specific fees but haven&apos;t configured age boundaries (above). All players will be charged the Masters fee until boundaries are set.</span>
                                         </div>
                                     )}
                                     <div className="grid grid-cols-3 gap-3">
