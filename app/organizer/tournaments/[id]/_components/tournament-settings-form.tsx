@@ -190,9 +190,14 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             .from('tournament_secrets')
             .upsert(secretsPayload, { onConflict: 'tournament_id' });
 
-        if (error || secretsError) {
-            console.error(error || secretsError);
-            toast.error("Failed to update settings");
+        if (error) {
+            console.error("Tournament update error:", error);
+            toast.error(`Failed to update tournament: ${error.message}`);
+        } else if (secretsError) {
+            console.error("Secrets upsert error:", secretsError);
+            // Don't block saving if only the secrets table fails
+            toast.warning("Tournament saved, but webhook secrets could not be updated. Check console for details.");
+            router.refresh();
         } else {
             toast.success("Tournament settings saved");
             router.refresh();
@@ -565,8 +570,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                             id="payment_webhook_secret"
                                             type="text"
                                             value={paymentWebhookSecret}
-                                            readOnly
-                                            className="font-mono text-xs bg-muted"
+                                            onChange={(e) => setPaymentWebhookSecret(e.target.value)}
+                                            placeholder="whsec_... (paste from Stripe)"
+                                            className="font-mono text-xs"
                                         />
                                         <Button
                                             type="button"
