@@ -8,7 +8,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
  * Helper to check if a user is authorized to act as a judge/organizer/admin for a specific tournament.
  */
 async function checkTournamentAuth(supabase: SupabaseClient, userId: string, tournamentId: string): Promise<boolean> {
-    console.log(`[checkTournamentAuth] Checking auth for user ${userId} on tournament ${tournamentId}`);
+
     // 1. Check if Judge
     const { data: judgeRecord, error: judgeError } = await supabase
         .from("tournament_judges")
@@ -17,13 +17,13 @@ async function checkTournamentAuth(supabase: SupabaseClient, userId: string, tou
         .eq("user_id", userId)
         .single();
     
-    console.log(`[checkTournamentAuth] Judge record:`, judgeRecord, `Error:`, judgeError);
+
 
     if (judgeRecord) return true;
 
     // 2. Check if Organizer / Admin
     const isOrgAdmin = await checkOrganizerAdminAuth(supabase, userId, tournamentId);
-    console.log(`[checkTournamentAuth] Org/Admin check:`, isOrgAdmin);
+
     return isOrgAdmin;
 }
 

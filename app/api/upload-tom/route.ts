@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
             attributeNamePrefix: '',
         });
         const result = parser.parse(xmlData) as { tournament?: TomTournament };
-        console.log('Parsed XML Structure:', JSON.stringify(result, null, 2));
 
         // Root is "tournament"
         const tournamentRoot = result.tournament;
@@ -48,7 +47,6 @@ export async function POST(req: NextRequest) {
         const standingsRoot = tournamentRoot.standings;
         if (standingsRoot) {
             const standingsPods = asArray(standingsRoot.pod);
-            console.log('Parsed Standings:', JSON.stringify(standingsPods, null, 2));
 
             // If standings exist checking if all pods are finished
             // Note: If standingsPods is empty (e.g. empty standings tag), semantics imply not completed.
@@ -148,10 +146,19 @@ export async function POST(req: NextRequest) {
         if (targetId) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id')
+                .select('id, organizer_popid')
                 .eq('id', targetId)
                 .single();
-            existingTournament = data;
+
+            if (data) {
+                // SEC-002: Verify the uploader owns the target tournament
+                if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
+                    return NextResponse.json({
+                        error: 'Forbidden: You do not own the target tournament.'
+                    }, { status: 403 });
+                }
+                existingTournament = { id: data.id };
+            }
         }
 
         // Fallback 1: If tom_uid exists, it's a globally unique Sanction ID. Match on that alone.
@@ -514,7 +521,7 @@ export async function POST(req: NextRequest) {
                         // warning handled below or skipped
                     }
                     if (!p1Id && !p2Id) {
-                        console.warn(`Skipping match with missing player(s): Match R${roundNumber}-T${m.tablenumber}`);
+                        // Skip match with missing player(s)
                         return;
                     }
 
@@ -583,7 +590,7 @@ export async function POST(req: NextRequest) {
                 .map((m: any) => m.id);
 
             if (orphanIds.length > 0) {
-                console.log(`GC: Removing ${orphanIds.length} orphaned matches for tournament ${tournamentId}`);
+
                 await supabase.from('matches').delete().in('id', orphanIds);
             }
         } else {
@@ -686,7 +693,7 @@ export async function POST(req: NextRequest) {
                 if (standingsError) {
                     console.error('Error updating standings in tournament_players:', standingsError);
                 } else {
-                    console.log(`Updated standings for ${tpUpdates.length} players.`);
+
                 }
             }
         }

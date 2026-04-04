@@ -43,12 +43,30 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     // Payment settings
     const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
     const [paymentUrl, setPaymentUrl] = useState(tournament.payment_url || "");
-    const [paymentWebhookSecret, setPaymentWebhookSecret] = useState(tournament.payment_webhook_secret || "");
+    const [paymentWebhookSecret, setPaymentWebhookSecret] = useState("");
     
     // Notification webhook settings
-    const [notificationWebhookUrl, setNotificationWebhookUrl] = useState(tournament.notification_webhook_url || "");
-    const [notificationWebhookSecret, setNotificationWebhookSecret] = useState(tournament.notification_webhook_secret || "");
+    const [notificationWebhookUrl, setNotificationWebhookUrl] = useState("");
+    const [notificationWebhookSecret, setNotificationWebhookSecret] = useState("");
     const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+    // SEC-003: Load secrets from tournament_secrets on mount
+    useEffect(() => {
+        const supabase = createClient();
+        (async () => {
+            const { data: secrets } = await (supabase as any)
+                .from('tournament_secrets')
+                .select('notification_webhook_url, notification_webhook_secret, payment_webhook_secret')
+                .eq('tournament_id', tournament.id)
+                .maybeSingle();
+            
+            if (secrets) {
+                setNotificationWebhookUrl(secrets.notification_webhook_url || "");
+                setNotificationWebhookSecret(secrets.notification_webhook_secret || "");
+                setPaymentWebhookSecret(secrets.payment_webhook_secret || "");
+            }
+        })();
+    }, [tournament.id]);
     
     // For start time - split date and time
     const [startDate, setStartDate] = useState("");
@@ -150,14 +168,24 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 start_time: startTimeValue,
                 payment_required: paymentRequired,
                 payment_url: paymentRequired ? (paymentUrl || null) : null,
-                payment_webhook_secret: paymentRequired ? (paymentWebhookSecret || null) : null,
-                notification_webhook_url: notificationWebhookUrl || null,
-                notification_webhook_secret: notificationWebhookSecret || null,
             })
             .eq("id", tournament.id);
 
-        if (error) {
-            console.error(error);
+        // SEC-003: Save secrets to tournament_secrets table
+        const secretsPayload: Record<string, unknown> = {
+            tournament_id: tournament.id,
+            notification_webhook_url: notificationWebhookUrl || null,
+            notification_webhook_secret: notificationWebhookSecret || null,
+            payment_webhook_secret: paymentRequired ? (paymentWebhookSecret || null) : null,
+            updated_at: new Date().toISOString(),
+        };
+
+        const { error: secretsError } = await (supabase as any)
+            .from('tournament_secrets')
+            .upsert(secretsPayload, { onConflict: 'tournament_id' });
+
+        if (error || secretsError) {
+            console.error(error || secretsError);
             toast.error("Failed to update settings");
         } else {
             toast.success("Tournament settings saved");

@@ -20,17 +20,26 @@ export async function tryDispatchNotification(
   extraPayload?: Record<string, unknown>
 ): Promise<void> {
   try {
-    // 1. Fetch tournament webhook config
+    // 1. Fetch tournament name
     const { data: tournament, error: tError } = await supabase
       .from('tournaments')
-      .select('name, notification_webhook_url, notification_webhook_secret')
+      .select('name')
       .eq('id', tournamentId)
       .single();
 
     if (tError || !tournament) return;
 
+    // 2. Fetch webhook secrets from restricted table
+    const { data: secrets, error: sError } = await supabase
+      .from('tournament_secrets' as any)
+      .select('notification_webhook_url, notification_webhook_secret')
+      .eq('tournament_id', tournamentId)
+      .single();
+
+    if (sError || !secrets) return;
+
     // No-op if no webhook URL or secret configured
-    if (!tournament.notification_webhook_url || !tournament.notification_webhook_secret) {
+    if (!secrets.notification_webhook_url || !secrets.notification_webhook_secret) {
       return;
     }
 
@@ -53,8 +62,8 @@ export async function tryDispatchNotification(
 
     // 3. Fire webhook (fire-and-forget — errors are logged internally)
     await dispatchWebhook(
-      tournament.notification_webhook_url,
-      tournament.notification_webhook_secret,
+      secrets.notification_webhook_url,
+      secrets.notification_webhook_secret,
       event,
       payload
     );

@@ -17,16 +17,7 @@ export type UserResult = {
 export async function searchUsers(query: string): Promise<UserResult[]> {
     const supabase = await createClient();
 
-    console.log('--- DEBUG SEARCH START ---');
-    console.log('Search Query:', query, 'Type:', typeof query);
-
-    // Step B: Sanity Check
-    const sanityCheck = await supabase.from('profiles').select('*').limit(1).single();
-    console.log('Sanity Check - Raw DB Row:', sanityCheck.data);
-
     if (!query || query.length < 2) {
-        console.log('Query too short, returning empty.');
-        console.log('--- DEBUG SEARCH END ---');
         return [];
     }
 
@@ -34,8 +25,7 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
     const sanitizedQuery = query.trim();
 
     // Strategy 1: Search by Pokemon Player ID (Exact or approximate)
-    console.log('Executing Supabase Query (Strategy 1 - PID Match)...');
-    console.log(`[DEBUG SQL INTENT] SELECT id, email, first_name, last_name, nick_name, pokemon_player_id, role FROM profiles WHERE pokemon_player_id = '${sanitizedQuery}' LIMIT 5`);
+
 
     // Select valid columns: id, email, first_name, last_name, nick_name, pokemon_player_id, role
     // Note: 'display_name' does NOT exist in DB.
@@ -48,10 +38,7 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
     if (idError) {
         console.error('Search Error (Strategy 1):', idError);
     } else {
-        console.log('Search Results Count (Strategy 1):', idData?.length);
-        if (idData && idData.length > 0) {
-            console.log('First Result Sample (Strategy 1):', idData[0]);
-        }
+
     }
 
     if (idData && idData.length > 0) {
@@ -59,12 +46,11 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
     }
 
     // Strategy 2: Search by Name or Email
-    console.log('Executing Supabase Query (Strategy 2 - Text Match)...');
+
     // Corrected filter string without 'display_name'
     const safeQuery = sanitizeSearchQuery(sanitizedQuery);
     const filterString = `email.ilike.%${safeQuery}%,pokemon_player_id.ilike.%${safeQuery}%,first_name.ilike.%${safeQuery}%,last_name.ilike.%${safeQuery}%,nick_name.ilike.%${safeQuery}%`;
-    console.log('Filter String:', filterString);
-    console.log(`[DEBUG SQL INTENT] SELECT ... FROM profiles WHERE ${filterString.replace(/,/g, ' OR ')} LIMIT 5`);
+
 
     const { data: textData, error: textError } = await supabase
         .from("profiles")
@@ -75,10 +61,7 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
     if (textError) {
         console.error('Search Error (Strategy 2):', textError);
     } else {
-        console.log('Search Results Count (Strategy 2):', textData?.length);
-        if (textData && textData.length > 0) {
-            console.log('First Result Sample (Strategy 2):', textData[0]);
-        }
+
     }
 
     if (textData) {
@@ -91,7 +74,7 @@ export async function searchUsers(query: string): Promise<UserResult[]> {
         });
     }
 
-    console.log('--- DEBUG SEARCH END ---');
+
 
     // MAPPING STEP: Synthesis of display_name
     const mappedUsers: UserResult[] = users.map(user => {
@@ -170,6 +153,27 @@ export async function removeJudge(tournamentId: string, targetUserId: string): P
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) return { error: "Unauthorized" };
+
+        // Verify Permission (Organizer or Admin)
+        const { data: requesterProfile } = await supabase
+            .from("profiles")
+            .select("role, pokemon_player_id")
+            .eq("id", user.id)
+            .single();
+
+        const isAdmin = requesterProfile?.role === "admin";
+
+        if (!isAdmin) {
+            const { data: tournament } = await supabase
+                .from("tournaments")
+                .select("organizer_popid")
+                .eq("id", tournamentId)
+                .single();
+
+            if (!tournament || tournament.organizer_popid !== requesterProfile?.pokemon_player_id) {
+                return { error: "Unauthorized: Only Admins or the Organizer can remove judges." };
+            }
+        }
 
         const { error } = await supabase
             .from("tournament_judges")

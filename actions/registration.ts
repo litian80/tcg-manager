@@ -185,17 +185,9 @@ export async function registerPlayer(tournamentId: string) {
     }
 
     const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
-    const capacityCheck = await checkDivisionCapacity(tournamentId, division);
 
     // Determine if payment is required
-    const paymentRequired = tournament.payment_required && tournament.payment_url;
-    let status = "waitlisted";
-    
-    if (tournament.enable_queue) {
-      status = "queued";
-    } else if (capacityCheck.available) {
-      status = paymentRequired ? "pending_payment" : "registered";
-    }
+    const paymentRequired = !!(tournament.payment_required && tournament.payment_url);
 
     // Generate payment callback token if needed
     const callbackToken = paymentRequired ? randomUUID() : null;
@@ -210,7 +202,7 @@ export async function registerPlayer(tournamentId: string) {
     if (existingPlayer) {
       playerId = existingPlayer.id;
       
-      // Update the name just in case it changed (e.g., they mistakenly imported under wrong name before)
+      // Update the name just in case it changed
       await supabase
         .from("players")
         .update({
@@ -235,54 +227,43 @@ export async function registerPlayer(tournamentId: string) {
       playerId = newPlayer.id;
     }
 
-    // Check if already registered
-    const { data: existingReg } = await supabase
-      .from("tournament_players")
-      .select("registration_status")
-      .eq("tournament_id", tournamentId)
-      .eq("player_id", profile.pokemon_player_id)
-      .maybeSingle();
-
-    // Build the insert/update payload
+    // SEC-005: Atomic registration via database RPC with deadlock retry
     const adminSupabase = await createAdminClient();
-    const isPaymentNext = status === "pending_payment";
-    const registrationData: Record<string, unknown> = {
-      registration_status: status,
-      ...(isPaymentNext ? {
-        payment_callback_token: callbackToken,
-        payment_pending_since: new Date().toISOString(),
-      } : {}),
-    };
+    const MAX_RETRIES = 3;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let rpcResult: any = null;
 
-    if (existingReg) {
-        if (existingReg.registration_status !== 'withdrawn' && existingReg.registration_status !== 'cancelled') {
-            return { error: "You are already registered or on the waitlist." };
-        }
-        
-        // Update existing withdrawn/cancelled record to active using admin client
-        const { error: updateError } = await adminSupabase
-            .from("tournament_players")
-            .update(registrationData)
-            .eq("tournament_id", tournamentId)
-            .eq("player_id", profile.pokemon_player_id);
-            
-        if (updateError) return { error: "Failed to update registration status." };
-    } else {
-        // Create new registration record using admin client
-        const { error: insertError } = await adminSupabase
-          .from("tournament_players")
-          .insert({
-            tournament_id: tournamentId,
-            player_id: profile.pokemon_player_id,
-            division: division,
-            ...registrationData,
-          });
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const rpcResponse: any = await adminSupabase.rpc('register_player_atomic' as any, {
+        p_tournament_id: tournamentId,
+        p_player_id: profile.pokemon_player_id,
+        p_division: division,
+        p_payment_required: paymentRequired,
+        p_callback_token: callbackToken,
+        p_enable_queue: !!tournament.enable_queue,
+      } as any);
 
-        if (insertError) {
-          console.error("Insert registration error:", insertError);
-          return { error: "Failed to complete registration." };
-        }
+      if (rpcResponse.error) {
+        console.error("RPC registration error:", rpcResponse.error);
+        return { error: "Failed to complete registration." };
+      }
+
+      rpcResult = rpcResponse.data;
+
+      // If the RPC returned a deadlock hint, retry with backoff
+      if (rpcResult?.error === 'DEADLOCK_RETRY' && attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt - 1)));
+        continue;
+      }
+
+      break;
     }
+
+    if (!rpcResult || rpcResult.error) {
+      return { error: rpcResult?.error || "Failed to complete registration." };
+    }
+
+    const status: string = rpcResult.status;
 
     revalidatePath(`/tournaments/${tournamentId}`);
 

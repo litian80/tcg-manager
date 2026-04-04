@@ -62,21 +62,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Fetch tournament to verify webhook signature
-    const { data: tournament, error: tournamentError } = await supabase
-      .from('tournaments')
+    // 3. Fetch tournament webhook secret from restricted table
+    const { data: secrets, error: secretsError } = await supabase
+      .from('tournament_secrets')
       .select('payment_webhook_secret')
-      .eq('id', registration.tournament_id)
+      .eq('tournament_id', registration.tournament_id)
       .single();
 
-    if (tournamentError || !tournament) {
-      return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
+    if (secretsError || !secrets) {
+      return NextResponse.json({ error: 'Tournament secrets not found' }, { status: 404 });
     }
 
     // 4. Verify HMAC signature (MANDATORY — fail-closed)
     // If no webhook secret is configured, reject the request entirely.
     // This prevents forged payment callbacks on misconfigured tournaments.
-    if (!tournament.payment_webhook_secret) {
+    if (!secrets.payment_webhook_secret) {
       console.error(`Payment webhook rejected: tournament ${registration.tournament_id} has no payment_webhook_secret configured`);
       return NextResponse.json(
         { error: 'Payment webhook not configured for this tournament' },
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     }
 
     const signature = request.headers.get('X-Webhook-Signature') || '';
-    const isValid = verifyWebhookSignature(rawBody, signature, tournament.payment_webhook_secret);
+    const isValid = verifyWebhookSignature(rawBody, signature, secrets.payment_webhook_secret);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
     }

@@ -24,7 +24,7 @@ export async function testNotificationWebhook(tournamentId: string) {
 
     const { data: tournament } = await supabase
       .from("tournaments")
-      .select("name, organizer_popid, notification_webhook_url, notification_webhook_secret")
+      .select("name, organizer_popid")
       .eq("id", tournamentId)
       .single();
 
@@ -36,15 +36,22 @@ export async function testNotificationWebhook(tournamentId: string) {
       return { error: "Unauthorized — only the organizer or an admin can test webhooks" };
     }
 
+    // 3. Fetch secrets from restricted table
+    const { data: secrets } = await supabase
+      .from("tournament_secrets" as any)
+      .select("notification_webhook_url, notification_webhook_secret")
+      .eq("tournament_id", tournamentId)
+      .single();
+
     // 3. Check webhook is configured
-    if (!tournament.notification_webhook_url || !tournament.notification_webhook_secret) {
+    if (!secrets?.notification_webhook_url || !secrets?.notification_webhook_secret) {
       return { error: "Webhook URL and secret must be configured before testing" };
     }
 
     // 4. Send ping event
     const result = await dispatchWebhook(
-      tournament.notification_webhook_url,
-      tournament.notification_webhook_secret,
+      secrets.notification_webhook_url,
+      secrets.notification_webhook_secret,
       "ping",
       {
         tournament_id: tournamentId,

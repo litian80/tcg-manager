@@ -5,9 +5,12 @@ import { createHmac } from "node:crypto";
 interface Tournament {
   id: string;
   name: string;
+  deck_list_submission_deadline: string;
+}
+
+interface TournamentSecrets {
   notification_webhook_url: string;
   notification_webhook_secret: string;
-  deck_list_submission_deadline: string;
 }
 
 interface MissingDeckPlayer {
@@ -58,12 +61,9 @@ Deno.serve(async (_req: Request) => {
     const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
     // 1. Find tournaments with deck deadline within next 2 hours
-    //    that have notification webhooks configured
     const { data: tournaments, error: tError } = await supabase
       .from('tournaments')
-      .select('id, name, notification_webhook_url, notification_webhook_secret, deck_list_submission_deadline')
-      .not('notification_webhook_url', 'is', null)
-      .not('notification_webhook_secret', 'is', null)
+      .select('id, name, deck_list_submission_deadline')
       .not('deck_list_submission_deadline', 'is', null)
       .gte('deck_list_submission_deadline', now.toISOString())
       .lte('deck_list_submission_deadline', twoHoursFromNow.toISOString())
@@ -83,7 +83,19 @@ Deno.serve(async (_req: Request) => {
     let totalReminders = 0;
 
     for (const tournament of tournaments as Tournament[]) {
-      // 2. Find registered/checked_in players who haven't submitted a deck
+      // 2a. Fetch webhook secrets for this tournament
+      const { data: secrets } = await supabase
+        .from('tournament_secrets')
+        .select('notification_webhook_url, notification_webhook_secret')
+        .eq('tournament_id', tournament.id)
+        .maybeSingle();
+
+      // Skip if no webhook configured
+      if (!secrets?.notification_webhook_url || !secrets?.notification_webhook_secret) continue;
+
+      const webhookSecrets = secrets as TournamentSecrets;
+
+      // 2b. Find registered/checked_in players who haven't submitted a deck
       //    and haven't been reminded yet
       const { data: allPlayers } = await supabase
         .from('tournament_players')
@@ -121,8 +133,8 @@ Deno.serve(async (_req: Request) => {
           .maybeSingle();
 
         await dispatchWebhook(
-          tournament.notification_webhook_url,
-          tournament.notification_webhook_secret,
+          webhookSecrets.notification_webhook_url,
+          webhookSecrets.notification_webhook_secret,
           'deck.reminder',
           {
             tournament_id: tournament.id,

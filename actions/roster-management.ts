@@ -227,12 +227,7 @@ export async function removePlayerFromRoster(tournamentId: string, playerId: str
         return { error: `Failed to remove player from roster: ${deleteError.message}` };
     }
 
-    if (count === 0) {
-        console.warn(`RemovePlayer: No record found for tournament ${tournamentId} and player ${playerId}`);
-        // This could happen if the ID in the UI is out of sync or already deleted
-    } else {
-        console.log(`RemovePlayer Success: Deleted ${count} record(s).`);
-    }
+
 
     revalidatePath(`/organizer/tournaments/${tournamentId}`);
     return { success: true };
