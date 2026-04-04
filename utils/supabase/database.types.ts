@@ -737,6 +737,41 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_secrets: {
+        Row: {
+          created_at: string | null
+          notification_webhook_secret: string | null
+          notification_webhook_url: string | null
+          payment_webhook_secret: string | null
+          tournament_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
+          payment_webhook_secret?: string | null
+          tournament_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
+          payment_webhook_secret?: string | null
+          tournament_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_secrets_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: true
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -807,6 +842,17 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      register_player_atomic: {
+        Args: {
+          p_callback_token?: string
+          p_division: string
+          p_enable_queue?: boolean
+          p_payment_required?: boolean
+          p_player_id: string
+          p_tournament_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
