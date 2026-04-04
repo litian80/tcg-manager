@@ -31,6 +31,7 @@ interface RegisterButtonProps {
     playerId?: string | null;
     fee?: number;
     division?: string | null;
+    paymentRequired?: boolean;
 }
 
 export function RegisterButton({ 
@@ -46,6 +47,7 @@ export function RegisterButton({
     playerId,
     fee = 0,
     division,
+    paymentRequired = false,
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
@@ -357,8 +359,8 @@ export function RegisterButton({
         );
     }
 
-    // Compute fee label for register button
-    const feeLabel = fee > 0 ? ` ($${fee.toFixed(2)})` : (division ? ' (Free)' : '');
+    // Compute fee label for register button. Only say "(Free)" if the tournament actually uses payments.
+    const feeLabel = fee > 0 ? ` ($${fee.toFixed(2)})` : ((paymentRequired && division) ? ' (Free)' : '');
 
     return (
         <Button 

@@ -440,6 +440,7 @@ export default function TournamentView({
                                 playerId={myPlayerId}
                                 fee={myDivisionFee}
                                 division={myDivision}
+                                paymentRequired={!!tournament.payment_required}
                             />
                         </div>
                     )}
