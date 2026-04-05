@@ -186,11 +186,14 @@ export async function registerPlayer(tournamentId: string) {
 
     const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
 
-    // REG-004: Compute per-division fee and payment requirement
-    const feeColumnMap = { junior: 'fee_juniors', senior: 'fee_seniors', master: 'fee_masters' } as const;
-    const feeColumn = feeColumnMap[division];
-    const divisionFee = parseFloat((tournament as any)[feeColumn] as string) || 0;
-    const paymentRequired = !!(tournament.payment_required && tournament.payment_url && divisionFee > 0);
+    const urlColumnMap = { junior: 'payment_url_juniors', senior: 'payment_url_seniors', master: 'payment_url_masters' } as const;
+    const targetUrl = (tournament as any)[urlColumnMap[division]] as string | null;
+
+    if (tournament.payment_required && !targetUrl) {
+      return { error: `Payment URL is not configured for the ${division} division. Please contact the organizer.` };
+    }
+
+    const paymentRequired = !!(tournament.payment_required && targetUrl);
 
     // Generate payment callback token if needed
     const callbackToken = paymentRequired ? randomUUID() : null;
@@ -287,7 +290,6 @@ export async function registerPlayer(tournamentId: string) {
         tournament_id: tournamentId,
         division,
         return_url: `${siteUrl}/tournament/${tournamentId}/payment-status?token=${callbackToken}`,
-        amount: divisionFee.toFixed(2),
       };
 
       // Stripe uses client_reference_id (automatically included in webhook events)
@@ -298,7 +300,7 @@ export async function registerPlayer(tournamentId: string) {
         urlParams.callback_token = callbackToken;
       }
 
-      const paymentUrl = buildPaymentRedirectUrl(tournament.payment_url!, {
+      const paymentUrl = buildPaymentRedirectUrl(targetUrl!, {
         ...urlParams,
         callback_token: callbackToken, // Always include for return_url matching
       });

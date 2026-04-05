@@ -42,12 +42,11 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     
     // Payment settings
     const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
-    const [paymentUrl, setPaymentUrl] = useState(tournament.payment_url || "");
     const [paymentWebhookSecret, setPaymentWebhookSecret] = useState("");
     const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'generic'>((tournament.payment_provider as 'stripe' | 'generic') || 'stripe');
-    const [feeJuniors, setFeeJuniors] = useState(tournament.fee_juniors || "");
-    const [feeSeniors, setFeeSeniors] = useState(tournament.fee_seniors || "");
-    const [feeMasters, setFeeMasters] = useState(tournament.fee_masters || "");
+    const [paymentUrlJuniors, setPaymentUrlJuniors] = useState(tournament.payment_url_juniors || "");
+    const [paymentUrlSeniors, setPaymentUrlSeniors] = useState(tournament.payment_url_seniors || "");
+    const [paymentUrlMasters, setPaymentUrlMasters] = useState(tournament.payment_url_masters || "");
     
     // Notification webhook settings
     const [notificationWebhookUrl, setNotificationWebhookUrl] = useState("");
@@ -172,10 +171,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 start_time: startTimeValue,
                 payment_required: paymentRequired,
                 payment_provider: paymentRequired ? paymentProvider : 'stripe',
-                payment_url: paymentRequired ? (paymentUrl || null) : null,
-                fee_juniors: paymentRequired ? (feeJuniors || null) : null,
-                fee_seniors: paymentRequired ? (feeSeniors || null) : null,
-                fee_masters: paymentRequired ? (feeMasters || null) : null,
+                payment_url_juniors: paymentRequired ? (paymentUrlJuniors || null) : null,
+                payment_url_seniors: paymentRequired ? (paymentUrlSeniors || null) : null,
+                payment_url_masters: paymentRequired ? (paymentUrlMasters || null) : null,
             })
             .eq("id", tournament.id);
 
@@ -516,71 +514,45 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     </p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="payment_url">Payment URL</Label>
-                                    <Input
-                                        id="payment_url"
-                                        type="url"
-                                        placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-link' : 'https://your-payment-system.com/pay'}
-                                        value={paymentUrl}
-                                        onChange={(e) => setPaymentUrl(e.target.value)}
-                                    />
+                                <div className="space-y-4">
+                                    <Label>Division Payment URLs</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Players will be redirected here to pay. We&apos;ll append player details as query parameters automatically.
+                                        Provide the exact Payment Link (or custom payment gateway URL) for each division. Leave blank if a division is free.
                                     </p>
-                                </div>
-
-                                {/* REG-004: Division-specific fees */}
-                                <div className="space-y-3">
-                                    <Label>Division Fees</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Set entry fee per division. Leave empty or set to 0 for free divisions. Changing fees won&apos;t affect players already in the payment process.
-                                    </p>
-                                    {/* EC-15 Warning: fees set but no birth year boundaries */}
-                                    {(feeJuniors || feeSeniors) && !jrMax && !srMax && (
-                                        <div className="flex items-start gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-600 dark:text-amber-400">
-                                            <span className="mt-0.5">⚠️</span>
-                                            <span>You&apos;ve set division-specific fees but haven&apos;t configured age boundaries (above). All players will be charged the Masters fee until boundaries are set.</span>
-                                        </div>
-                                    )}
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="space-y-1">
-                                            <Label htmlFor="fee_juniors" className="text-xs">Juniors ($)</Label>
-                                            <Input
-                                                id="fee_juniors"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                value={feeJuniors}
-                                                onChange={(e) => setFeeJuniors(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="fee_seniors" className="text-xs">Seniors ($)</Label>
-                                            <Input
-                                                id="fee_seniors"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                value={feeSeniors}
-                                                onChange={(e) => setFeeSeniors(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="fee_masters" className="text-xs">Masters ($)</Label>
-                                            <Input
-                                                id="fee_masters"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                value={feeMasters}
-                                                onChange={(e) => setFeeMasters(e.target.value)}
-                                            />
-                                        </div>
+                                    
+                                    <div className="space-y-2">
+                                        <Label htmlFor="payment_url_masters" className="text-xs">Masters Payment URL</Label>
+                                        <Input
+                                            id="payment_url_masters"
+                                            type="url"
+                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-masters-link' : 'https://your-payment-system.com/pay-masters'}
+                                            value={paymentUrlMasters}
+                                            onChange={(e) => setPaymentUrlMasters(e.target.value)}
+                                        />
                                     </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="payment_url_seniors" className="text-xs">Seniors Payment URL</Label>
+                                        <Input
+                                            id="payment_url_seniors"
+                                            type="url"
+                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-seniors-link' : 'https://your-payment-system.com/pay-seniors'}
+                                            value={paymentUrlSeniors}
+                                            onChange={(e) => setPaymentUrlSeniors(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="payment_url_juniors" className="text-xs">Juniors Payment URL</Label>
+                                        <Input
+                                            id="payment_url_juniors"
+                                            type="url"
+                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-juniors-link' : 'https://your-payment-system.com/pay-juniors'}
+                                            value={paymentUrlJuniors}
+                                            onChange={(e) => setPaymentUrlJuniors(e.target.value)}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Players will be redirected to the URL corresponding to their division. We&apos;ll append player details as query parameters automatically.
+                                    </p>
                                 </div>
 
                                 <div className="space-y-2">

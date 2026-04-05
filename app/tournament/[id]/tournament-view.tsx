@@ -59,7 +59,6 @@ interface TournamentViewProps {
     myPaymentUrl?: string | null;
     myPaymentPendingSince?: string | null;
     myDivision?: string | null;
-    myDivisionFee?: number;
     penaltyCounts?: Record<string, number>;
     deckCheckCounts?: Record<string, number>;
     deckList?: any;
@@ -82,7 +81,6 @@ export default function TournamentView({
     myPaymentUrl,
     myPaymentPendingSince,
     myDivision,
-    myDivisionFee = 0,
     penaltyCounts = {},
     deckCheckCounts = {},
     deckList,
@@ -400,32 +398,13 @@ export default function TournamentView({
                     {/* Registration Button (Visible if Registration is Enabled or User is Registered) */}
                     {(!hasMatches && (tournament.registration_open || myRegistrationStatus)) && (
                         <div className="pt-2 space-y-2">
-                            {/* REG-004: Division-specific pricing display */}
-                            {tournament.payment_required && (() => {
-                                const feeJr = parseFloat((tournament as any).fee_juniors as string) || 0;
-                                const feeSr = parseFloat((tournament as any).fee_seniors as string) || 0;
-                                const feeMa = parseFloat((tournament as any).fee_masters as string) || 0;
-                                const hasAnyFee = feeJr > 0 || feeSr > 0 || feeMa > 0;
-                                if (!hasAnyFee) return null;
-                                const formatFee = (f: number) => f > 0 ? `$${f.toFixed(2)}` : 'Free';
-                                // Check if all fees are the same
-                                const allSame = feeJr === feeSr && feeSr === feeMa;
-                                return (
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-                                        <span>💳</span>
-                                        {allSame ? (
-                                            <span>Entry Fee: <strong className="text-foreground">{formatFee(feeMa)}</strong></span>
-                                        ) : (
-                                            <span>
-                                                Entry Fee: 
-                                                {feeJr !== feeMa && <> Juniors <strong className="text-foreground">{formatFee(feeJr)}</strong> · </>}
-                                                {feeSr !== feeMa && <> Seniors <strong className="text-foreground">{formatFee(feeSr)}</strong> · </>}
-                                                Masters <strong className="text-foreground">{formatFee(feeMa)}</strong>
-                                            </span>
-                                        )}
-                                    </div>
-                                );
-                            })()}
+                            {/* Payment Required display */}
+                            {tournament.payment_required && (
+                                <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                                    <span>💳</span>
+                                    <span>Payment is required for registration</span>
+                                </div>
+                            )}
 
                             <RegisterButton 
                                 tournamentId={tournament.id}
@@ -438,7 +417,6 @@ export default function TournamentView({
                                 paymentUrl={myPaymentUrl}
                                 paymentPendingSince={myPaymentPendingSince}
                                 playerId={myPlayerId}
-                                fee={myDivisionFee}
                                 division={myDivision}
                                 paymentRequired={!!tournament.payment_required}
                             />
