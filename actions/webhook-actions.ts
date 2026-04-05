@@ -18,7 +18,7 @@ export async function testNotificationWebhook(tournamentId: string) {
     // 2. Verify organizer/admin access
     const { data: profile } = await supabase
       .from("profiles")
-      .select("pokemon_player_id, app_role")
+      .select("pokemon_player_id, role")
       .eq("id", user.id)
       .single();
 
@@ -30,7 +30,7 @@ export async function testNotificationWebhook(tournamentId: string) {
 
     if (!tournament) return { error: "Tournament not found" };
 
-    const isAdmin = profile?.app_role === "admin";
+    const isAdmin = profile?.role === "admin";
     const isOrganizer = profile?.pokemon_player_id === tournament.organizer_popid;
     if (!isAdmin && !isOrganizer) {
       return { error: "Unauthorized — only the organizer or an admin can test webhooks" };
