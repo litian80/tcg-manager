@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -663,6 +663,87 @@ export type Database = {
           },
         ]
       }
+      tournament_templates: {
+        Row: {
+          allow_online_match_reporting: boolean | null
+          capacity: number | null
+          capacity_juniors: number | null
+          capacity_masters: number | null
+          capacity_seniors: number | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          deck_submission_cutoff_hours: number | null
+          enable_queue: boolean | null
+          id: string
+          juniors_birth_year_max: number | null
+          organizer_popid: string
+          payment_provider: string | null
+          payment_required: boolean | null
+          publish_roster: boolean | null
+          queue_batch_size: number | null
+          queue_promotion_window_minutes: number | null
+          registration_open: boolean | null
+          requires_deck_list: boolean | null
+          seniors_birth_year_max: number | null
+          start_time_default: string | null
+          tournament_mode: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_online_match_reporting?: boolean | null
+          capacity?: number | null
+          capacity_juniors?: number | null
+          capacity_masters?: number | null
+          capacity_seniors?: number | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          deck_submission_cutoff_hours?: number | null
+          enable_queue?: boolean | null
+          id?: string
+          juniors_birth_year_max?: number | null
+          organizer_popid: string
+          payment_provider?: string | null
+          payment_required?: boolean | null
+          publish_roster?: boolean | null
+          queue_batch_size?: number | null
+          queue_promotion_window_minutes?: number | null
+          registration_open?: boolean | null
+          requires_deck_list?: boolean | null
+          seniors_birth_year_max?: number | null
+          start_time_default?: string | null
+          tournament_mode: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_online_match_reporting?: boolean | null
+          capacity?: number | null
+          capacity_juniors?: number | null
+          capacity_masters?: number | null
+          capacity_seniors?: number | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          deck_submission_cutoff_hours?: number | null
+          enable_queue?: boolean | null
+          id?: string
+          juniors_birth_year_max?: number | null
+          organizer_popid?: string
+          payment_provider?: string | null
+          payment_required?: boolean | null
+          publish_roster?: boolean | null
+          queue_batch_size?: number | null
+          queue_promotion_window_minutes?: number | null
+          registration_open?: boolean | null
+          requires_deck_list?: boolean | null
+          seniors_birth_year_max?: number | null
+          start_time_default?: string | null
+          tournament_mode?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           allow_online_match_reporting: boolean | null
@@ -683,8 +764,6 @@ export type Database = {
           is_published: boolean | null
           juniors_birth_year_max: number | null
           name: string
-          notification_webhook_secret: string | null
-          notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
           payment_provider: string | null
@@ -692,7 +771,6 @@ export type Database = {
           payment_url_juniors: string | null
           payment_url_masters: string | null
           payment_url_seniors: string | null
-          payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
           queue_batch_size: number | null
@@ -729,8 +807,6 @@ export type Database = {
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
           name: string
-          notification_webhook_secret?: string | null
-          notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
           payment_provider?: string | null
@@ -738,7 +814,6 @@ export type Database = {
           payment_url_juniors?: string | null
           payment_url_masters?: string | null
           payment_url_seniors?: string | null
-          payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
           queue_batch_size?: number | null
@@ -775,8 +850,6 @@ export type Database = {
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
           name?: string
-          notification_webhook_secret?: string | null
-          notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
           payment_provider?: string | null
@@ -784,7 +857,6 @@ export type Database = {
           payment_url_juniors?: string | null
           payment_url_masters?: string | null
           payment_url_seniors?: string | null
-          payment_webhook_secret?: string | null
           pokemon_url?: string | null
           publish_roster?: boolean | null
           queue_batch_size?: number | null
@@ -842,8 +914,6 @@ export type Database = {
           is_published: boolean | null
           juniors_birth_year_max: number | null
           name: string
-          notification_webhook_secret: string | null
-          notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
           payment_provider: string | null
@@ -851,7 +921,6 @@ export type Database = {
           payment_url_juniors: string | null
           payment_url_masters: string | null
           payment_url_seniors: string | null
-          payment_webhook_secret: string | null
           pokemon_url: string | null
           publish_roster: boolean | null
           queue_batch_size: number | null

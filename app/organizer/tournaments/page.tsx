@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import { requireOrganizerOrAdmin } from "@/lib/auth";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,11 @@ export default async function OrganizerTournamentsListPage() {
                                 <div className="flex items-center gap-2">
                                     <Link href={`/tournament/${tournament.id}`}>
                                         <Button variant="outline" size="sm">View Public</Button>
+                                    </Link>
+                                    <Link href={`/organizer/tournaments/new?duplicate=${tournament.id}`}>
+                                        <Button variant="outline" size="sm" title="Duplicate tournament">
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
                                     </Link>
                                     <Link href={`/organizer/tournaments/${tournament.id}`}>
                                         <Button size="sm">Manage</Button>

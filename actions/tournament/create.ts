@@ -161,6 +161,36 @@ export async function createTournament(formData: FormData) {
         return { error: `Failed to create tournament: ${error.message} (Code: ${error.code})` };
     }
 
+    // UX-020: Auto-save organiser template for this event type
+    // This allows future tournaments of the same type to pre-fill from this one
+    if (popId) {
+        await supabase
+            .from('tournament_templates')
+            .upsert({
+                organizer_popid: popId,
+                tournament_mode,
+                city,
+                country,
+                start_time_default: startTime,
+                requires_deck_list,
+                deck_submission_cutoff_hours,
+                registration_open,
+                publish_roster,
+                allow_online_match_reporting,
+                capacity_juniors,
+                capacity_seniors,
+                capacity_masters,
+                juniors_birth_year_max,
+                seniors_birth_year_max,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'organizer_popid,tournament_mode' })
+            .then(({ error: templateError }) => {
+                if (templateError) {
+                    console.warn("Failed to save tournament template:", templateError.message);
+                }
+            });
+    }
+
     revalidatePath('/organizer/tournaments');
     redirect(`/organizer/tournaments/${data.id}`);
 }
