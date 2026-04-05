@@ -10,6 +10,7 @@ const profileSchema = z.object({
     nick_name: z.string().optional(),
     pokemon_player_id: z.string().regex(/^\d+$/, "Player ID must be numeric").min(4, "Invalid Player ID"),
     birth_year: z.coerce.number().int().min(1900).max(new Date().getFullYear()),
+    email: z.string().email("Invalid email address").optional().or(z.literal('')),
 });
 
 export type UpdateProfileState = {
@@ -19,6 +20,7 @@ export type UpdateProfileState = {
         nick_name?: string[];
         pokemon_player_id?: string[];
         birth_year?: string[];
+        email?: string[];
         _form?: string[];
     };
     message?: string;
@@ -39,6 +41,7 @@ export async function updateProfile(prevState: UpdateProfileState, formData: For
         nick_name: formData.get("nick_name"),
         pokemon_player_id: formData.get("pokemon_player_id"),
         birth_year: formData.get("birth_year"),
+        email: formData.get("email"),
     };
 
     const validatedFields = profileSchema.safeParse(rawData);
@@ -60,6 +63,7 @@ export async function updateProfile(prevState: UpdateProfileState, formData: For
                 nick_name: validatedFields.data.nick_name || null,
                 pokemon_player_id: validatedFields.data.pokemon_player_id,
                 birth_year: validatedFields.data.birth_year,
+                email: validatedFields.data.email || null,
                 updated_at: new Date().toISOString(),
             })
             .eq("id", user.id);

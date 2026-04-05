@@ -113,6 +113,19 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                     </div>
 
                     <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            defaultValue={profile.email || ''}
+                            placeholder="jane.doe@example.com"
+                        />
+                        <p className="text-xs text-muted-foreground">Used for tournament notifications. Required for some events.</p>
+                        {state.errors?.email && <p className="text-sm text-red-500">{state.errors.email}</p>}
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="pokemon_player_id">Pokemon Player ID</Label>
                         <Input
                             id="pokemon_player_id"

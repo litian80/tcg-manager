@@ -10,6 +10,7 @@ export interface ProfileFormData {
     nick_name?: string;
     pokemon_player_id: string; // "POP ID"
     birth_year: number;
+    email: string | null;
 }
 
 export interface Player {
