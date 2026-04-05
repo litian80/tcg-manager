@@ -316,17 +316,15 @@ export async function registerPlayer(tournamentId: string) {
         callback_token: callbackToken, // Always include for return_url matching
       });
 
-      // Fire payment.pending webhook (fire-and-forget)
-      tryDispatchNotification(supabase, tournamentId, 'payment.pending', profile.pokemon_player_id, { division })
-        .catch(() => {});
+      // Fire payment.pending webhook (await to ensure delivery on Vercel Edge)
+      await tryDispatchNotification(adminSupabase, tournamentId, 'payment.pending', profile.pokemon_player_id, { division });
 
       return { success: true, status: 'pending_payment', paymentUrl };
     }
     
-    // Fire registration webhook (fire-and-forget)
+    // Fire registration webhook (await to ensure delivery on Vercel Edge)
     const webhookEvent = status === 'waitlisted' ? 'registration.waitlisted' : 'registration.confirmed';
-    tryDispatchNotification(supabase, tournamentId, webhookEvent, profile.pokemon_player_id, { division })
-      .catch(() => {});
+    await tryDispatchNotification(adminSupabase, tournamentId, webhookEvent, profile.pokemon_player_id, { division });
 
     // If they got waitlisted, calculate what position they are
     if (status === "waitlisted") {
@@ -373,9 +371,9 @@ export async function withdrawPlayer(tournamentId: string) {
       return { error: "Failed to withdraw." };
     }
 
-    // Fire registration.withdrawn webhook (fire-and-forget)
-    tryDispatchNotification(supabase, tournamentId, 'registration.withdrawn', profile.pokemon_player_id)
-      .catch(() => {});
+    // Fire registration.withdrawn webhook (await to ensure delivery on Vercel Edge)
+    const adminSupabase = await createAdminClient();
+    await tryDispatchNotification(adminSupabase, tournamentId, 'registration.withdrawn', profile.pokemon_player_id);
 
     revalidatePath(`/tournaments/${tournamentId}`);
     return { success: true };
