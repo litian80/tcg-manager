@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatDate } from "@/lib/utils"
 
 export default function PrivacyPolicy() {
   return (
@@ -6,7 +7,7 @@ export default function PrivacyPolicy() {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Privacy Policy</CardTitle>
-          <CardDescription>Last updated: {new Date().toLocaleDateString()}</CardDescription>
+          <CardDescription>Last updated: {formatDate(new Date())}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 text-muted-foreground">
           <section>
