@@ -1,5 +1,6 @@
 /**
  * UX-020: Tournament Templates — system defaults & types
+ * UX-021: Smart Division Defaults — auto-calculated season cutoffs
  *
  * These are fallback defaults used when an organiser has no saved template
  * in the DB. Once they create a tournament, their preferences are saved
@@ -37,9 +38,48 @@ export interface TemplateOption {
     defaults: TournamentFormDefaults;
 }
 
-// Current Pokémon TCG season age cutoffs (2025-2026 season)
-const CURRENT_JR_YEAR = 2015;
-const CURRENT_SR_YEAR = 2011;
+/**
+ * UX-021: Calculate Pokémon TCG season age division cutoffs.
+ *
+ * The Pokémon season runs July → June. So:
+ *   - Month ≥ 7 (July+) → season = current_year + 1
+ *   - Month < 7          → season = current_year
+ *
+ * Division birth year thresholds (stable formula verified against official rules):
+ *   - Juniors: born in (season − 12) or later
+ *   - Seniors: born in (season − 16) to (season − 13)
+ *   - Masters: born in (season − 17) or earlier
+ *
+ * For the 2025-2026 season: Juniors ≥ 2014, Seniors 2010–2013, Masters ≤ 2009
+ */
+export interface SeasonCutoffs {
+    seasonYear: number;
+    juniorsBornAfter: number;  // juniors_birth_year_max
+    seniorsBornAfter: number;  // seniors_birth_year_max
+}
+
+export function getSeasonCutoffs(refDate: Date = new Date()): SeasonCutoffs {
+    const year = refDate.getFullYear();
+    const month = refDate.getMonth() + 1; // 1-indexed
+    const seasonYear = month >= 7 ? year + 1 : year;
+
+    return {
+        seasonYear,
+        juniorsBornAfter: seasonYear - 12,
+        seniorsBornAfter: seasonYear - 16,
+    };
+}
+
+/**
+ * Returns a human-readable season label, e.g. "2025–2026 Season".
+ */
+export function getSeasonLabel(refDate: Date = new Date()): string {
+    const { seasonYear } = getSeasonCutoffs(refDate);
+    return `${seasonYear - 1}–${seasonYear} Season`;
+}
+
+// Build season-aware defaults at module load time
+const { juniorsBornAfter, seniorsBornAfter } = getSeasonCutoffs();
 
 export const SYSTEM_TEMPLATES: TemplateOption[] = [
     {
@@ -62,8 +102,8 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             capacity_juniors: 0,
             capacity_seniors: 0,
             capacity_masters: 32,
-            juniors_birth_year_max: CURRENT_JR_YEAR,
-            seniors_birth_year_max: CURRENT_SR_YEAR,
+            juniors_birth_year_max: juniorsBornAfter,
+            seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
         },
@@ -88,8 +128,8 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             capacity_juniors: 16,
             capacity_seniors: 16,
             capacity_masters: 64,
-            juniors_birth_year_max: CURRENT_JR_YEAR,
-            seniors_birth_year_max: CURRENT_SR_YEAR,
+            juniors_birth_year_max: juniorsBornAfter,
+            seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
         },
@@ -114,8 +154,8 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             capacity_juniors: 0,
             capacity_seniors: 0,
             capacity_masters: 32,
-            juniors_birth_year_max: CURRENT_JR_YEAR,
-            seniors_birth_year_max: CURRENT_SR_YEAR,
+            juniors_birth_year_max: juniorsBornAfter,
+            seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
         },

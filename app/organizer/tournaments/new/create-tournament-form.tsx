@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { createTournament } from "@/actions/tournament/create";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import type { TournamentFormDefaults } from "@/lib/tournament-templates";
+import { getSeasonCutoffs, getSeasonLabel } from "@/lib/tournament-templates";
 
 type FormState = { error: string } | undefined;
 
@@ -31,6 +32,10 @@ export function CreateTournamentForm({ userRole, userPopId, defaults, duplicateN
     const isAdmin = userRole === 'admin';
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
     
+    // UX-021: Season cutoffs for smart defaults
+    const season = getSeasonCutoffs();
+    const seasonLabel = getSeasonLabel();
+
     // Core fields — always visible
     const [tournamentMode, setTournamentMode] = useState(defaults?.tournament_mode || "LEAGUECHALLENGE");
     const [name, setName] = useState(duplicateName || "");
@@ -48,8 +53,8 @@ export function CreateTournamentForm({ userRole, userPopId, defaults, duplicateN
     const [capJuniors, setCapJuniors] = useState(defaults?.capacity_juniors?.toString() ?? "0");
     const [capSeniors, setCapSeniors] = useState(defaults?.capacity_seniors?.toString() ?? "0");
     const [capMasters, setCapMasters] = useState(defaults?.capacity_masters?.toString() ?? "0");
-    const [jrMax, setJrMax] = useState(defaults?.juniors_birth_year_max?.toString() ?? "");
-    const [srMax, setSrMax] = useState(defaults?.seniors_birth_year_max?.toString() ?? "");
+    const [jrMax, setJrMax] = useState(defaults?.juniors_birth_year_max?.toString() ?? season.juniorsBornAfter.toString());
+    const [srMax, setSrMax] = useState(defaults?.seniors_birth_year_max?.toString() ?? season.seniorsBornAfter.toString());
 
     // Reset all fields when defaults change (template switch or duplicate load)
     useEffect(() => {
@@ -65,10 +70,13 @@ export function CreateTournamentForm({ userRole, userPopId, defaults, duplicateN
         setCapJuniors(defaults.capacity_juniors?.toString() ?? "0");
         setCapSeniors(defaults.capacity_seniors?.toString() ?? "0");
         setCapMasters(defaults.capacity_masters?.toString() ?? "0");
-        setJrMax(defaults.juniors_birth_year_max?.toString() ?? "");
-        setSrMax(defaults.seniors_birth_year_max?.toString() ?? "");
+        setJrMax(defaults.juniors_birth_year_max?.toString() ?? season.juniorsBornAfter.toString());
+        setSrMax(defaults.seniors_birth_year_max?.toString() ?? season.seniorsBornAfter.toString());
         setAdvancedOpen(false);
-    }, [defaults]);
+    }, [defaults, season.juniorsBornAfter, season.seniorsBornAfter]);
+
+    // UX-021: Check if current cutoffs match the current season
+    const isSeasonCurrent = jrMax === season.juniorsBornAfter.toString() && srMax === season.seniorsBornAfter.toString();
 
     // Build a summary line for collapsed state
     const summaryParts: string[] = [];
@@ -315,25 +323,53 @@ export function CreateTournamentForm({ userRole, userPopId, defaults, duplicateN
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="jr_max">Juniors: Born after</Label>
-                                        <Input id="jr_max" type="number" placeholder="2015" value={jrMax} onChange={(e) => setJrMax(e.target.value)} disabled={isPending} />
-                                        <p className="text-xs text-muted-foreground">Players born in this year or later</p>
+                                {/* UX-021: Smart Division Defaults */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base">Age Division Cutoffs</Label>
+                                        <div className="flex items-center gap-2">
+                                            {isSeasonCurrent ? (
+                                                <Badge variant="secondary" className="text-[10px]">
+                                                    ✓ {seasonLabel}
+                                                </Badge>
+                                            ) : (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs gap-1"
+                                                    onClick={() => {
+                                                        setJrMax(season.juniorsBornAfter.toString());
+                                                        setSrMax(season.seniorsBornAfter.toString());
+                                                    }}
+                                                    disabled={isPending}
+                                                >
+                                                    <Sparkles className="h-3 w-3" />
+                                                    Apply {seasonLabel}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="sr_max">Seniors: Born after</Label>
-                                        <Input id="sr_max" type="number" placeholder="2011" value={srMax} onChange={(e) => setSrMax(e.target.value)} disabled={isPending} />
-                                        <p className="text-xs text-muted-foreground">Players born in this year to Jr threshold</p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="jr_max">Juniors: Born in or after</Label>
+                                            <Input id="jr_max" type="number" placeholder={season.juniorsBornAfter.toString()} value={jrMax} onChange={(e) => setJrMax(e.target.value)} disabled={isPending} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="sr_max">Seniors: Born in or after</Label>
+                                            <Input id="sr_max" type="number" placeholder={season.seniorsBornAfter.toString()} value={srMax} onChange={(e) => setSrMax(e.target.value)} disabled={isPending} />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                                    <p className="font-medium">Age Division Rules:</p>
-                                    <ul className="list-disc pl-5 space-y-1 mt-1">
-                                        <li>Junior: Born in or after the Junior year</li>
-                                        <li>Senior: Born in or after the Senior year (but younger than Junior threshold)</li>
-                                        <li>Master: Born before the Senior year</li>
-                                    </ul>
+
+                                    <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
+                                        <p className="font-medium">{seasonLabel} — Age Divisions:</p>
+                                        <ul className="list-disc pl-5 space-y-1 mt-1">
+                                            <li>Junior: Born {jrMax || season.juniorsBornAfter} or later</li>
+                                            <li>Senior: Born {srMax || season.seniorsBornAfter} to {parseInt(jrMax || season.juniorsBornAfter.toString()) - 1}</li>
+                                            <li>Master: Born {parseInt(srMax || season.seniorsBornAfter.toString()) - 1} or earlier</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </CollapsibleContent>
@@ -356,3 +392,4 @@ export function CreateTournamentForm({ userRole, userPopId, defaults, duplicateN
         </Card>
     );
 }
+

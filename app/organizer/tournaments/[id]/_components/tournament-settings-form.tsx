@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Copy, Bell, Send } from "lucide-react";
+import { Loader2, RefreshCw, Copy, Bell, Send, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ExtendedTournament as Tournament } from "@/types/tournament";
 import { testNotificationWebhook } from "@/actions/webhook-actions";
+import { getSeasonCutoffs, getSeasonLabel } from "@/lib/tournament-templates";
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;
@@ -20,6 +22,10 @@ interface TournamentSettingsFormProps {
 }
 
 export function TournamentSettingsForm({ tournament, isAdmin = false }: TournamentSettingsFormProps) {
+    // UX-021: Season cutoffs for smart defaults
+    const season = getSeasonCutoffs();
+    const seasonLabel = getSeasonLabel();
+
     const [tournamentMode, setTournamentMode] = useState(tournament.tournament_mode || "LEAGUECHALLENGE");
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
     const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
@@ -34,6 +40,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [capMasters, setCapMasters] = useState(tournament.capacity_masters?.toString() || "0");
     const [jrMax, setJrMax] = useState(tournament.juniors_birth_year_max?.toString() || "");
     const [srMax, setSrMax] = useState(tournament.seniors_birth_year_max?.toString() || "");
+
+    // UX-021: Check if current cutoffs match active season
+    const isSeasonCurrent = jrMax === season.juniorsBornAfter.toString() && srMax === season.seniorsBornAfter.toString();
     
     // Queue settings
     const [enableQueue, setEnableQueue] = useState(tournament.enable_queue || false);
@@ -393,35 +402,64 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="jrMax">Juniors: Born after</Label>
-                                <Input 
-                                    id="jrMax" 
-                                    type="number" 
-                                    placeholder="2014" 
-                                    value={jrMax} 
-                                    onChange={(e) => setJrMax(e.target.value)} 
-                                />
+                        {/* UX-021: Smart Division Defaults */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-base">Age Division Cutoffs</Label>
+                                <div className="flex items-center gap-2">
+                                    {isSeasonCurrent ? (
+                                        <Badge variant="secondary" className="text-[10px]">
+                                            ✓ {seasonLabel}
+                                        </Badge>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 text-xs gap-1"
+                                            onClick={() => {
+                                                setJrMax(season.juniorsBornAfter.toString());
+                                                setSrMax(season.seniorsBornAfter.toString());
+                                            }}
+                                        >
+                                            <Sparkles className="h-3 w-3" />
+                                            Apply {seasonLabel}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="srMax">Seniors: Born after</Label>
-                                <Input 
-                                    id="srMax" 
-                                    type="number" 
-                                    placeholder="2010" 
-                                    value={srMax} 
-                                    onChange={(e) => setSrMax(e.target.value)} 
-                                />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="jrMax">Juniors: Born in or after</Label>
+                                    <Input 
+                                        id="jrMax" 
+                                        type="number" 
+                                        placeholder={season.juniorsBornAfter.toString()}
+                                        value={jrMax} 
+                                        onChange={(e) => setJrMax(e.target.value)} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="srMax">Seniors: Born in or after</Label>
+                                    <Input 
+                                        id="srMax" 
+                                        type="number" 
+                                        placeholder={season.seniorsBornAfter.toString()}
+                                        value={srMax} 
+                                        onChange={(e) => setSrMax(e.target.value)} 
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                            <p className="font-medium">Age Division Rules:</p>
-                            <ul className="list-disc pl-5 space-y-1 mt-1">
-                                <li>Junior: Born in or after the Junior year</li>
-                                <li>Senior: Born in or after the Senior year (but younger than Junior threshold)</li>
-                                <li>Master: Born before the Senior year</li>
-                            </ul>
+
+                            <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
+                                <p className="font-medium">{seasonLabel} — Age Divisions:</p>
+                                <ul className="list-disc pl-5 space-y-1 mt-1">
+                                    <li>Junior: Born {jrMax || season.juniorsBornAfter} or later</li>
+                                    <li>Senior: Born {srMax || season.seniorsBornAfter} to {parseInt(jrMax || season.juniorsBornAfter.toString()) - 1}</li>
+                                    <li>Master: Born {parseInt(srMax || season.seniorsBornAfter.toString()) - 1} or earlier</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
