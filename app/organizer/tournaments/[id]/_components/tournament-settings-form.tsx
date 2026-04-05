@@ -44,6 +44,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
     const [paymentUrl, setPaymentUrl] = useState(tournament.payment_url || "");
     const [paymentWebhookSecret, setPaymentWebhookSecret] = useState("");
+    const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'generic'>((tournament.payment_provider as 'stripe' | 'generic') || 'stripe');
     const [feeJuniors, setFeeJuniors] = useState(tournament.fee_juniors || "");
     const [feeSeniors, setFeeSeniors] = useState(tournament.fee_seniors || "");
     const [feeMasters, setFeeMasters] = useState(tournament.fee_masters || "");
@@ -170,6 +171,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 queue_paused: queuePaused,
                 start_time: startTimeValue,
                 payment_required: paymentRequired,
+                payment_provider: paymentRequired ? paymentProvider : 'stripe',
                 payment_url: paymentRequired ? (paymentUrl || null) : null,
                 fee_juniors: paymentRequired ? (feeJuniors || null) : null,
                 fee_seniors: paymentRequired ? (feeSeniors || null) : null,
@@ -497,11 +499,29 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         {paymentRequired && (
                             <div className="space-y-4 pl-6">
                                 <div className="space-y-2">
+                                    <Label htmlFor="payment_provider">Payment Provider</Label>
+                                    <Select value={paymentProvider} onValueChange={(v: 'stripe' | 'generic') => setPaymentProvider(v)}>
+                                        <SelectTrigger id="payment_provider">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="stripe">Stripe (Payment Links)</SelectItem>
+                                            <SelectItem value="generic">Generic / Custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        {paymentProvider === 'stripe'
+                                            ? 'Uses Stripe Payment Links with automated webhook verification.'
+                                            : 'Use any payment system that can send HMAC-signed webhook callbacks.'}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
                                     <Label htmlFor="payment_url">Payment URL</Label>
                                     <Input
                                         id="payment_url"
                                         type="url"
-                                        placeholder="https://buy.stripe.com/your-link"
+                                        placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-link' : 'https://your-payment-system.com/pay'}
                                         value={paymentUrl}
                                         onChange={(e) => setPaymentUrl(e.target.value)}
                                     />
@@ -564,14 +584,16 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="payment_webhook_secret">Webhook Secret</Label>
+                                    <Label htmlFor="payment_webhook_secret">
+                                        {paymentProvider === 'stripe' ? 'Stripe Webhook Signing Secret' : 'Webhook Secret'}
+                                    </Label>
                                     <div className="flex gap-2">
                                         <Input
                                             id="payment_webhook_secret"
                                             type="text"
                                             value={paymentWebhookSecret}
                                             onChange={(e) => setPaymentWebhookSecret(e.target.value)}
-                                            placeholder="whsec_... (paste from Stripe)"
+                                            placeholder={paymentProvider === 'stripe' ? 'whsec_... (paste from Stripe Dashboard)' : 'Your HMAC secret'}
                                             className="font-mono text-xs"
                                         />
                                         <Button
@@ -586,23 +608,27 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                         >
                                             <Copy className="h-4 w-4" />
                                         </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            title="Regenerate secret"
-                                            onClick={() => {
-                                                const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                                                    .map(b => b.toString(16).padStart(2, '0')).join('');
-                                                setPaymentWebhookSecret(secret);
-                                                toast.info("New secret generated. Remember to save and update your payment system.");
-                                            }}
-                                        >
-                                            <RefreshCw className="h-4 w-4" />
-                                        </Button>
+                                        {paymentProvider === 'generic' && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                title="Generate secret"
+                                                onClick={() => {
+                                                    const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                                                        .map(b => b.toString(16).padStart(2, '0')).join('');
+                                                    setPaymentWebhookSecret(secret);
+                                                    toast.info("New secret generated. Remember to save and update your payment system.");
+                                                }}
+                                            >
+                                                <RefreshCw className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        Use this secret in your payment system to sign webhook callbacks.
+                                        {paymentProvider === 'stripe'
+                                            ? 'Find this in Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.'
+                                            : 'Use this secret in your payment system to sign webhook callbacks.'}
                                     </p>
                                 </div>
 
@@ -611,7 +637,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     <div className="flex gap-2">
                                         <Input
                                             type="text"
-                                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/payment`}
+                                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/${paymentProvider === 'stripe' ? 'stripe' : 'payment'}`}
                                             readOnly
                                             className="font-mono text-xs bg-muted"
                                         />
@@ -621,7 +647,8 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                             size="icon"
                                             title="Copy endpoint"
                                             onClick={() => {
-                                                navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/payment`);
+                                                const endpoint = paymentProvider === 'stripe' ? 'stripe' : 'payment';
+                                                navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/${endpoint}`);
                                                 toast.success("Endpoint copied to clipboard");
                                             }}
                                         >
@@ -629,7 +656,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                         </Button>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        Configure your payment system to POST results to this URL.
+                                        {paymentProvider === 'stripe'
+                                            ? 'Add this URL as your Stripe webhook endpoint in Dashboard → Developers → Webhooks.'
+                                            : 'Configure your payment system to POST results to this URL.'}
                                     </p>
                                 </div>
                             </div>

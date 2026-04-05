@@ -425,6 +425,35 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_payment_webhooks: {
+        Row: {
+          created_at: string | null
+          player_id: string
+          tournament_id: string
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          player_id: string
+          tournament_id: string
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string | null
+          player_id?: string
+          tournament_id?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_payment_webhooks_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           birth_year: number | null
@@ -599,6 +628,41 @@ export type Database = {
           },
         ]
       }
+      tournament_secrets: {
+        Row: {
+          created_at: string | null
+          notification_webhook_secret: string | null
+          notification_webhook_url: string | null
+          payment_webhook_secret: string | null
+          tournament_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
+          payment_webhook_secret?: string | null
+          tournament_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          notification_webhook_secret?: string | null
+          notification_webhook_url?: string | null
+          payment_webhook_secret?: string | null
+          tournament_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_secrets_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: true
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           allow_online_match_reporting: boolean | null
@@ -625,6 +689,7 @@ export type Database = {
           notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
+          payment_provider: string | null
           payment_required: boolean | null
           payment_url: string | null
           payment_webhook_secret: string | null
@@ -670,6 +735,7 @@ export type Database = {
           notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
+          payment_provider?: string | null
           payment_required?: boolean | null
           payment_url?: string | null
           payment_webhook_secret?: string | null
@@ -715,6 +781,7 @@ export type Database = {
           notification_webhook_url?: string | null
           organizer_popid?: string | null
           parsed_data?: Json | null
+          payment_provider?: string | null
           payment_required?: boolean | null
           payment_url?: string | null
           payment_webhook_secret?: string | null
@@ -736,41 +803,6 @@ export type Database = {
           tournament_mode?: string
         }
         Relationships: []
-      }
-      tournament_secrets: {
-        Row: {
-          created_at: string | null
-          notification_webhook_secret: string | null
-          notification_webhook_url: string | null
-          payment_webhook_secret: string | null
-          tournament_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          notification_webhook_secret?: string | null
-          notification_webhook_url?: string | null
-          payment_webhook_secret?: string | null
-          tournament_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          notification_webhook_secret?: string | null
-          notification_webhook_url?: string | null
-          payment_webhook_secret?: string | null
-          tournament_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tournament_secrets_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: true
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
@@ -816,6 +848,7 @@ export type Database = {
           notification_webhook_url: string | null
           organizer_popid: string | null
           parsed_data: Json | null
+          payment_provider: string | null
           payment_required: boolean | null
           payment_url: string | null
           payment_webhook_secret: string | null
@@ -842,6 +875,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      process_tournament_queue: {
+        Args: { p_tournament_id: string }
+        Returns: {
+          division: string
+          new_status: string
+          player_id: string
+        }[]
       }
       register_player_atomic: {
         Args: {
@@ -988,4 +1029,3 @@ export const Constants = {
     },
   },
 } as const
-

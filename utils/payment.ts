@@ -6,15 +6,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
  */
 export function buildPaymentRedirectUrl(
   baseUrl: string,
-  params: {
-    player_name: string;
-    player_id: string;
-    tournament_id: string;
-    division: string;
-    callback_token: string;
-    return_url: string;
-    amount?: string;
-  }
+  params: Record<string, string | undefined>
 ): string {
   const url = new URL(baseUrl);
   Object.entries(params).forEach(([key, value]) => {

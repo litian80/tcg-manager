@@ -279,14 +279,28 @@ export async function registerPlayer(tournamentId: string) {
     // Payment required: build redirect URL and return it
     if (status === "pending_payment" && paymentRequired && callbackToken) {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      const paymentUrl = buildPaymentRedirectUrl(tournament.payment_url!, {
+      const isStripe = tournament.payment_provider === 'stripe';
+      
+      const urlParams: Record<string, string> = {
         player_name: `${profile.first_name} ${profile.last_name}`,
         player_id: profile.pokemon_player_id,
         tournament_id: tournamentId,
         division,
-        callback_token: callbackToken,
         return_url: `${siteUrl}/tournament/${tournamentId}/payment-status?token=${callbackToken}`,
         amount: divisionFee.toFixed(2),
+      };
+
+      // Stripe uses client_reference_id (automatically included in webhook events)
+      // Generic providers use callback_token in a custom webhook body
+      if (isStripe) {
+        urlParams.client_reference_id = callbackToken;
+      } else {
+        urlParams.callback_token = callbackToken;
+      }
+
+      const paymentUrl = buildPaymentRedirectUrl(tournament.payment_url!, {
+        ...urlParams,
+        callback_token: callbackToken, // Always include for return_url matching
       });
 
       // Fire payment.pending webhook (fire-and-forget)
