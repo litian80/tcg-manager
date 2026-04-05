@@ -20,10 +20,10 @@ export async function tryDispatchNotification(
   extraPayload?: Record<string, unknown>
 ): Promise<void> {
   try {
-    // 1. Fetch tournament name
+    // 1. Fetch tournament name and date
     const { data: tournament, error: tError } = await supabase
       .from('tournaments')
-      .select('name')
+      .select('name, date')
       .eq('id', tournamentId)
       .single();
 
@@ -54,6 +54,7 @@ export async function tryDispatchNotification(
     const payload: Record<string, unknown> = {
       tournament_id: tournamentId,
       tournament_name: tournament.name,
+      tournament_date: tournament.date,
       player_id: playerPopId,
       player_name: profile ? `${profile.first_name} ${profile.last_name}` : null,
       player_email: profile?.email || null,
