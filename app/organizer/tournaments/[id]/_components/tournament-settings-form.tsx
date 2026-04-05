@@ -28,6 +28,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [allowOnlineMatchReporting, setAllowOnlineMatchReporting] = useState(tournament.allow_online_match_reporting || false);
     const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
     const [deckSubmissionCutoffHours, setDeckSubmissionCutoffHours] = useState(tournament.deck_submission_cutoff_hours?.toString() || "1");
+    const [overallCapacity, setOverallCapacity] = useState(tournament.capacity?.toString() || "0");
     const [capJuniors, setCapJuniors] = useState(tournament.capacity_juniors?.toString() || "0");
     const [capSeniors, setCapSeniors] = useState(tournament.capacity_seniors?.toString() || "0");
     const [capMasters, setCapMasters] = useState(tournament.capacity_masters?.toString() || "0");
@@ -159,6 +160,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 deck_list_submission_deadline: deckListSubmissionDeadline,
                 deck_size: 60,
                 sideboard_size: 0,
+                capacity: parseInt(overallCapacity || "0", 10),
                 capacity_juniors: parseInt(capJuniors || "0", 10),
                 capacity_seniors: parseInt(capSeniors || "0", 10),
                 capacity_masters: parseInt(capMasters || "0", 10),
@@ -366,6 +368,14 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                 onCheckedChange={(checked) => setPublishRoster(checked === true)}
                             />
                             <Label htmlFor="publish_roster">Publish Player Roster (Visible to Public)</Label>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="overallCapacity">Overall Tournament Capacity</Label>
+                            <Input id="overallCapacity" type="number" min="0" value={overallCapacity} onChange={(e) => setOverallCapacity(e.target.value)} />
+                            <p className="text-xs text-muted-foreground">
+                                Maximum total players across all divisions. Set to 0 for unlimited. When set, registration closes once this limit is reached even if individual division caps are not full.
+                            </p>
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">

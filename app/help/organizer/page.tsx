@@ -40,6 +40,7 @@ function EnglishManual() {
               <p className="mb-3 font-medium">Do not start in TOM. Navigate to <strong>My Tournaments</strong> and click <strong>Create Tournament</strong>. Here, you can configure:</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground pl-2">
                 <li><strong className="text-foreground">Registration & Deck Lists</strong>: Enable player self-registration, set capacities, and require Deck List submissions with automated cutoff deadlines.</li>
+                <li><strong className="text-foreground">Payments (Optional)</strong>: Set up specific Stripe Payment Links for each division. Registrations will automatically route players to the appropriate secure payment checkout, skipping payment for divisions configured as free.</li>
                 <li><strong className="text-foreground">Divisions & Caps</strong>: Set maximum capacities for Juniors, Seniors, and Masters.</li>
               </ul>
             </CardContent>
@@ -52,7 +53,7 @@ function EnglishManual() {
             <CardContent className="pt-4">
               <p className="mb-3 font-medium">Add players to the event <em className="text-primary/80">before</em> opening T.O.M.</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground pl-2">
-                <li>If registration is open, players will appear automatically.</li>
+                <li>If registration is open, players will appear automatically via our secure automated queue. If payment is required, players are auto-enrolled upon successful checkout. If capacity is full, players enter a Waitlist Queue.</li>
                 <li>You can also manually search and add players from the <strong className="text-foreground">Roster Management</strong> section on the Tournament Dashboard.</li>
               </ul>
             </CardContent>
@@ -175,6 +176,7 @@ function ChineseManual() {
               <p className="mb-3 font-medium">请勿在 TOM 中直接新建比赛。导航至 <strong>My Tournaments</strong> 并点击 <strong>Create Tournament</strong>。在这里配置赛事参数：</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground pl-2">
                 <li><strong className="text-foreground">Registration & Deck Lists</strong>: 开启玩家自助 Registration，设置名额上限，以及开启具有自动倒计时约束的 Deck List 提交流程。</li>
+                <li><strong className="text-foreground">Payments (支付与收费)</strong>: 为不同组别（Juniors, Seniors, Masters）配置独立的 Stripe 付款链接。玩家报名时会自动重定向跳转至对应的付款页面，若该组别设为免费则自动跳过付款。</li>
                 <li><strong className="text-foreground">Divisions</strong>: 设置 Juniors, Seniors, Masters 三个组别的容纳人数上限。</li>
               </ul>
             </CardContent>
@@ -187,7 +189,7 @@ function ChineseManual() {
             <CardContent className="pt-4">
               <p className="mb-3 font-medium">在进入 TOM <em className="text-primary/80">之前</em>，确保所有玩家已进入该赛事的 Roster：</p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground pl-2">
-                <li>如果您开启了在线报名，玩家会自动进入该列表 (支持 Waitlist 排队功能)。</li>
+                <li>如果您开启了在线报名，由于配备了高并发自动报名队列，玩家在完成付款手续后将自动被确认并进入赛事列表（名额满后会自动进入 Waitlist 候补列表）。</li>
                 <li>您也可以在 Tournament Dashboard 的 <strong className="text-foreground">Roster Management</strong> 模块，手动搜索并添加玩家。</li>
               </ul>
             </CardContent>
@@ -296,7 +298,7 @@ export default function OrganizerHelpPage() {
                <div className="bg-card border rounded-xl overflow-hidden shadow-md">
                   <header className="mb-0 text-center bg-gradient-to-r from-blue-500/[0.08] via-purple-500/[0.08] to-blue-500/[0.08] p-8 border-b border-border/50">
                      <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent pb-1 leading-snug">Organiser Manual</h1>
-                     <p className="text-muted-foreground font-semibold tracking-wide uppercase text-sm">Last Updated: March 26, 2026</p>
+                     <p className="text-muted-foreground font-semibold tracking-wide uppercase text-sm">Last Updated: April 5, 2026</p>
                   </header>
                   <div className="p-6 md:p-10">
                      <EnglishManual />
@@ -308,7 +310,7 @@ export default function OrganizerHelpPage() {
                <div className="bg-card border rounded-xl overflow-hidden shadow-md">
                   <header className="mb-0 text-center bg-gradient-to-r from-blue-500/[0.08] via-purple-500/[0.08] to-blue-500/[0.08] p-8 border-b border-border/50">
                      <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent pb-1 leading-snug">主办方用户手册</h1>
-                     <p className="text-muted-foreground font-semibold tracking-wide uppercase text-sm">最后更新：2026年3月26日</p>
+                     <p className="text-muted-foreground font-semibold tracking-wide uppercase text-sm">最后更新：2026年4月5日</p>
                   </header>
                   <div className="p-6 md:p-10">
                      <ChineseManual />

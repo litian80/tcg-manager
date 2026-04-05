@@ -33,36 +33,47 @@ export async function calculatePlayerDivision(
   return "master";
 }
 
-// Check if division is full
+// Check if division is full (also checks overall tournament capacity)
 export async function checkDivisionCapacity(
   tournamentId: string,
   division: Division
-): Promise<{ available: boolean; currentCount: number; capacity: number }> {
+): Promise<{ available: boolean; currentCount: number; capacity: number; overallCount: number; overallCapacity: number }> {
   const supabase = await createClient();
   const capacityColumn = `capacity_${division}s` as "capacity_juniors" | "capacity_seniors" | "capacity_masters";
 
-  const { count, error: countError } = await supabase
-    .from("tournament_players")
-    .select("*", { count: "exact", head: true })
-    .eq("tournament_id", tournamentId)
-    .eq("division", division)
-    .in("registration_status", ["registered", "checked_in"]);
+  // Fetch division count and overall count in parallel
+  const [divCountRes, overallCountRes, tournamentRes] = await Promise.all([
+    supabase
+      .from("tournament_players")
+      .select("*", { count: "exact", head: true })
+      .eq("tournament_id", tournamentId)
+      .eq("division", division)
+      .in("registration_status", ["registered", "checked_in"]),
+    supabase
+      .from("tournament_players")
+      .select("*", { count: "exact", head: true })
+      .eq("tournament_id", tournamentId)
+      .in("registration_status", ["registered", "checked_in"]),
+    supabase
+      .from("tournaments")
+      .select(`capacity, ${capacityColumn}`)
+      .eq("id", tournamentId)
+      .single(),
+  ]);
 
-  const { data: tournament, error: tError } = await supabase
-    .from("tournaments")
-    .select(capacityColumn)
-    .eq("id", tournamentId)
-    .single();
+  if (tournamentRes.error) throw new Error("Failed to fetch tournament capacity");
 
-  if (tError) throw new Error("Failed to fetch tournament capacity");
+  const capacity = (tournamentRes.data as any)[capacityColumn] || 0;
+  const overallCapacity = (tournamentRes.data as any).capacity || 0;
+  const currentCount = divCountRes.count || 0;
+  const overallCount = overallCountRes.count || 0;
 
-  const capacity = (tournament as any)[capacityColumn] || 0;
-  const currentCount = count || 0;
+  // 0 = unlimited for either cap
+  const divAvailable = capacity === 0 || currentCount < capacity;
+  const overallAvailable = overallCapacity === 0 || overallCount < overallCapacity;
+  const available = divAvailable && overallAvailable;
 
-  // 0 capacity implies unlimited
-  const available = capacity === 0 || currentCount < capacity;
-
-  return { available, currentCount, capacity };
+  return { available, currentCount, capacity, overallCount, overallCapacity };
 }
 
 export async function getWaitlistPosition(
