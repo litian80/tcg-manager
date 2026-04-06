@@ -6,20 +6,29 @@ import { Button } from './ui/button'
 import { UserNav } from './user-nav'
 import { User } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { LogoIcon } from './logo-icon'
 
 export function Header({ initialUser }: { initialUser: User | null }) {
     const [user, setUser] = useState<User | null>(initialUser)
     const supabase = createClient()
+    const router = useRouter()
 
     useEffect(() => {
         // Sync user state if it changes client-side
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null)
+            
+            // Force Next.js Server Components to re-fetch their data based on the new auth session.
+            // Without this, the client-side router cache might keep showing the unauthenticated
+            // version of page.tsx even after the user successfully logs in.
+            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                router.refresh()
+            }
         })
 
         return () => subscription.unsubscribe()
-    }, [supabase])
+    }, [supabase, router])
 
     return (
         <header className="border-b bg-background">
