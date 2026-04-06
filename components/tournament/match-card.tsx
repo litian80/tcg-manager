@@ -11,7 +11,6 @@ import { useSecretTrigger } from "@/hooks/use-secret-trigger";
 import { createOrJoinGame } from "@/actions/minigame";
 import { toast } from "sonner";
 import { ConnectFourModal } from "./connect-four-modal";
-import Barcode from 'react-barcode';
 interface MatchCardProps {
     match: Match;
     stats: Record<string, { wins: number; losses: number; ties: number }>;
@@ -171,15 +170,10 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
     const isConflict = reportingStatus === 'conflict';
     const hasStatus = match.p1_reported_result || match.p2_reported_result;
 
-    let resultKey = null;
-    if (isConfirmed && !isFinished && isJudge) {
-        if (match.p1_reported_result === 'win') resultKey = match.player1_win;
-        else if (match.p1_reported_result === 'loss') resultKey = match.player2_win;
-        else if (match.p1_reported_result === 'tie') resultKey = match.tie;
-    }
+    const hasConfirmedResult = isConfirmed && !isFinished && isJudge && !!match.p1_reported_result;
 
     return (
-        <div className={cn("flex flex-col border-b group transition-colors", isMe ? "" : "hover:bg-muted/50", resultKey && "bg-green-50/30 dark:bg-green-950/10")}>
+        <div className={cn("flex flex-col border-b group transition-colors", isMe ? "" : "hover:bg-muted/50", hasConfirmedResult && "bg-green-50/30 dark:bg-green-950/10")}>
             <div
                 id={isMe ? "current-user-row" : undefined}
                 className={cn(
@@ -274,14 +268,15 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
             {/* Match Reporting Judge Info */}
             {!isFinished && isJudge && hasStatus && (
                 <div className="px-4 pb-2 -mt-1 ml-12">
-                    {isConfirmed && resultKey && (
-                        <div className="flex flex-col items-center gap-1.5 mt-2 px-3 py-2 bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 shadow-sm max-w-fit">
+                    {hasConfirmedResult && (
+                        <div className="flex flex-col items-center gap-1 mt-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 shadow-sm max-w-fit">
                             <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                <Ticket className="h-4 w-4" />
-                                <span>Confirmed result slip key</span>
-                            </div>
-                            <div className="bg-white px-2 pt-2 pb-0 mt-0.5 rounded shadow-sm overflow-hidden flex flex-col items-center">
-                                <Barcode value={resultKey} height={40} width={1.8} fontSize={14} margin={0} background="transparent" />
+                                <Check className="h-3.5 w-3.5" />
+                                <span>
+                                    {match.p1_reported_result === 'win' && `${match.p1?.first_name} ${match.p1?.last_name || ''} Wins`}
+                                    {match.p1_reported_result === 'loss' && `${match.p2?.first_name} ${match.p2?.last_name || ''} Wins`}
+                                    {match.p1_reported_result === 'tie' && 'Match Tied'}
+                                </span>
                             </div>
                         </div>
                     )}
