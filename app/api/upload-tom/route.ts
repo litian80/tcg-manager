@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const supabaseAuth = await createClient();
     const { searchParams } = new URL(req.url);
     const isPublished = searchParams.get('published') !== 'false'; // Default to true if missing
+    const forceSync = searchParams.get('force') === 'true'; // DB-002: Force override for sync protection
 
     try {
         const xmlData = await req.text();
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
         }
 
         let tournamentId: string;
-        const parsedDataPayload = { tom_stage: tournamentRoot.stage ? Number(tournamentRoot.stage) : 1 };
+        const parsedDataPayload: Record<string, unknown> = { tom_stage: tournamentRoot.stage ? Number(tournamentRoot.stage) : 1 };
 
         if (existingTournament) {
             tournamentId = existingTournament.id;
@@ -296,7 +297,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Bulk upsert into tournament_players
+        // --- Step B2: Upsert tournament_players (always runs in both sync modes) ---
         // ignoreDuplicates: false so TOM can update existing registrations to checked_in
         if (tournamentPlayersToInsert.length > 0) {
             const { error: tpError } = await supabase
@@ -309,23 +310,69 @@ export async function POST(req: NextRequest) {
             if (tpError) {
                 console.error('Error populating tournament_players:', tpError);
             }
-            
-            // Delete any players NOT in this TOM file to ensure strict syncing
-            const tomPlayerIds = tournamentPlayersToInsert.map(p => p.player_id);
-            if (tomPlayerIds.length > 0) {
-                await supabase
+        }
+
+        // --- Step B3: Player Deletion with Sync Protection (DB-002) ---
+        const tomStage = (parsedDataPayload.tom_stage as number) || 1;
+        const syncMode = tomStage === 1 ? 'setup_protected' : 'live_strict';
+        let playersProtectedCount = 0;
+
+        if (tomStage > 1) {
+            // LIVE_STRICT: Full sync with decklist protection
+            if (tournamentPlayersToInsert.length > 0) {
+                const tomPlayerIds = tournamentPlayersToInsert.map(p => p.player_id);
+
+                // Build base delete query: players in DB but NOT in TDF
+                let deleteQuery = supabase
                     .from('tournament_players')
                     .delete()
                     .eq('tournament_id', tournamentId)
-                    .not('player_id', 'in', `(${tomPlayerIds.map(id => `"${id}"`).join(',')})`); // Quote strings in postgres syntax
+                    .not('player_id', 'in', `(${tomPlayerIds.map(id => `"${id}"`).join(',')})`);
+
+                // Decklist protection: skip players with submitted decklists (unless force)
+                if (!forceSync) {
+                    const { data: decklistPlayers } = await supabase
+                        .from('deck_lists')
+                        .select('player_id')
+                        .eq('tournament_id', tournamentId);
+
+                    if (decklistPlayers && decklistPlayers.length > 0) {
+                        const protectedIds = [...new Set(decklistPlayers.map(d => d.player_id))];
+                        // Exclude players with decklists from deletion
+                        deleteQuery = deleteQuery
+                            .not('player_id', 'in', `(${protectedIds.map(id => `"${id}"`).join(',')})`);
+                        playersProtectedCount = protectedIds.length;
+                        console.log(`[TOM Sync] LIVE_STRICT: Protected ${protectedIds.length} player(s) with decklists from deletion`);
+                    }
+                }
+
+                await deleteQuery;
+            } else {
+                // Empty TDF in live mode — only delete-all if force=true
+                if (forceSync) {
+                    await supabase
+                        .from('tournament_players')
+                        .delete()
+                        .eq('tournament_id', tournamentId);
+                    console.log(`[TOM Sync] LIVE_STRICT: Force-deleted all players (empty TDF)`);
+                } else {
+                    console.log(`[TOM Sync] LIVE_STRICT: Skipped delete-all (empty TDF without force flag)`);
+                }
             }
         } else {
-            // Delete everyone if TOM file is totally empty
-            await supabase
-                .from('tournament_players')
-                .delete()
-                .eq('tournament_id', tournamentId);
+            // SETUP_PROTECTED: Skip ALL player deletions
+            console.log(`[TOM Sync] SETUP_PROTECTED: Skipped all player deletions (stage=1, tournament=${tournamentId})`);
         }
+
+        // Store sync metadata in parsed_data
+        parsedDataPayload.sync_metadata = {
+            mode: syncMode,
+            last_sync_at: new Date().toISOString(),
+            force_used: forceSync,
+            players_upserted: tournamentPlayersToInsert.length,
+            players_protected: playersProtectedCount
+        };
+        console.log(`[TOM Sync] tournament=${tournamentId} stage=${tomStage} mode=${syncMode} force=${forceSync} upserted=${tournamentPlayersToInsert.length} protected=${playersProtectedCount}`);
 
         // --- Step C: Matches (Delta Upsert — DB-001) ---
         // <tournament><pods><pod>...<rounds><round>...</round></rounds>...</pod></pods>
@@ -704,7 +751,16 @@ export async function POST(req: NextRequest) {
             .update({ updated_at: new Date().toISOString() })
             .eq('id', tournamentId);
 
-        return NextResponse.json({ success: true, tournamentId });
+        return NextResponse.json({
+            success: true,
+            tournamentId,
+            sync: {
+                mode: syncMode,
+                players_upserted: tournamentPlayersToInsert.length,
+                players_protected: playersProtectedCount,
+                force_used: forceSync
+            }
+        });
 
     } catch (error) {
         console.error('Upload error:', error);
