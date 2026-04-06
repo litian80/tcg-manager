@@ -46,6 +46,7 @@ export async function createTournament(formData: FormData) {
     const capacity_juniors = parseInt((formData.get("capacity_juniors") as string) || "0", 10);
     const capacity_seniors = parseInt((formData.get("capacity_seniors") as string) || "0", 10);
     const capacity_masters = parseInt((formData.get("capacity_masters") as string) || "0", 10);
+    const capacity = parseInt((formData.get("capacity") as string) || "0", 10);
     
     // Convert empty string to null for optional integer birth year constraints
     const jr_max_raw = formData.get("juniors_birth_year_max") as string;
@@ -54,6 +55,17 @@ export async function createTournament(formData: FormData) {
     const juniors_birth_year_max = jr_max_raw ? parseInt(jr_max_raw, 10) : null;
     const seniors_birth_year_max = sr_max_raw ? parseInt(sr_max_raw, 10) : null;
     // Masters birth year is no longer an input - derived from seniors threshold in registration logic
+
+    // Advanced settings (optional)
+    const enable_queue = formData.get("enable_queue") === "true";
+    const queue_batch_size = parseInt((formData.get("queue_batch_size") as string) || "10", 10);
+    const queue_promotion_window_minutes = parseInt((formData.get("queue_promotion_window_minutes") as string) || "10", 10);
+    const payment_required = formData.get("payment_required") === "true";
+    const payment_provider = (formData.get("payment_provider") as string) || "stripe";
+    const payment_url_juniors = (formData.get("payment_url_juniors") as string) || null;
+    const payment_url_seniors = (formData.get("payment_url_seniors") as string) || null;
+    const payment_url_masters = (formData.get("payment_url_masters") as string) || null;
+    const notification_webhook_url = (formData.get("notification_webhook_url") as string) || null;
 
     // Basic Validation
     if (!name || !date || !city) {
@@ -137,6 +149,7 @@ export async function createTournament(formData: FormData) {
             registration_open,
             publish_roster,
             allow_online_match_reporting,
+            capacity,
             capacity_juniors,
             capacity_seniors,
             capacity_masters,
@@ -148,7 +161,15 @@ export async function createTournament(formData: FormData) {
             requires_deck_list,
             deck_size: 60,
             sideboard_size: 0,
-            tournament_mode
+            tournament_mode,
+            enable_queue,
+            queue_batch_size,
+            queue_promotion_window_minutes,
+            payment_required,
+            payment_provider: payment_required ? payment_provider : null,
+            payment_url_juniors: payment_required ? payment_url_juniors : null,
+            payment_url_seniors: payment_required ? payment_url_seniors : null,
+            payment_url_masters: payment_required ? payment_url_masters : null,
         })
         .select('id')
         .single();
@@ -187,6 +208,27 @@ export async function createTournament(formData: FormData) {
             .then(({ error: templateError }) => {
                 if (templateError) {
                     console.warn("Failed to save tournament template:", templateError.message);
+                }
+            });
+    }
+
+    // Save notification webhook to tournament_secrets if provided
+    if (notification_webhook_url) {
+        // Generate HMAC secret for webhook signature verification
+        const webhookSecret = Array.from({ length: 32 }, () =>
+            Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
+        ).join('');
+
+        await supabase
+            .from('tournament_secrets')
+            .upsert({
+                tournament_id: data.id,
+                notification_webhook_url,
+                notification_webhook_secret: webhookSecret,
+            }, { onConflict: 'tournament_id' })
+            .then(({ error: secretError }) => {
+                if (secretError) {
+                    console.warn("Failed to save webhook secret:", secretError.message);
                 }
             });
     }
