@@ -583,8 +583,8 @@ export async function POST(req: NextRequest) {
 
                     if (outcome !== 5) {
                         if (!p1WinKey) p1WinKey = generateBracketOpsKey(category, roundNumber, tNum, 1);
-                        if (!tieKey) tieKey = generateBracketOpsKey(category, roundNumber, tNum, 2);
-                        if (!p2WinKey) p2WinKey = generateBracketOpsKey(category, roundNumber, tNum, 3);
+                        if (!tieKey) tieKey = generateBracketOpsKey(category, roundNumber, tNum, 3);
+                        if (!p2WinKey) p2WinKey = generateBracketOpsKey(category, roundNumber, tNum, 2);
                     }
 
                     matchesToUpsert.push({
