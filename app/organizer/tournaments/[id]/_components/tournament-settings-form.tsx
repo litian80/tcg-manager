@@ -2,19 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Copy, Bell, Send, Sparkles } from "lucide-react";
+import { Loader2, Settings, Users, Layers, CreditCard, ListOrdered, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ExtendedTournament as Tournament } from "@/types/tournament";
-import { testNotificationWebhook } from "@/actions/webhook-actions";
-import { getSeasonCutoffs, getSeasonLabel } from "@/lib/tournament-templates";
+import { GeneralPanel } from "./settings/general-panel";
+import { RegistrationPanel } from "./settings/registration-panel";
+import { DeckPanel } from "./settings/deck-panel";
+import { PaymentPanel } from "./settings/payment-panel";
+import { QueuePanel } from "./settings/queue-panel";
+import { WebhookPanel } from "./settings/webhook-panel";
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;
@@ -22,18 +22,17 @@ interface TournamentSettingsFormProps {
 }
 
 export function TournamentSettingsForm({ tournament, isAdmin = false }: TournamentSettingsFormProps) {
-    // UX-021: Season cutoffs for smart defaults
-    const season = getSeasonCutoffs();
-    const seasonLabel = getSeasonLabel();
-
+    // === State: General ===
     const [tournamentMode, setTournamentMode] = useState(tournament.tournament_mode || "LEAGUECHALLENGE");
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
     const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
+    const [allowOnlineMatchReporting, setAllowOnlineMatchReporting] = useState(tournament.allow_online_match_reporting || false);
+    const [startDate, setStartDate] = useState("");
+    const [startTime, setStartTime] = useState("09:00");
+
+    // === State: Registration ===
     const [registrationOpen, setRegistrationOpen] = useState(tournament.registration_open || false);
     const [publishRoster, setPublishRoster] = useState(tournament.publish_roster ?? true);
-    const [allowOnlineMatchReporting, setAllowOnlineMatchReporting] = useState(tournament.allow_online_match_reporting || false);
-    const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
-    const [deckSubmissionCutoffHours, setDeckSubmissionCutoffHours] = useState(tournament.deck_submission_cutoff_hours?.toString() || "1");
     const [overallCapacity, setOverallCapacity] = useState(tournament.capacity?.toString() || "0");
     const [capJuniors, setCapJuniors] = useState(tournament.capacity_juniors?.toString() || "0");
     const [capSeniors, setCapSeniors] = useState(tournament.capacity_seniors?.toString() || "0");
@@ -41,27 +40,32 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [jrMax, setJrMax] = useState(tournament.juniors_birth_year_max?.toString() || "");
     const [srMax, setSrMax] = useState(tournament.seniors_birth_year_max?.toString() || "");
 
-    // UX-021: Check if current cutoffs match active season
-    const isSeasonCurrent = jrMax === season.juniorsBornAfter.toString() && srMax === season.seniorsBornAfter.toString();
-    
-    // Queue settings
+    // === State: Deck Lists ===
+    const [requiresDeckList, setRequiresDeckList] = useState(tournament.requires_deck_list || false);
+    const [deckSubmissionCutoffHours, setDeckSubmissionCutoffHours] = useState(tournament.deck_submission_cutoff_hours?.toString() || "1");
+
+    // === State: Queue ===
     const [enableQueue, setEnableQueue] = useState(tournament.enable_queue || false);
     const [queuePromotionWindow, setQueuePromotionWindow] = useState(tournament.queue_promotion_window_minutes?.toString() || "10");
     const [queueBatchSize, setQueueBatchSize] = useState(tournament.queue_batch_size?.toString() || "10");
     const [queuePaused, setQueuePaused] = useState(tournament.queue_paused || false);
-    
-    // Payment settings
+
+    // === State: Payment ===
     const [paymentRequired, setPaymentRequired] = useState(tournament.payment_required || false);
     const [paymentWebhookSecret, setPaymentWebhookSecret] = useState("");
     const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'generic'>((tournament.payment_provider as 'stripe' | 'generic') || 'stripe');
     const [paymentUrlJuniors, setPaymentUrlJuniors] = useState(tournament.payment_url_juniors || "");
     const [paymentUrlSeniors, setPaymentUrlSeniors] = useState(tournament.payment_url_seniors || "");
     const [paymentUrlMasters, setPaymentUrlMasters] = useState(tournament.payment_url_masters || "");
-    
-    // Notification webhook settings
+
+    // === State: Webhooks ===
     const [notificationWebhookUrl, setNotificationWebhookUrl] = useState("");
     const [notificationWebhookSecret, setNotificationWebhookSecret] = useState("");
     const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+    // === UI State ===
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     // SEC-003: Load secrets from tournament_secrets on mount
     useEffect(() => {
@@ -72,7 +76,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 .select('notification_webhook_url, notification_webhook_secret, payment_webhook_secret')
                 .eq('tournament_id', tournament.id)
                 .maybeSingle();
-            
+
             if (secrets) {
                 setNotificationWebhookUrl(secrets.notification_webhook_url || "");
                 setNotificationWebhookSecret(secrets.notification_webhook_secret || "");
@@ -80,13 +84,6 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             }
         })();
     }, [tournament.id]);
-    
-    // For start time - split date and time
-    const [startDate, setStartDate] = useState("");
-    const [startTime, setStartTime] = useState("09:00");
-    
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
 
     // Parse start_time into date and time components on mount
     useEffect(() => {
@@ -103,7 +100,8 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
         }
     }, [tournament.start_time]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // === Submit Handler (unchanged logic) ===
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
@@ -117,7 +115,6 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             return;
         }
 
-        // Validate deck submission cutoff
         const cutoffHours = parseInt(deckSubmissionCutoffHours, 10);
         if (cutoffHours < 0 || cutoffHours > 48) {
             toast.error("Deck submission cutoff must be between 0 and 48 hours.");
@@ -125,22 +122,18 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             return;
         }
 
-
-        // Calculate start_time from date and time
         let startTimeValue = null;
         let deckListSubmissionDeadline = tournament.deck_list_submission_deadline;
-        
+
         if (startDate && startTime) {
             try {
-                // Combine date and time in local timezone
                 const combinedDateTime = new Date(`${startDate}T${startTime}`);
                 if (isNaN(combinedDateTime.getTime())) {
                     throw new Error("Invalid date/time");
                 }
-                
+
                 startTimeValue = combinedDateTime.toISOString();
-                
-                // Recalculate deck list submission deadline if start time changes
+
                 if (cutoffHours > 0) {
                     const deadlineDate = new Date(combinedDateTime.getTime() - (cutoffHours * 60 * 60 * 1000));
                     deckListSubmissionDeadline = deadlineDate.toISOString();
@@ -157,7 +150,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
 
         const { error } = await supabase
             .from("tournaments")
-            .update({ 
+            .update({
                 tournament_mode: tournamentMode,
                 tom_uid: tomUid || null,
                 ...(isAdmin ? { organizer_popid: organizerPopid || null } : {}),
@@ -206,7 +199,6 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             toast.error(`Failed to update tournament: ${error.message}`);
         } else if (secretsError) {
             console.error("Secrets upsert error:", secretsError);
-            // Don't block saving if only the secrets table fails
             toast.warning("Tournament saved, but webhook secrets could not be updated. Check console for details.");
             router.refresh();
         } else {
@@ -215,7 +207,16 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
         }
 
         setIsLoading(false);
-    };
+    }, [
+        tournament.id, tournament.deck_list_submission_deadline, isAdmin, router,
+        tournamentMode, tomUid, organizerPopid, allowOnlineMatchReporting,
+        startDate, startTime, registrationOpen, publishRoster,
+        overallCapacity, capJuniors, capSeniors, capMasters, jrMax, srMax,
+        requiresDeckList, deckSubmissionCutoffHours,
+        enableQueue, queueBatchSize, queuePromotionWindow, queuePaused,
+        paymentRequired, paymentProvider, paymentUrlJuniors, paymentUrlSeniors, paymentUrlMasters, paymentWebhookSecret,
+        notificationWebhookUrl, notificationWebhookSecret,
+    ]);
 
     return (
         <Card>
@@ -226,582 +227,98 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-6">
-                    {/* Tournament Type Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="tournament_mode">Tournament Type</Label>
-                        <Select
-                            value={tournamentMode}
-                            onValueChange={(value) => setTournamentMode(value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select tournament type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="LEAGUECHALLENGE">League Challenge</SelectItem>
-                                <SelectItem value="TCG1DAY">League Cup</SelectItem>
-                                <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <CardContent>
+                    <Tabs defaultValue="registration" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
+                            <TabsTrigger value="general" className="gap-1.5 text-xs">
+                                <Settings className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">General</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="registration" className="gap-1.5 text-xs">
+                                <Users className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Registration</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="decks" className="gap-1.5 text-xs">
+                                <Layers className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Deck Lists</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="payment" className="gap-1.5 text-xs">
+                                <CreditCard className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Payment</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="queue" className="gap-1.5 text-xs">
+                                <ListOrdered className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Queue</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="webhooks" className="gap-1.5 text-xs">
+                                <Bell className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Webhooks</span>
+                            </TabsTrigger>
+                        </TabsList>
 
-                    {/* Tournament Timing Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Tournament Timing</h3>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="start_date">Start Date</Label>
-                                <Input
-                                    id="start_date"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    required
+                        <div className="mt-6">
+                            <TabsContent value="general" className="mt-0">
+                                <GeneralPanel
+                                    tournamentMode={tournamentMode} setTournamentMode={setTournamentMode}
+                                    startDate={startDate} setStartDate={setStartDate}
+                                    startTime={startTime} setStartTime={setStartTime}
+                                    tomUid={tomUid} setTomUid={setTomUid}
+                                    organizerPopid={organizerPopid} setOrganizerPopid={setOrganizerPopid}
+                                    isAdmin={isAdmin}
+                                    allowOnlineMatchReporting={allowOnlineMatchReporting} setAllowOnlineMatchReporting={setAllowOnlineMatchReporting}
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="start_time">Start Time</Label>
-                                <Input
-                                    id="start_time"
-                                    type="time"
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                    required
+                            </TabsContent>
+
+                            <TabsContent value="registration" className="mt-0">
+                                <RegistrationPanel
+                                    registrationOpen={registrationOpen} setRegistrationOpen={setRegistrationOpen}
+                                    publishRoster={publishRoster} setPublishRoster={setPublishRoster}
+                                    overallCapacity={overallCapacity} setOverallCapacity={setOverallCapacity}
+                                    capJuniors={capJuniors} setCapJuniors={setCapJuniors}
+                                    capSeniors={capSeniors} setCapSeniors={setCapSeniors}
+                                    capMasters={capMasters} setCapMasters={setCapMasters}
+                                    jrMax={jrMax} setJrMax={setJrMax}
+                                    srMax={srMax} setSrMax={setSrMax}
                                 />
-                            </div>
+                            </TabsContent>
+
+                            <TabsContent value="decks" className="mt-0">
+                                <DeckPanel
+                                    requiresDeckList={requiresDeckList} setRequiresDeckList={setRequiresDeckList}
+                                    deckSubmissionCutoffHours={deckSubmissionCutoffHours} setDeckSubmissionCutoffHours={setDeckSubmissionCutoffHours}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="payment" className="mt-0">
+                                <PaymentPanel
+                                    paymentRequired={paymentRequired} setPaymentRequired={setPaymentRequired}
+                                    paymentProvider={paymentProvider} setPaymentProvider={setPaymentProvider}
+                                    paymentUrlJuniors={paymentUrlJuniors} setPaymentUrlJuniors={setPaymentUrlJuniors}
+                                    paymentUrlSeniors={paymentUrlSeniors} setPaymentUrlSeniors={setPaymentUrlSeniors}
+                                    paymentUrlMasters={paymentUrlMasters} setPaymentUrlMasters={setPaymentUrlMasters}
+                                    paymentWebhookSecret={paymentWebhookSecret} setPaymentWebhookSecret={setPaymentWebhookSecret}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="queue" className="mt-0">
+                                <QueuePanel
+                                    enableQueue={enableQueue} setEnableQueue={setEnableQueue}
+                                    queueBatchSize={queueBatchSize} setQueueBatchSize={setQueueBatchSize}
+                                    queuePromotionWindow={queuePromotionWindow} setQueuePromotionWindow={setQueuePromotionWindow}
+                                    queuePaused={queuePaused} setQueuePaused={setQueuePaused}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="webhooks" className="mt-0">
+                                <WebhookPanel
+                                    tournamentId={tournament.id}
+                                    notificationWebhookUrl={notificationWebhookUrl} setNotificationWebhookUrl={setNotificationWebhookUrl}
+                                    notificationWebhookSecret={notificationWebhookSecret} setNotificationWebhookSecret={setNotificationWebhookSecret}
+                                    isTestingWebhook={isTestingWebhook} setIsTestingWebhook={setIsTestingWebhook}
+                                />
+                            </TabsContent>
                         </div>
-                    </div>
-
-                    {/* Sanction ID Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="tom_uid">Sanction ID / TOM UID</Label>
-                        <Input
-                            id="tom_uid"
-                            placeholder="26-01-123456"
-                            value={tomUid}
-                            onChange={(e) => setTomUid(e.target.value)}
-                            pattern="\d{2}-\d{2}-\d{6}"
-                            title="Format: YY-MM-XXXXXX (e.g. 26-01-123456)"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Format: YY-MM-XXXXXX (e.g. 26-01-123456)
-                        </p>
-                    </div>
-
-                    {/* Organiser Player ID Section */}
-                    <div className="space-y-2">
-                        <Label htmlFor="organizer_popid">Organiser Player ID</Label>
-                        <Input
-                            id="organizer_popid"
-                            placeholder="e.g. 1234567"
-                            value={organizerPopid}
-                            onChange={(e) => setOrganizerPopid(e.target.value)}
-                            disabled={!isAdmin}
-                            className={!isAdmin ? "bg-muted cursor-not-allowed" : ""}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            {isAdmin ? "Set the Player ID of the tournament organiser." : "The Player ID of the tournament organiser."}
-                        </p>
-                    </div>
-
-                    {/* Match Reporting Settings Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium">Match Reporting Settings</h3>
-                        
-                        <div className="flex items-center space-x-2 pb-2">
-                            <Checkbox 
-                                id="allow_online_match_reporting" 
-                                checked={allowOnlineMatchReporting}
-                                onCheckedChange={(checked) => setAllowOnlineMatchReporting(checked === true)}
-                            />
-                            <Label htmlFor="allow_online_match_reporting">Enable Online Match Result Reporting</Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground -mt-3">
-                            When enabled, allows players to self-report match results from their player dashboard.
-                        </p>
-                    </div>
-
-                    {/* Deck List Settings Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium">Deck List Settings</h3>
-                        
-                        <div className="flex items-center space-x-2 pb-2">
-                            <Checkbox 
-                                id="requires_deck_list" 
-                                checked={requiresDeckList}
-                                onCheckedChange={(checked) => setRequiresDeckList(checked === true)}
-                            />
-                            <Label htmlFor="requires_deck_list">Require Deck List Submission</Label>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="deck_submission_cutoff_hours">
-                                Deck List Submission Cutoff (Hours before start)
-                            </Label>
-                            <Input
-                                id="deck_submission_cutoff_hours"
-                                type="number"
-                                min="0"
-                                max="48"
-                                value={deckSubmissionCutoffHours}
-                                onChange={(e) => setDeckSubmissionCutoffHours(e.target.value)}
-                                disabled={!requiresDeckList}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                {requiresDeckList 
-                                    ? "Players must submit deck lists this many hours before the tournament starts. Set to 0 to disable deadlines."
-                                    : "Enable deck list submission to configure deadlines."}
-                            </p>
-                        </div>
-
-                    </div>
-
-                    {/* Registration Settings Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium">Registration Settings</h3>
-                        
-                        <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="registration_open" 
-                                checked={registrationOpen}
-                                onCheckedChange={(checked) => setRegistrationOpen(checked === true)}
-                            />
-                            <Label htmlFor="registration_open">Enable Online Registration</Label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 pb-4">
-                            <Checkbox 
-                                id="publish_roster" 
-                                checked={publishRoster}
-                                onCheckedChange={(checked) => setPublishRoster(checked === true)}
-                            />
-                            <Label htmlFor="publish_roster">Publish Player Roster (Visible to Public)</Label>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="overallCapacity">Overall Tournament Capacity</Label>
-                            <Input id="overallCapacity" type="number" min="0" value={overallCapacity} onChange={(e) => setOverallCapacity(e.target.value)} />
-                            <p className="text-xs text-muted-foreground">
-                                Maximum total players across all divisions. Set to 0 for unlimited. When set, registration closes once this limit is reached even if individual division caps are not full.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="capJuniors">Juniors Capacity</Label>
-                                <Input id="capJuniors" type="number" min="0" value={capJuniors} onChange={(e) => setCapJuniors(e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="capSeniors">Seniors Capacity</Label>
-                                <Input id="capSeniors" type="number" min="0" value={capSeniors} onChange={(e) => setCapSeniors(e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="capMasters">Masters Capacity</Label>
-                                <Input id="capMasters" type="number" min="0" value={capMasters} onChange={(e) => setCapMasters(e.target.value)} />
-                            </div>
-                        </div>
-
-                        {/* UX-021: Smart Division Defaults */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-base">Age Division Cutoffs</Label>
-                                <div className="flex items-center gap-2">
-                                    {isSeasonCurrent ? (
-                                        <Badge variant="secondary" className="text-[10px]">
-                                            ✓ {seasonLabel}
-                                        </Badge>
-                                    ) : (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-7 text-xs gap-1"
-                                            onClick={() => {
-                                                setJrMax(season.juniorsBornAfter.toString());
-                                                setSrMax(season.seniorsBornAfter.toString());
-                                            }}
-                                        >
-                                            <Sparkles className="h-3 w-3" />
-                                            Apply {seasonLabel}
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="jrMax">Juniors: Born in or after</Label>
-                                    <Input 
-                                        id="jrMax" 
-                                        type="number" 
-                                        placeholder={season.juniorsBornAfter.toString()}
-                                        value={jrMax} 
-                                        onChange={(e) => setJrMax(e.target.value)} 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="srMax">Seniors: Born in or after</Label>
-                                    <Input 
-                                        id="srMax" 
-                                        type="number" 
-                                        placeholder={season.seniorsBornAfter.toString()}
-                                        value={srMax} 
-                                        onChange={(e) => setSrMax(e.target.value)} 
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                                <p className="font-medium">{seasonLabel} — Age Divisions:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Junior: Born {jrMax || season.juniorsBornAfter} or later</li>
-                                    <li>Senior: Born {srMax || season.seniorsBornAfter} to {parseInt(jrMax || season.juniorsBornAfter.toString()) - 1}</li>
-                                    <li>Master: Born {parseInt(srMax || season.seniorsBornAfter.toString()) - 1} or earlier</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Queue Settings Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium">Registration Queue Settings</h3>
-                        
-                        <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="enable_queue" 
-                                checked={enableQueue}
-                                onCheckedChange={(checked) => setEnableQueue(checked === true)}
-                            />
-                            <Label htmlFor="enable_queue">Enable Registration Queue (Recommended for high-demand events)</Label>
-                        </div>
-                        
-                        {enableQueue && (
-                            <div className="space-y-4 pl-6 border-l-2 ml-2 border-primary/20">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="queue_batch_size">Queue Batch Size</Label>
-                                        <Input
-                                            id="queue_batch_size"
-                                            type="number"
-                                            min="1"
-                                            max="100"
-                                            value={queueBatchSize}
-                                            onChange={(e) => setQueueBatchSize(e.target.value)}
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            How many players to promote to pending payment per minute. Try 10-20.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="queue_promotion_window">Checkout Window (Minutes)</Label>
-                                        <Input
-                                            id="queue_promotion_window"
-                                            type="number"
-                                            min="1"
-                                            max="60"
-                                            value={queuePromotionWindow}
-                                            onChange={(e) => setQueuePromotionWindow(e.target.value)}
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            How long a promoted player has to pay before they lose their spot. 
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-2 bg-destructive/10 p-3 rounded-md border border-destructive/20">
-                                    <Checkbox 
-                                        id="queue_paused" 
-                                        checked={queuePaused}
-                                        onCheckedChange={(checked) => setQueuePaused(checked === true)}
-                                    />
-                                    <Label htmlFor="queue_paused" className="text-destructive font-semibold">Pause Queue Promotion (Emergency Stop)</Label>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Payment Settings Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium">💳 Payment Settings</h3>
-                        
-                        <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="payment_required" 
-                                checked={paymentRequired}
-                                onCheckedChange={(checked) => {
-                                    const isChecked = checked === true;
-                                    setPaymentRequired(isChecked);
-                                    // Auto-generate secret on first enable
-                                    if (isChecked && !paymentWebhookSecret) {
-                                        const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                                            .map(b => b.toString(16).padStart(2, '0')).join('');
-                                        setPaymentWebhookSecret(secret);
-                                    }
-                                }}
-                            />
-                            <Label htmlFor="payment_required">Require Payment for Registration</Label>
-                        </div>
-
-                        {paymentRequired && (
-                            <div className="space-y-4 pl-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="payment_provider">Payment Provider</Label>
-                                    <Select value={paymentProvider} onValueChange={(v: 'stripe' | 'generic') => setPaymentProvider(v)}>
-                                        <SelectTrigger id="payment_provider">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="stripe">Stripe (Payment Links)</SelectItem>
-                                            <SelectItem value="generic">Generic / Custom</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">
-                                        {paymentProvider === 'stripe'
-                                            ? 'Uses Stripe Payment Links with automated webhook verification.'
-                                            : 'Use any payment system that can send HMAC-signed webhook callbacks.'}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <Label>Division Payment URLs</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Provide the exact Payment Link (or custom payment gateway URL) for each division. Leave blank if a division is free.
-                                    </p>
-                                    
-                                    <div className="space-y-2">
-                                        <Label htmlFor="payment_url_masters" className="text-xs">Masters Payment URL</Label>
-                                        <Input
-                                            id="payment_url_masters"
-                                            type="url"
-                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-masters-link' : 'https://your-payment-system.com/pay-masters'}
-                                            value={paymentUrlMasters}
-                                            onChange={(e) => setPaymentUrlMasters(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="payment_url_seniors" className="text-xs">Seniors Payment URL</Label>
-                                        <Input
-                                            id="payment_url_seniors"
-                                            type="url"
-                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-seniors-link' : 'https://your-payment-system.com/pay-seniors'}
-                                            value={paymentUrlSeniors}
-                                            onChange={(e) => setPaymentUrlSeniors(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="payment_url_juniors" className="text-xs">Juniors Payment URL</Label>
-                                        <Input
-                                            id="payment_url_juniors"
-                                            type="url"
-                                            placeholder={paymentProvider === 'stripe' ? 'https://buy.stripe.com/your-juniors-link' : 'https://your-payment-system.com/pay-juniors'}
-                                            value={paymentUrlJuniors}
-                                            onChange={(e) => setPaymentUrlJuniors(e.target.value)}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Players will be redirected to the URL corresponding to their division. We&apos;ll append player details as query parameters automatically.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="payment_webhook_secret">
-                                        {paymentProvider === 'stripe' ? 'Stripe Webhook Signing Secret' : 'Webhook Secret'}
-                                    </Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="payment_webhook_secret"
-                                            type="text"
-                                            value={paymentWebhookSecret}
-                                            onChange={(e) => setPaymentWebhookSecret(e.target.value)}
-                                            placeholder={paymentProvider === 'stripe' ? 'whsec_... (paste from Stripe Dashboard)' : 'Your HMAC secret'}
-                                            className="font-mono text-xs"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            title="Copy to clipboard"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(paymentWebhookSecret);
-                                                toast.success("Secret copied to clipboard");
-                                            }}
-                                        >
-                                            <Copy className="h-4 w-4" />
-                                        </Button>
-                                        {paymentProvider === 'generic' && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                title="Generate secret"
-                                                onClick={() => {
-                                                    const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                                                        .map(b => b.toString(16).padStart(2, '0')).join('');
-                                                    setPaymentWebhookSecret(secret);
-                                                    toast.info("New secret generated. Remember to save and update your payment system.");
-                                                }}
-                                            >
-                                                <RefreshCw className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {paymentProvider === 'stripe'
-                                            ? 'Find this in Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.'
-                                            : 'Use this secret in your payment system to sign webhook callbacks.'}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Webhook Endpoint</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            type="text"
-                                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/${paymentProvider === 'stripe' ? 'stripe' : 'payment'}`}
-                                            readOnly
-                                            className="font-mono text-xs bg-muted"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            title="Copy endpoint"
-                                            onClick={() => {
-                                                const endpoint = paymentProvider === 'stripe' ? 'stripe' : 'payment';
-                                                navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/${endpoint}`);
-                                                toast.success("Endpoint copied to clipboard");
-                                            }}
-                                        >
-                                            <Copy className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {paymentProvider === 'stripe'
-                                            ? 'Add this URL as your Stripe webhook endpoint in Dashboard → Developers → Webhooks.'
-                                            : 'Configure your payment system to POST results to this URL.'}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Notification Webhooks Section */}
-                    <div className="pt-4 border-t space-y-4">
-                        <h3 className="text-lg font-medium flex items-center gap-2">
-                            <Bell className="h-5 w-5" />
-                            Notification Webhooks
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            Receive JSON events when players register, submit decks, or complete payment.
-                            Connect to Mailchimp, Zapier, n8n, or any webhook-compatible tool.
-                        </p>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="notification_webhook_url">Webhook URL</Label>
-                            <Input
-                                id="notification_webhook_url"
-                                type="url"
-                                placeholder="https://hooks.zapier.com/hooks/catch/..."
-                                value={notificationWebhookUrl}
-                                onChange={(e) => {
-                                    setNotificationWebhookUrl(e.target.value);
-                                    // Auto-generate secret on first URL entry
-                                    if (e.target.value && !notificationWebhookSecret) {
-                                        const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                                            .map(b => b.toString(16).padStart(2, '0')).join('');
-                                        setNotificationWebhookSecret(secret);
-                                    }
-                                }}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                We&apos;ll POST signed JSON events to this HTTPS endpoint.
-                            </p>
-                        </div>
-
-                        {notificationWebhookUrl && (
-                            <>
-                                <div className="space-y-2">
-                                    <Label htmlFor="notification_webhook_secret">Webhook Secret</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="notification_webhook_secret"
-                                            type="text"
-                                            value={notificationWebhookSecret}
-                                            readOnly
-                                            className="font-mono text-xs bg-muted"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            title="Copy to clipboard"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(notificationWebhookSecret);
-                                                toast.success("Secret copied to clipboard");
-                                            }}
-                                        >
-                                            <Copy className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            title="Regenerate secret"
-                                            onClick={() => {
-                                                const secret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                                                    .map(b => b.toString(16).padStart(2, '0')).join('');
-                                                setNotificationWebhookSecret(secret);
-                                                toast.info("New secret generated. Remember to save and update your endpoint.");
-                                            }}
-                                        >
-                                            <RefreshCw className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Use this secret to verify the X-Webhook-Signature header on incoming events.
-                                        Signature = HMAC-SHA256(timestamp + &quot;.&quot; + body).
-                                    </p>
-                                </div>
-
-                                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md">
-                                    <p className="font-medium mb-1">Events fired:</p>
-                                    <ul className="list-disc pl-5 space-y-0.5 text-xs font-mono">
-                                        <li>registration.confirmed / .waitlisted / .withdrawn</li>
-                                        <li>payment.pending / .confirmed</li>
-                                        <li>deck.submitted / .reminder</li>
-                                    </ul>
-                                </div>
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={isTestingWebhook || !notificationWebhookSecret}
-                                    onClick={async () => {
-                                        setIsTestingWebhook(true);
-                                        // Save first, then test
-                                        const result = await testNotificationWebhook(tournament.id);
-                                        if (result.success) {
-                                            toast.success(`Ping sent! Endpoint returned HTTP ${result.status}.`);
-                                        } else {
-                                            toast.error(result.error || "Test failed");
-                                        }
-                                        setIsTestingWebhook(false);
-                                    }}
-                                >
-                                    {isTestingWebhook ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Send className="mr-2 h-4 w-4" />
-                                    )}
-                                    Test Webhook
-                                </Button>
-                                <p className="text-xs text-muted-foreground -mt-2">
-                                    Sends a <code className="bg-muted px-1 rounded">ping</code> event to verify your endpoint. Save settings first.
-                                </p>
-                            </>
-                        )}
-                    </div>
+                    </Tabs>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
                     <Button type="submit" disabled={isLoading}>
