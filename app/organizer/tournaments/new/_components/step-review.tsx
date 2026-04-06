@@ -244,7 +244,7 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
                                             ? <Badge variant="default" className="text-[10px]">
                                                 {advanced.paymentProvider === "stripe" ? "Stripe" : "Generic"}
                                               </Badge>
-                                            : <BoolBadge value={false} falseLabel="Free" />
+                                            : <BoolBadge value={false} falseLabel="Off" />
                                     }
                                 />
                                 {advanced.paymentRequired && advanced.paymentUrlMasters && (

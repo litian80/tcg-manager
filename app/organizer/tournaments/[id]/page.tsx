@@ -14,6 +14,7 @@ import { StaffManager } from "@/components/tournament/staff-manager";
 import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
 import { TournamentPhaseIndicator } from "./_components/tournament-phase-indicator";
 import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs";
+import { DashboardWidgets } from "./_components/dashboard-widgets";
 
 
 
@@ -118,6 +119,23 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         })) || [];
     }
 
+    // UX-022: Compute dashboard widget stats from existing data
+    const activeRoster = currentRoster.filter(
+        (p: any) => p.registration_status === 'registered' || p.registration_status === 'checked_in'
+    );
+    const widgetStats = {
+        registeredCount: activeRoster.length,
+        capacity: tournament.capacity || 0,
+        decksSubmitted: tournament.requires_deck_list
+            ? currentRoster.filter((p: any) => p.deck_list_status !== 'missing' && (p.registration_status === 'registered' || p.registration_status === 'checked_in')).length
+            : 0,
+        decksRequired: tournament.requires_deck_list ? activeRoster.length : 0,
+        pendingPayments: currentRoster.filter((p: any) => p.registration_status === 'pending_payment').length,
+        paymentRequired: !!tournament.payment_required,
+        startTime: tournament.start_time || null,
+        deckDeadline: tournament.deck_list_submission_deadline || null,
+    };
+
     return (
         <div className="container max-w-7xl py-8 space-y-6">
             {/* Header */}
@@ -161,6 +179,9 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                                     </AlertDescription>
                                 </Alert>
                             )}
+
+                            {/* UX-022: Dashboard Widgets */}
+                            <DashboardWidgets {...widgetStats} />
 
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div className="space-y-6">
