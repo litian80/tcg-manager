@@ -2,8 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Layers, CreditCard, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { cn, formatDateTimeCompact, formatTime } from "@/lib/utils";
 
 interface DashboardWidgetsProps {
     registeredCount: number;
@@ -46,7 +45,7 @@ function getCountdownText(startTime: string): { label: string; sub: string; urge
     if (days > 0) {
         return {
             label: `${days}d ${remainingHours}h`,
-            sub: format(start, "MMM d, h:mm a"),
+            sub: formatDateTimeCompact(start),
             urgent: false,
         };
     }
@@ -54,7 +53,7 @@ function getCountdownText(startTime: string): { label: string; sub: string; urge
     if (hours > 0) {
         return {
             label: `${hours}h ${minutes}m`,
-            sub: format(start, "h:mm a"),
+            sub: formatTime(start),
             urgent: hours < 2,
         };
     }
@@ -134,7 +133,7 @@ export function DashboardWidgets({
                             <ProgressBar value={decksSubmitted} max={decksRequired} colorClass={deckColor} />
                             {deckDeadline && (
                                 <p className="text-xs text-muted-foreground mt-1.5">
-                                    Due {format(new Date(deckDeadline), "MMM d, h:mm a")}
+                                    Due {formatDateTimeCompact(deckDeadline)}
                                 </p>
                             )}
                         </>

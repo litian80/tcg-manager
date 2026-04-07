@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTimeCompact } from "@/lib/utils";
 import { hasPermission, Role } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { MatchCard } from "@/components/tournament/match-card";
@@ -299,7 +299,7 @@ export default function TournamentView({
                     <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
                     <div className="space-y-1">
                         <p className="text-muted-foreground">
-                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `at ${isMounted ? formatDateTime(memoizedDeadline) : '...'}` : ''}
+                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `at ${isMounted ? formatDateTimeCompact(memoizedDeadline) : '...'}` : ''}
                         </p>
                         
                         {timeLeft && !timeLeft.isPast && (

@@ -10,6 +10,7 @@ import type { StepBasicsData } from "./step-basics";
 import type { StepRegistrationData } from "./step-registration";
 import type { StepAdvancedData } from "./step-advanced";
 import { getSeasonLabel } from "@/lib/tournament-templates";
+import { MODE_LABELS } from "@/lib/utils";
 
 type FormState = { error: string } | undefined;
 
@@ -23,11 +24,7 @@ interface StepReviewProps {
     advancedStepId: number;
 }
 
-const MODE_LABELS: Record<string, string> = {
-    LEAGUECHALLENGE: "League Challenge",
-    TCG1DAY: "League Cup",
-    PRERELEASE: "Prerelease / Draft",
-};
+
 
 async function submitTournament(_prevState: FormState, formData: FormData) {
     return await createTournament(formData);

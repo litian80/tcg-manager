@@ -79,6 +79,8 @@ export async function getTournaments({
     return { success: data as Tournament[] };
 }
 
+export type PublicTournament = Tournament & { player_count: number };
+
 export async function getPublicTournaments({
     limit = 20,
     offset = 0,
@@ -88,7 +90,7 @@ export async function getPublicTournaments({
     const supabase = await createClient();
     let query = supabase
         .from('tournaments')
-        .select('*')
+        .select('*, tournament_players(count)')
         .or('is_published.eq.true,registration_open.eq.true');
 
     const todayDateOnly = new Date().toISOString().split('T')[0];
@@ -111,7 +113,55 @@ export async function getPublicTournaments({
         console.error('Error fetching public tournaments:', error);
         return { error: error.message };
     }
-    return { success: data as Tournament[] };
+
+    // Flatten the Supabase aggregated count into a simple number
+    const tournaments: PublicTournament[] = (data || []).map((row: any) => ({
+        ...row,
+        player_count: row.tournament_players?.[0]?.count ?? 0,
+        tournament_players: undefined,
+    }));
+
+    return { success: tournaments };
+}
+
+export async function getAdminTournamentsWithStats({
+    statusFilter = 'all'
+}: { statusFilter?: 'upcoming' | 'past' | 'all' } = {}) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Not authenticated' };
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || profile.role !== 'admin') return { error: 'Not authorized' };
+
+    let query = supabase
+        .from('tournaments')
+        .select('*, tournament_players(count)');
+
+    const todayDateOnly = new Date().toISOString().split('T')[0];
+
+    if (statusFilter === 'upcoming') {
+        query = query.gte('date', todayDateOnly);
+    } else if (statusFilter === 'past') {
+        query = query.lt('date', todayDateOnly);
+    }
+
+    const { data, error } = await query
+        .order('date', { ascending: statusFilter === 'upcoming' });
+
+    if (error) {
+        console.error('Error fetching admin tournaments:', error);
+        return { error: error.message };
+    }
+
+    // Flatten the Supabase aggregated count into a simple number
+    const tournaments: PublicTournament[] = (data || []).map((row: any) => ({
+        ...row,
+        player_count: row.tournament_players?.[0]?.count ?? 0,
+        tournament_players: undefined,
+    }));
+
+    return { success: tournaments };
 }
 
 export async function getOrganizerTournaments({

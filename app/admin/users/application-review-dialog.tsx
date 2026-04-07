@@ -18,6 +18,7 @@ import {
     reviewOrganiserApplication,
     type OrganiserApplicationWithProfile
 } from '@/actions/organiser-application'
+import { formatDateTime } from '@/lib/utils'
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn'
 
@@ -111,7 +112,7 @@ export function ApplicationReviewDialog({
                         </div>
                         <div>
                             <span className="font-medium text-muted-foreground">Submitted: </span>
-                            <span>{new Date(application.created_at).toLocaleDateString()} {new Date(application.created_at).toLocaleTimeString()}</span>
+                            <span>{formatDateTime(application.created_at)}</span>
                         </div>
                     </div>
 

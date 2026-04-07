@@ -33,7 +33,7 @@ const FACETED_COLUMNS = new Set(['status', 'is_published'])
 
 // Default filters applied when the page is loaded with no query params
 const DEFAULT_FILTERS: ColumnFiltersState = [
-    { id: 'status', value: ['running'] },
+    { id: 'status', value: ['not_started'] },
 ]
 
 /** Parse URL search params into ColumnFiltersState */

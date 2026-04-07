@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { formatDateTime, formatTimeShort } from "@/lib/utils";
 
 interface JudgePlayerDetailModalProps {
     isOpen: boolean;
@@ -374,7 +374,7 @@ export function JudgePlayerDetailModal({
                                     {deckStatus === 'paper' && history.paperMeta && (
                                         <div className="text-center text-xs text-muted-foreground mt-2 border border-blue-100 bg-blue-50/50 p-2 rounded">
                                             <div>Accepted by <strong>{history.paperMeta.accepted_by_name}</strong></div>
-                                            <div>{format(new Date(history.paperMeta.accepted_at), "MMM d, yyyy 'at' HH:mm")}</div>
+                                            <div>{formatDateTime(history.paperMeta.accepted_at)}</div>
                                         </div>
                                     )}
                                 </div>
@@ -529,7 +529,7 @@ export function JudgePlayerDetailModal({
                                             <div className="border-l-4 border-blue-500 bg-muted/40 p-3 rounded-r text-sm">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="font-bold text-blue-700 dark:text-blue-400">PAPER DECKLIST</span>
-                                                    <span className="text-xs text-muted-foreground">{format(new Date(history.paperMeta.accepted_at), "HH:mm")}</span>
+                                                    <span className="text-xs text-muted-foreground">{formatTimeShort(history.paperMeta.accepted_at)}</span>
                                                 </div>
                                                 <div className="text-muted-foreground mt-1 text-xs">Accepted by {history.paperMeta.accepted_by_name}</div>
                                             </div>
@@ -543,7 +543,7 @@ export function JudgePlayerDetailModal({
                                                 <div key={p.id} className="border-l-4 border-destructive bg-muted/40 p-3 rounded-r text-sm">
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="font-bold text-destructive">{p.penalty}</span>
-                                                        <span className="text-xs text-muted-foreground">{format(new Date(p.created_at), "HH:mm")} (R{p.round_number})</span>
+                                                        <span className="text-xs text-muted-foreground">{formatTimeShort(p.created_at)} (R{p.round_number})</span>
                                                     </div>
                                                     <div className="font-medium">{p.category} - {p.severity}</div>
                                                     {p.notes && <div className="text-muted-foreground mt-1 text-xs italic">&quot;{p.notes}&quot;</div>}
@@ -580,7 +580,7 @@ export function JudgePlayerDetailModal({
                                                 <div key={dc.id} className="border-l-4 border-green-500 bg-muted/40 p-3 rounded-r text-sm">
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="font-bold text-green-700 dark:text-green-400">PASSED</span>
-                                                        <span className="text-xs text-muted-foreground">{format(new Date(dc.check_time), "HH:mm")} (R{dc.round_number})</span>
+                                                        <span className="text-xs text-muted-foreground">{formatTimeShort(dc.check_time)} (R{dc.round_number})</span>
                                                     </div>
                                                     {dc.note && <div className="text-muted-foreground mt-1 text-xs">{dc.note}</div>}
                                                     <div className="text-[11px] text-muted-foreground mt-2 border-t border-green-500/20 pt-1 flex items-center gap-1 opacity-80">

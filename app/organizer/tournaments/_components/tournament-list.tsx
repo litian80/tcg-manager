@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import type { Tournament } from "@/types/tournament";
 
-type StatusFilter = "all" | "running" | "completed";
+type StatusFilter = "all" | "not_started" | "running" | "completed";
 
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "All" },
+    { value: "not_started", label: "Upcoming" },
     { value: "running", label: "Active" },
     { value: "completed", label: "Completed" },
 ];
@@ -24,7 +25,7 @@ interface TournamentListProps {
 
 export function TournamentList({ tournaments }: TournamentListProps) {
     const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("not_started");
     const [showAllCompleted, setShowAllCompleted] = useState(false);
 
     const COLLAPSED_LIMIT = 5;
@@ -47,11 +48,13 @@ export function TournamentList({ tournaments }: TournamentListProps) {
     });
 
     // Group by status
+    const upcoming = filtered.filter((t) => t.status === "not_started");
     const active = filtered.filter((t) => t.status === "running");
     const completed = filtered.filter((t) => t.status === "completed");
 
-    // When status filter is specific, skip grouping
-    const showGrouped = statusFilter === "all" && (active.length > 0 && completed.length > 0);
+    // When status filter is "all" and we have multiple groups, show grouped view
+    const groupCount = [upcoming.length > 0, active.length > 0, completed.length > 0].filter(Boolean).length;
+    const showGrouped = statusFilter === "all" && groupCount > 1;
 
     const visibleCompleted = showAllCompleted
         ? completed
@@ -102,28 +105,41 @@ export function TournamentList({ tournaments }: TournamentListProps) {
                 </div>
             ) : showGrouped ? (
                 <>
+                    {/* Upcoming Section */}
+                    {upcoming.length > 0 && (
+                        <Section title="Upcoming" count={upcoming.length}>
+                            {upcoming.map((t) => (
+                                <TournamentCard key={t.id} tournament={t} />
+                            ))}
+                        </Section>
+                    )}
+
                     {/* Active Section */}
-                    <Section title="Active" count={active.length}>
-                        {active.map((t) => (
-                            <TournamentCard key={t.id} tournament={t} />
-                        ))}
-                    </Section>
+                    {active.length > 0 && (
+                        <Section title="Active" count={active.length}>
+                            {active.map((t) => (
+                                <TournamentCard key={t.id} tournament={t} />
+                            ))}
+                        </Section>
+                    )}
 
                     {/* Completed Section */}
-                    <Section title="Completed" count={completed.length}>
-                        {visibleCompleted.map((t) => (
-                            <TournamentCard key={t.id} tournament={t} />
-                        ))}
-                        {hasMoreCompleted && !showAllCompleted && (
-                            <button
-                                onClick={() => setShowAllCompleted(true)}
-                                className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground border border-dashed rounded-lg transition-colors"
-                            >
-                                <ChevronDown className="h-4 w-4" />
-                                Show all {completed.length} completed
-                            </button>
-                        )}
-                    </Section>
+                    {completed.length > 0 && (
+                        <Section title="Completed" count={completed.length}>
+                            {visibleCompleted.map((t) => (
+                                <TournamentCard key={t.id} tournament={t} />
+                            ))}
+                            {hasMoreCompleted && !showAllCompleted && (
+                                <button
+                                    onClick={() => setShowAllCompleted(true)}
+                                    className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground border border-dashed rounded-lg transition-colors"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                    Show all {completed.length} completed
+                                </button>
+                            )}
+                        </Section>
+                    )}
                 </>
             ) : (
                 <div className="grid gap-3">

@@ -1,16 +1,30 @@
-import { getTournaments, getPublicTournaments, getOrganizerTournaments, getJudgeAssignedTournaments } from "@/actions/tournament/queries";
+import { getTournaments, getPublicTournaments, getOrganizerTournaments, getJudgeAssignedTournaments, getAdminTournamentsWithStats, PublicTournament } from "@/actions/tournament/queries";
 import { createClient } from "@/utils/supabase/server";
-import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
+import { formatDate, formatLocation, formatTimeShort, getTournamentStatusConfig, MODE_LABELS } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, AlertCircle, Gavel } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, AlertCircle, Gavel, MapPin, Clock } from "lucide-react";
 import { Tournament } from "@/types";
 
-function TournamentGrid({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, children }: { tournaments: Tournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, children?: React.ReactNode }) {
+const STATUS_PRIORITY: Record<string, number> = { not_started: 0, running: 1, completed: 2 };
+
+function sortTournamentsByStatus(tournaments: Tournament[]): Tournament[] {
+  return [...tournaments].sort((a, b) => {
+    const pa = STATUS_PRIORITY[a.status] ?? 1;
+    const pb = STATUS_PRIORITY[b.status] ?? 1;
+    if (pa !== pb) return pa - pb;
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    // Upcoming: soonest first (ascending). Active/Completed: most recent first (descending).
+    return a.status === 'not_started' ? dateA - dateB : dateB - dateA;
+  });
+}
+
+function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, children }: { tournaments: PublicTournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, children?: React.ReactNode }) {
   if (!tournaments || tournaments.length === 0) {
     return (
-      <div className="col-span-full text-center py-12 border rounded-lg border-dashed bg-muted/20">
+      <div className="text-center py-12 border rounded-lg border-dashed bg-muted/20">
         <Icon className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
         <h3 className="text-lg font-medium">{emptyTitle}</h3>
         <p className="text-muted-foreground mt-1">{emptyDesc}</p>
@@ -20,41 +34,53 @@ function TournamentGrid({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, c
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {tournaments.map((tournament) => (
-        <Link key={tournament.id} href={`/tournament/${tournament.id}`}>
-          <Card className="h-full hover:border-primary transition-colors cursor-pointer group">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
-                  {tournament.name}
-                </CardTitle>
-                {(() => {
-                  const config = getTournamentStatusConfig(tournament.status)
-                  return (
-                    <Badge variant={config.variant} className={config.className}>
-                      {config.label}
-                    </Badge>
-                  )
-                })()}
-              </div>
-              <CardDescription className="flex items-center gap-2 pt-2">
-                <Calendar className="h-4 w-4" />
-                {formatDate(tournament.date)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Trophy className="h-4 w-4" />
-                  <span>{tournament.total_rounds} Rounds</span>
+    <div className="grid gap-3">
+      {tournaments.map((tournament) => {
+        const config = getTournamentStatusConfig(tournament.status);
+        const location = formatLocation(tournament.city, tournament.country);
+        const modeLabel = MODE_LABELS[tournament.tournament_mode] || tournament.tournament_mode;
+
+        return (
+          <Link key={tournament.id} href={`/tournament/${tournament.id}`} className="block group">
+            <div className="flex items-start justify-between gap-4 px-4 py-3.5 rounded-lg border hover:bg-accent/50 hover:border-primary/30 transition-all">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium group-hover:text-primary transition-colors">{tournament.name}</span>
+                  <Badge variant="outline" className="text-[10px] font-normal shrink-0">{modeLabel}</Badge>
                 </div>
-                <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                    {formatDate(tournament.date)}
+                  </span>
+                  {tournament.start_time && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      {formatTimeShort(tournament.start_time)}
+                    </span>
+                  )}
+                  {location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      {location}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5 shrink-0" />
+                    {tournament.player_count} {tournament.player_count === 1 ? 'player' : 'players'}
+                  </span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+              <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                <Badge variant={config.variant} className={`${config.className} text-xs`}>
+                  {config.label}
+                </Badge>
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -164,8 +190,8 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
   const upcomingRes = await getPublicTournaments({ statusFilter: 'upcoming' });
   const pastRes = await getPublicTournaments({ statusFilter: 'past' });
 
-  const upcomingTournaments = 'success' in upcomingRes ? upcomingRes.success : [];
-  const pastTournaments = 'success' in pastRes ? pastRes.success : [];
+  const upcomingTournaments: PublicTournament[] = ('success' in upcomingRes ? upcomingRes.success : []) ?? [];
+  const pastTournaments: PublicTournament[] = ('success' in pastRes ? pastRes.success : []) ?? [];
 
   return (
     <div className="space-y-12">
@@ -185,8 +211,8 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
         <h2 className="text-2xl font-semibold flex items-center gap-2">
           <Calendar className="h-6 w-6 text-primary" /> Upcoming Tournaments
         </h2>
-        <TournamentGrid 
-          tournaments={upcomingTournaments as any[]} 
+        <PublicTournamentList 
+          tournaments={upcomingTournaments} 
           emptyTitle="No upcoming tournaments" 
           emptyDesc="Check back soon for new events in your area!" 
           emptyIcon={Calendar} 
@@ -197,8 +223,8 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
         <h2 className="text-2xl font-semibold flex items-center gap-2">
           <Trophy className="h-6 w-6 text-muted-foreground" /> Past Tournaments
         </h2>
-        <TournamentGrid 
-          tournaments={pastTournaments as any[]} 
+        <PublicTournamentList 
+          tournaments={pastTournaments} 
           emptyTitle="No past tournaments" 
           emptyDesc="There are no completed public events yet." 
           emptyIcon={Trophy} 
@@ -209,22 +235,43 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
 }
 
 async function AdminView() {
-  const res = await getTournaments();
-  const tournaments = Array.isArray(res) ? res : ('success' in res ? res.success : []);
+  const upcomingRes = await getAdminTournamentsWithStats({ statusFilter: 'upcoming' });
+  const pastRes = await getAdminTournamentsWithStats({ statusFilter: 'past' });
+
+  const upcomingTournaments: PublicTournament[] = ('success' in upcomingRes ? upcomingRes.success : []) ?? [];
+  const pastTournaments: PublicTournament[] = ('success' in pastRes ? pastRes.success : []) ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <ShieldAlert className="h-6 w-6 text-destructive" /> All System Tournaments
+          <ShieldAlert className="h-6 w-6 text-destructive" /> Admin: All System Tournaments
         </h2>
       </div>
-      <TournamentGrid 
-        tournaments={tournaments as any[]} 
-        emptyTitle="No tournaments in system" 
-        emptyDesc="The platform has no tournaments registered." 
-        emptyIcon={Trophy} 
-      />
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-primary" /> Upcoming Tournaments
+        </h2>
+        <PublicTournamentList 
+          tournaments={upcomingTournaments} 
+          emptyTitle="No upcoming tournaments" 
+          emptyDesc="No future tournaments registered in the system." 
+          emptyIcon={Calendar} 
+        />
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-muted-foreground" /> Past Tournaments
+        </h2>
+        <PublicTournamentList 
+          tournaments={pastTournaments} 
+          emptyTitle="No past tournaments" 
+          emptyDesc="No completed tournaments in the system yet." 
+          emptyIcon={Trophy} 
+        />
+      </div>
     </div>
   );
 }

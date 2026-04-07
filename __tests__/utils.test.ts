@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cn, sanitizeSearchQuery, formatDate, formatDateTime, getTournamentStatusConfig } from '@/lib/utils'
+import { cn, sanitizeSearchQuery, formatDate, formatDateTime, formatDateTimeCompact, formatTime, formatTimeShort, getTournamentStatusConfig } from '@/lib/utils'
 
 describe('cn (classname merge)', () => {
   it('merges class names', () => {
@@ -50,28 +50,70 @@ describe('sanitizeSearchQuery', () => {
 })
 
 describe('formatDate', () => {
-  it('formats ISO string to yyyy-MM-dd', () => {
-    expect(formatDate('2026-03-25T12:00:00')).toBe('2026-03-25')
+  it('formats ISO string to human-friendly date', () => {
+    // Intl with en-GB: "25 Mar 2026"
+    const result = formatDate('2026-03-25T12:00:00')
+    expect(result).toMatch(/25 Mar 2026/)
   })
 
-  it('formats Date object to yyyy-MM-dd', () => {
-    expect(formatDate(new Date(2026, 2, 25))).toBe('2026-03-25')
+  it('formats Date object to human-friendly date', () => {
+    const result = formatDate(new Date(2026, 2, 25))
+    expect(result).toMatch(/25 Mar 2026/)
   })
 
   it('formats date-only string', () => {
-    expect(formatDate('2026-12-01')).toBe('2026-12-01')
+    const result = formatDate('2026-12-01')
+    expect(result).toMatch(/1 Dec 2026/)
   })
 })
 
 describe('formatDateTime', () => {
-  it('formats ISO string to yyyy-MM-dd HH:mm', () => {
+  it('includes timezone abbreviation', () => {
     const result = formatDateTime('2026-03-25T14:30:00')
-    expect(result).toBe('2026-03-25 14:30')
+    // Should contain date, time, and a timezone abbreviation
+    expect(result).toMatch(/25 Mar 2026/)
+    expect(result).toMatch(/\d{1,2}:\d{2}/)
+    // Timezone abbreviation should be present (e.g. NZDT, EST, UTC, GMT+13, etc.)
+    expect(result).toMatch(/[A-Z]{2,5}|GMT[+-]\d+/)
   })
 
-  it('formats Date object to yyyy-MM-dd HH:mm', () => {
+  it('formats Date object with timezone', () => {
     const result = formatDateTime(new Date(2026, 2, 25, 9, 5))
-    expect(result).toBe('2026-03-25 09:05')
+    expect(result).toMatch(/25 Mar 2026/)
+    expect(result).toMatch(/9:05/)
+  })
+})
+
+describe('formatDateTimeCompact', () => {
+  it('omits year but includes timezone', () => {
+    const result = formatDateTimeCompact('2026-03-25T14:30:00')
+    // Should have month + day but NOT the year
+    expect(result).toMatch(/25 Mar/)
+    expect(result).not.toMatch(/2026/)
+    // Should have timezone abbreviation
+    expect(result).toMatch(/[A-Z]{2,5}|GMT[+-]\d+/)
+  })
+})
+
+describe('formatTime', () => {
+  it('shows time with timezone abbreviation', () => {
+    const result = formatTime('2026-03-25T14:30:00')
+    expect(result).toMatch(/\d{1,2}:\d{2}/)
+    expect(result).toMatch(/[A-Z]{2,5}|GMT[+-]\d+/)
+  })
+})
+
+describe('formatTimeShort', () => {
+  it('shows time without timezone', () => {
+    const result = formatTimeShort('2026-03-25T14:30:00')
+    expect(result).toMatch(/\d{1,2}:\d{2}/)
+    // Should NOT have a timezone abbreviation
+    expect(result).not.toMatch(/[A-Z]{3,5}/)
+  })
+
+  it('uses 12-hour format with AM/PM', () => {
+    const result = formatTimeShort('2026-03-25T14:30:00')
+    expect(result).toMatch(/am|pm/i)
   })
 })
 
@@ -81,6 +123,13 @@ describe('getTournamentStatusConfig', () => {
     expect(config.label).toBe('Live')
     expect(config.variant).toBe('default')
     expect(config.className).toContain('bg-green-600')
+  })
+
+  it('maps "not_started" to Upcoming with blue outline badge', () => {
+    const config = getTournamentStatusConfig('not_started')
+    expect(config.label).toBe('Upcoming')
+    expect(config.variant).toBe('outline')
+    expect(config.className).toContain('text-blue-600')
   })
 
   it('maps "completed" to Completed with secondary badge', () => {

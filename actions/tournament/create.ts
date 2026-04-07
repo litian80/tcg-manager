@@ -143,7 +143,7 @@ export async function createTournament(formData: FormData) {
             tom_uid: tom_uid || null, // Convert empty string to null to avoid unique constraint violation on ""
             // organizer_id: user.id, // OMITTING: DB types say this is optional for INSERT (likely default=auth.uid())
             organizer_popid: popId || null, // Mandatory insertion
-            status: 'running',
+            status: 'not_started',
             total_rounds: 0,
             is_published: false,
             registration_open,

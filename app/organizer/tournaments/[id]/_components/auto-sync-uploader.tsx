@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UploadCloud, RefreshCw, StopCircle, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
+import { cn, formatTimeShort } from '@/lib/utils';
 import { toast } from 'sonner';
 
 declare global {
@@ -220,7 +220,7 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Last synced:</span>
                             <span className="font-medium">
-                                {lastSynced ? lastSynced.toLocaleTimeString() : 'Never'}
+                                {lastSynced ? formatTimeShort(lastSynced) : 'Never'}
                             </span>
                         </div>
                     </div>
