@@ -76,18 +76,11 @@ export function UserNav({ user }: UserNavProps) {
                     <>
                         <DropdownMenuLabel>Admin Functions</DropdownMenuLabel>
                         {canManageUsers && (
-                            <>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/admin/users" className="w-full cursor-pointer">
-                                        User Management
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/admin/roles" className="w-full cursor-pointer">
-                                        Role Management
-                                    </Link>
-                                </DropdownMenuItem>
-                            </>
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin/users" className="w-full cursor-pointer">
+                                    User Management
+                                </Link>
+                            </DropdownMenuItem>
                         )}
                         {canManageTournaments && (
                             <DropdownMenuItem asChild>

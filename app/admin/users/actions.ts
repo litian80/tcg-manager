@@ -28,19 +28,50 @@ export async function searchUsers(query: string) {
         return []
     }
 
-    // 2. Perform Search
+    // 2. Find users with pending organiser applications (always shown at top)
+    const { data: pendingApps } = await supabase
+        .from('organiser_applications')
+        .select('user_id')
+        .eq('status', 'pending')
+
+    const pendingUserIds = (pendingApps || []).map(a => a.user_id)
+
+    // 3. Perform Search
     if (!query) {
-        const { data, error } = await supabase
+        // Fetch pending users first
+        let pendingUsers: any[] = []
+        if (pendingUserIds.length > 0) {
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .in('id', pendingUserIds)
+                .order('first_name', { ascending: true })
+
+            pendingUsers = data || []
+        }
+
+        // Fetch remaining users (excluding pending ones)
+        let remainingQuery = supabase
             .from('profiles')
             .select('*')
             .order('first_name', { ascending: true })
             .limit(20)
 
+        if (pendingUserIds.length > 0) {
+            // Supabase doesn't have a NOT IN filter directly, use .not() with .in()
+            for (const pid of pendingUserIds) {
+                remainingQuery = remainingQuery.neq('id', pid)
+            }
+        }
+
+        const { data: remainingUsers, error } = await remainingQuery
+
         if (error) {
             console.error('Search error:', error)
-            return []
+            return pendingUsers // At least return pending users if the second query fails
         }
-        return data
+
+        return [...pendingUsers, ...(remainingUsers || [])]
     }
 
     const sanitized = sanitizeSearchQuery(query)
@@ -53,6 +84,16 @@ export async function searchUsers(query: string) {
     if (error) {
         console.error('Search error:', error)
         return []
+    }
+
+    // Sort search results: pending applicants first
+    if (pendingUserIds.length > 0 && data) {
+        const pendingSet = new Set(pendingUserIds)
+        return data.sort((a, b) => {
+            const ap = pendingSet.has(a.id) ? 0 : 1
+            const bp = pendingSet.has(b.id) ? 0 : 1
+            return ap - bp
+        })
     }
 
     return data

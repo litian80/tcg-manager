@@ -1,7 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "./profile-form";
+import { OrganiserApplicationCard } from "./organiser-application-card";
 import { Profile } from "@/types";
+import { getMyOrganiserApplication } from "@/actions/organiser-application";
 
 export default async function ProfilePage() {
     const supabase = await createClient();
@@ -21,8 +23,6 @@ export default async function ProfilePage() {
         .single();
 
     if (error || !profile) {
-        // Check if error is 'PGRST116' (no rows returned) which implies profile doesn't exist yet but user does (rare if trigger works)
-        // Or just handle generic error
         console.error("Error fetching profile:", error);
         return (
             <div className="p-10 text-center">
@@ -32,9 +32,16 @@ export default async function ProfilePage() {
         )
     }
 
+    // Fetch the user's latest organiser application
+    const application = await getMyOrganiserApplication();
+
     return (
         <div className="container py-10">
             <ProfileForm profile={profile as Profile} />
+            <OrganiserApplicationCard
+                application={application}
+                userRole={profile.role}
+            />
         </div>
     );
 }

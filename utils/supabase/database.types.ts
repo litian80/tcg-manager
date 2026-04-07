@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -353,6 +353,57 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: true
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organiser_applications: {
+        Row: {
+          admin_notes: string | null
+          association: string
+          created_at: string
+          id: string
+          league_url: string
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          association: string
+          created_at?: string
+          id?: string
+          league_url: string
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          association?: string
+          created_at?: string
+          id?: string
+          league_url?: string
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organiser_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organiser_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

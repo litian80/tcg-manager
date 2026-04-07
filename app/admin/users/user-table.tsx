@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { searchUsers, adminUpdateUser } from './actions'
 import { deleteUser } from './delete-user'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog'
 import {
     AlertDialog,
@@ -31,10 +30,16 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Shield } from 'lucide-react'
 import { RoleSelect } from './role-select'
 import { useDebounce } from '@/hooks/use-debounce'
+import { ApplicationReviewDialog } from './application-review-dialog'
+import {
+    getOrganiserApplications,
+    type OrganiserApplicationWithProfile
+} from '@/actions/organiser-application'
 
 // Inline debounce hook since I'm not sure if the project has one
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -63,6 +68,11 @@ export default function UserTable() {
     const [deleteUserOpen, setDeleteUserOpen] = useState(false)
     const [userToDelete, setUserToDelete] = useState<any>(null)
 
+    // Organiser applications state
+    const [applications, setApplications] = useState<OrganiserApplicationWithProfile[]>([])
+    const [reviewingApp, setReviewingApp] = useState<OrganiserApplicationWithProfile | null>(null)
+    const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+
     // Form State
     const [pid, setPid] = useState('')
     const [byear, setByear] = useState('')
@@ -80,9 +90,20 @@ export default function UserTable() {
         }
     }, [])
 
+    const fetchApplications = useCallback(async () => {
+        const result = await getOrganiserApplications()
+        if (result.success) {
+            setApplications(result.success)
+        }
+    }, [])
+
     useEffect(() => {
         fetchUsers(debouncedSearch)
     }, [debouncedSearch, fetchUsers])
+
+    useEffect(() => {
+        fetchApplications()
+    }, [fetchApplications])
 
     const handleEditClick = (user: any) => {
         setEditingUser(user)
@@ -127,8 +148,51 @@ export default function UserTable() {
         }
     }
 
+    // Helper: get pending application for a user
+    const getPendingApp = (userId: string) =>
+        applications.find(a => a.user_id === userId && a.status === 'pending')
+
+    const getLatestApp = (userId: string) =>
+        applications.find(a => a.user_id === userId)
+
+    const pendingCount = applications.filter(a => a.status === 'pending').length
+
+    // Sort users: pending applicants first, then preserve original order
+    const sortedUsers = useMemo(() => {
+        const pendingIds = new Set(
+            applications.filter(a => a.status === 'pending').map(a => a.user_id)
+        )
+        if (pendingIds.size === 0) return users
+        return [...users].sort((a, b) => {
+            const aPending = pendingIds.has(a.id) ? 0 : 1
+            const bPending = pendingIds.has(b.id) ? 0 : 1
+            return aPending - bPending
+        })
+    }, [users, applications])
+
+    const handleReviewClick = (app: OrganiserApplicationWithProfile) => {
+        setReviewingApp(app)
+        setReviewDialogOpen(true)
+    }
+
+    const handleReviewComplete = () => {
+        fetchApplications()
+        fetchUsers(debouncedSearch)
+    }
+
     return (
         <div className="space-y-4">
+            {/* Pending Applications Banner */}
+            {pendingCount > 0 && (
+                <div className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">
+                        {pendingCount} pending organiser {pendingCount === 1 ? 'application' : 'applications'}
+                    </span>
+                    <Badge variant="default" className="ml-1">{pendingCount}</Badge>
+                </div>
+            )}
+
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="Search by email, name, or Player ID..."
@@ -159,34 +223,49 @@ export default function UserTable() {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {users.map((user) => (
-                            <TableRow key={user.id}>
-                                <TableCell className="font-medium">
-                                    {user.first_name} {user.last_name}
-                                </TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
-                                    <RoleSelect userId={user.id} currentRole={user.role} />
-                                </TableCell>
-                                <TableCell>{user.pokemon_player_id || '-'}</TableCell>
-                                <TableCell>{user.birth_year || '-'}</TableCell>
-                                <TableCell className="flex gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="sr-only">Edit user</span>
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => handleDeleteClick(user)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Delete user</span>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {sortedUsers.map((user) => {
+                            const pendingApp = getPendingApp(user.id)
+                            return (
+                                <TableRow key={user.id} className={pendingApp ? 'bg-primary/[0.02]' : undefined}>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            {user.first_name} {user.last_name}
+                                            {pendingApp && (
+                                                <Badge
+                                                    variant="default"
+                                                    className="cursor-pointer text-xs"
+                                                    onClick={() => handleReviewClick(pendingApp)}
+                                                >
+                                                    <Shield className="h-3 w-3 mr-1" />
+                                                    Pending
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>
+                                        <RoleSelect userId={user.id} currentRole={user.role} />
+                                    </TableCell>
+                                    <TableCell>{user.pokemon_player_id || '-'}</TableCell>
+                                    <TableCell>{user.birth_year || '-'}</TableCell>
+                                    <TableCell className="flex gap-2">
+                                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
+                                            <Pencil className="h-4 w-4" />
+                                            <span className="sr-only">Edit user</span>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => handleDeleteClick(user)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Delete user</span>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
                     </TableBody>
                 </Table>
             </div>
@@ -244,6 +323,13 @@ export default function UserTable() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <ApplicationReviewDialog
+                application={reviewingApp}
+                open={reviewDialogOpen}
+                onOpenChange={setReviewDialogOpen}
+                onReviewComplete={handleReviewComplete}
+            />
         </div>
     )
 }

@@ -1,0 +1,447 @@
+﻿REASONING:
+We are given an implementation plan for adding an 'Apply to Become Organiser' feature to a Next.js / Supabase application.
+ We are to review the plan and identify potential risks, security vulnerabilities, edge cases, UX issues, or missing dependencies.
+
+ Let's break down the review into sections:
+
+ 1. Database Schema and Security
+ 2. Server Actions and Validation
+ 3. Frontend Components and UX
+ 4. Admin Panel
+ 5. Open Questions
+ 6. Verification Plan
+
+ We'll go step by step.
+
+--- REVIEW ---
+
+## 1. Database Schema and Security
+
+### Table Design
+- The table `organiser_applications` has appropriate columns and constraints.
+- The use of a CHECK constraint for `status` is good.
+- The `league_url` is stored as TEXT, which is acceptable given the plan to validate it.
+
+### Indexes
+- Indexes are proposed for status (for admin queries) and user_id (for user's own applications). These are appropriate.
+
+### RLS Policies
+- The plan includes RLS policies. However, note that the plan does not specify if RLS is enabled on the table. We must ensure RLS is enabled.
+- The policies described are:
+    - Users can SELECT their own applications.
+    - Users can INSERT their own applications.
+    - Users can UPDATE their own applications only to set status = 'withdrawn' (and only when current status is 'pending').
+    - Admins can SELECT and UPDATE all applications.
+
+  We must ensure that the UPDATE policy for users is correctly written to only allow updating the status to 'withdrawn' and only when the current status is 'pending'. The plan does not provide the exact SQL for the policies, so we must be cautious.
+
+  Example policy for user update (using Supabase RLS):
+
+  ```sql
+  CREATE POLICY "Users can withdraw their own pending applications"
+  ON public.organiser_applications
+  FOR UPDATE
+  USING (auth.uid() = user_id AND status = 'pending')
+  WITH CHECK (auth.uid() = user_id AND status = 'withdrawn');
+  ```
+
+  However, note that the above policy would allow updating only to 'withdrawn'. But note that the plan says "Users can UPDATE their own applications only to set status = 'withdrawn' (where current status = 'pending')". This is a bit tricky because we want to allow the update only if the new status is 'withdrawn' and the old status is 'pending'. The above policy uses `USING` to check the old row and `WITH CHECK` for the new row. But note that in Supabase, the `WITH CHECK` expression is evaluated on the new row. So the above policy would require that the new row has status 'withdrawn' and the user_id matches. Also, the `USING` clause ensures that the old row has status 'pending' and the user_id matches.
+
+  Alternatively, we might want to use a trigger to ensure that the only update allowed by the user is to set status to 'withdrawn' and only from 'pending'. However, the plan says to use RLS. We can do it with RLS as above, but note that the user might try to update other columns. The policy above would allow updating any column as long as the conditions are met. To be strict, we might want to ensure that only the status can be updated (and maybe `updated_at`). But the plan does not specify. We could also add a trigger for more complex logic.
+
+### Constraint: One pending application per user
+- The partial unique index for one pending application per user is a good idea to prevent multiple pending applications.
+
+### Potential Risks and Edge Cases:
+- **RLS on INSERT**: The plan says users can INSERT their own applications. We must ensure that the user_id in the inserted row is the same as the authenticated user. This can be enforced by setting the user_id from the server action (using `auth.uid()`) or by a policy that forces the user_id to be the current user. The plan does not specify how the user_id is set. It is safer to set it in the server action (from the session) rather than relying on the client to send it.
+
+- **Admin Policies**: The plan says admins can SELECT and UPDATE all applications. We must have a way to identify admins. This is typically done by checking the user's role in the `profiles` table. We must ensure that the admin policy is correctly written to only allow users with an admin role. The plan does not specify the exact policy condition.
+
+- **Data Integrity**: The `reviewed_by` column references `profiles(id)`. We must ensure that when an admin reviews, this is set. Also, note that the `admin_notes` is optional.
+
+- **Cascading Deletes**: The table uses `ON DELETE CASCADE` for `user_id`. This is acceptable because if a user is deleted, their applications should be deleted too.
+
+## 2. Server Actions and Validation
+
+### Actions:
+- `submitOrganiserApplication`: Validates league URL and association text, then inserts a row with status='pending'.
+- `withdrawOrganiserApplication`: Sets status='withdrawn' for a pending application owned by the user.
+- `reviewOrganiserApplication`: Admin action to approve or reject an application, with optional admin notes. On approve, update the user's role to 'organizer'.
+
+### Validation:
+- League URL: Must be a valid URL and must include `pokemon.com` in the hostname. This is a good light-touch validation. However, note that the plan recommends option (a) - validate it's a real URL from `pokemon.com` domain only. We must be cautious because the URL might be a subdomain of `pokemon.com` (like `play.pokemon.com`). Also, the plan specifies a specific format for the league URL. We might want to check that the URL follows the expected pattern, but the plan only says to check the domain. We should consider if we need to validate the path as well. For now, the plan says light-touch, so domain validation might be enough.
+
+- Association: Required, 10â500 characters. This is reasonable.
+
+### Potential Risks and Edge Cases:
+- **Server Action Authentication**: We must ensure that each server action checks the user's authentication and authorization (role) appropriately. The plan does not specify how this is done. We should use Supabase's `auth.getUser()` or similar to get the current user in the server action.
+
+- **Input Validation**: The validation for the league URL should be done on the server (and optionally on the client). We must ensure that the URL is not only from `pokemon.com` but also a valid URL (to prevent SQL injection or other attacks). Using Zod for validation is good.
+
+- **Error Handling**: The plan does not specify error handling in the server actions. We must handle errors (e.g., database errors, validation errors) and return appropriate messages to the user.
+
+- **Admin Action Security**: The `reviewOrganiserApplication` action must check that the caller is an admin. We must not rely on the client to send the admin's user ID for `reviewed_by`; we should set it from the authenticated session.
+
+- **Role Update on Approval**: When an application is approved, the user's role is updated to 'organizer'. We must ensure that this update is done atomically (or at least in a transaction) so that if the role update fails, the application status is not changed. The plan does not mention transactions. We should use a transaction for the approval action.
+
+- **Withdrawal Condition**: The withdrawal action should only work on pending applications. The server action must check the current status and the ownership of the application.
+
+## 3. Frontend Components and UX
+
+### Profile Page
+- The plan modifies the profile page to show a card for organiser applications.
+- The card is shown only when `profile.role === 'user'`.
+- Different states are handled (no application, pending, rejected, approved, withdrawn).
+
+### Potential Risks and Edge Cases:
+- **Data Fetching**: The plan does not specify how the application data is fetched. We must ensure that the data is fetched securely (using server-side or client-side with proper RLS). The plan says to fetch the user's latest organiser application. We must be cautious about how we fetch this data. If we fetch it on the client, we must use the Supabase client with RLS. If we fetch it on the server (in the page.tsx), we must ensure that the user can only see their own application.
+
+- **Real-time Updates**: If the user submits an application, we might want to update the UI without a page refresh. The plan does not specify if we are using real-time subscriptions. For simplicity, we might just refetch the data after an action.
+
+- **Form Validation on Client**: We should have client-side validation for the form to improve UX, but we must also have server-side validation.
+
+- **Withdrawal Confirmation**: We should ask for confirmation before withdrawing an application.
+
+- **Approved State**: The plan says that if the user is already an organizer, the card is not shown. However, what if the user has an approved application? We don't show the card, which is acceptable.
+
+- **Rejected State**: The plan shows admin notes (if any) in the rejected state. We must ensure that admin notes are only shown to the user if the admin provided them and if the application is rejected. Also, note that the admin notes might contain sensitive information. We are storing them in the application record, and the user can see their own application, so that is acceptable.
+
+- **URL Display**: The league URL is shown as a clickable link. We must ensure that it is properly sanitized to prevent XSS attacks. Using Next.js Link or a simple anchor tag with proper URL encoding should be safe.
+
+## 4. Admin Panel
+
+### Changes to User Table
+- Pending badge with count.
+- Sort order: users with pending applications at the top.
+- Application indicator and review dialog.
+
+### Potential Risks and Edge Cases:
+- **Admin Authentication**: The admin panel must be accessible only to users with the admin role. The plan does not specify how this is enforced. We must ensure that the admin routes are protected.
+
+- **Data Fetching for Admin**: The admin panel fetches pending application count and user list with application status. We must ensure that the data fetching is done on the server (or with RLS on the client) and that only admins can see this data.
+
+- **Review Dialog**: The dialog shows the league URL and association text. We must ensure that the data is displayed safely (sanitize the association text to prevent XSS). The league URL is a link, so it is safe.
+
+- **Admin Notes**: The admin can provide notes when rejecting (or approving). We must store these notes and display them to the user (if rejected) and to the admin in the history.
+
+- **Application History**: The plan recommends full history. We must design the admin review dialog to show the history of applications for the user (if we are showing full history). The plan does not specify the exact design. We might want to show a list of past applications (with status, date, and admin notes) in the dialog.
+
+## 5. Open Questions
+
+1. **League URL strictness**: The plan recommends option (a) - validate it's a real URL from `pokemon.com` domain only. This is acceptable for light-touch validation. However, we must consider that the URL might be from a subdomain (like `play.pokemon.com`) or a different country TLD (like `pokemon.co.uk`). The plan specifies the format for the US. We might want to allow any `pokemon.com` domain and subdomains, and also allow other country-specific domains? The plan does not specify. We should clarify with the product owner.
+
+2. **Application history**: The plan recommends full history. This is good for admin context. We must adjust the admin review dialog to show the history. Also, we must consider if we want to show the history to the user (the plan currently only shows the latest). The user can see their own past applications if we allow them to view their own history. The plan does not specify if the user can see their own history. Currently, the profile page only shows the latest. We might want to show the user's own history as well, but the plan does not specify.
+
+3. **Notifications**: The plan asks if we should send a notification (toast or email) when the application is approved/rejected. For MVP, the profile page status display might be sufficient, but we should consider adding a toast notification on the next login or a simple email. This is a UX improvement that can be added later.
+
+## 6. Verification Plan
+
+### Automated Tests
+- The plan includes tests for server actions, constraints, and role enforcement. This is good.
+
+### Manual Verification
+- The manual verification steps cover the main user flows.
+
+### Additional Tests to Consider:
+- **Security Tests**: Ensure that users cannot see other users' applications, cannot withdraw applications that are not pending, cannot submit a second pending application, etc.
+- **Admin Security**: Ensure that non-admins cannot access the admin panel or perform admin actions.
+- **Validation Tests**: Test invalid league URLs (non-pokemon.com domains, malformed URLs) and association text (too short, too long).
+
+## Overall Recommendations
+
+1. **Use Transactions for Approval**: In the `reviewOrganiserApplication` action, when approving, update the application status and the user's role in a transaction.
+
+2. **Secure Server Actions**: In each server action, get the current user from the session and check permissions. Do not trust client-provided user IDs.
+
+3. **Implement RLS Policies Carefully**: Write the RLS policies for the `organiser_applications` table and test them thoroughly.
+
+4. **Consider XSS Protection**: Sanitize user input (especially the association text) when displaying it. The league URL should be treated as a URL and not HTML.
+
+5. **Clarify League URL Validation**: Decide on the exact validation rules for the league URL and document them.
+
+6. **Add Application History for User**: Consider showing the user their own application history, not just the latest.
+
+7. **Add Notifications**: Plan for future notifications (email or in-app) for application status changes.
+
+8. **Error Handling in UI**: Ensure that the UI handles errors from server actions gracefully.
+
+9. **Admin Panel Security**: Ensure the admin panel is protected by both RLS and route protection (e.g., middleware or server-side checks).
+
+10. **Database Migration**: The plan includes a migration for the new table. We must also consider if we need to update the `profiles` table to add the `role` column if it doesn't exist. The plan assumes the `profiles` table already has a `role` column.
+
+11. **Update Timestamps**: The table has `created_at` and `updated_at`. We should set up a trigger to update `updated_at` automatically, or use the `updated_at` column with a default of `now()` but note that `updated_at` must be updated on change. The plan does not specify a trigger for `updated_at`. We can use the following:
+
+    ```sql
+    CREATE TRIGGER update_organiser_applications_updated_at
+    BEFORE UPDATE ON public.organiser_applications
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+    ```
+
+    Assuming the function `update_updated_at_column()` exists (commonly used in Supabase projects).
+
+12. **Indexes**: The proposed indexes are good, but also consider an index on `reviewed_by` if we plan to query by admin reviewer often.
+
+## Conclusion
+
+The implementation plan is well thought out, but there are several security and UX details that need to be addressed. The main risks are around RLS policies, server action authentication, and input validation. We must also consider the open questions and decide on the league URL validation and application history display.
+
+--- END REVIEW ---
+
+CONTENT:
+# Security & Architecture Review: Apply to Become Organiser Feature
+
+## Overall Assessment
+The implementation plan is well-structured and follows good practices, but has several security and UX considerations that need addressing.
+
+## ð **Critical Security Issues**
+
+### 1. **Missing RLS Policy Implementation**
+**Risk**: High  
+**Issue**: Plan mentions RLS policies but doesn't specify exact SQL. Without proper policies, users could potentially access other users' applications or admins could be locked out.
+
+**Recommendation**:
+```sql
+-- Explicit RLS policies needed:
+ALTER TABLE organiser_applications ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their own apps
+CREATE POLICY "Users view own applications" 
+ON organiser_applications FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- Users can insert their own apps
+CREATE POLICY "Users insert own applications" 
+ON organiser_applications FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+-- Users can withdraw only their own pending apps
+CREATE POLICY "Users withdraw own pending applications" 
+ON organiser_applications FOR UPDATE 
+USING (auth.uid() = user_id AND status = 'pending')
+WITH CHECK (auth.uid() = user_id AND status = 'withdrawn');
+
+-- Admins can do everything
+CREATE POLICY "Admins full access" 
+ON organiser_applications 
+FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
+);
+```
+
+### 2. **Race Condition in Role Promotion**
+**Risk**: Medium  
+**Issue**: Server action `reviewOrganiserApplication` calls `updateUserRole(userId, 'organizer')` directly. If the user already has organizer access or if there are concurrent approvals, this could cause issues.
+
+**Recommendation**:
+```typescript
+// Use a transaction or check current role first
+const { data: currentUser, error } = await supabase
+  .from('profiles')
+  .select('role')
+  .eq('id', userId)
+  .single();
+
+if (currentUser?.role === 'user') {
+  await supabase
+    .from('profiles')
+    .update({ role: 'organizer' })
+    .eq('id', userId);
+}
+```
+
+### 3. **URL Validation Bypass Risk**
+**Risk**: Medium  
+**Issue**: Checking only for `pokemon.com` in hostname could be bypassed with:
+- `pokemon.com.evildomain.com`
+- Unicode homograph attacks
+- URL shorteners pointing to valid domains
+
+**Recommendation**:
+```typescript
+// Use URL API and strict domain checking
+function validatePokemonLeagueUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    
+    // Exact domain matching or subdomains of pokemon.com
+    return hostname === 'pokemon.com' || 
+           hostname === 'www.pokemon.com' ||
+           hostname.endsWith('.pokemon.com');
+  } catch {
+    return false;
+  }
+}
+```
+
+## â ï¸ **High Priority Issues**
+
+### 4. **Missing Rate Limiting**
+**Issue**: No protection against spam applications. Users could theoretically spam the endpoint or repeatedly apply/withdraw.
+
+**Recommendation**:
+- Implement rate limiting on server actions (e.g., 3 applications per 24 hours)
+- Add a cooldown period after withdrawal (e.g., 1 hour before re-applying)
+
+### 5. **No Application Audit Trail**
+**Issue**: The `admin_notes` field is optional and there's no record of who changed what and when for compliance.
+
+**Recommendation**:
+```sql
+-- Add audit columns
+ALTER TABLE organiser_applications ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+-- Consider separate audit table for immutable history
+```
+
+### 6. **Missing Input Sanitization**
+**Issue**: `association` field accepts free text without HTML escaping, creating XSS risk when displayed in admin panel.
+
+**Recommendation**:
+- Use React's automatic escaping or DOMPurify for admin notes display
+- Consider markdown instead of raw HTML
+
+## ð **Edge Cases & UX Issues**
+
+### 7. **Status Transition Conflicts**
+**Issue**: What happens if:
+- Admin tries to approve an already withdrawn application?
+- User withdraws while admin is reviewing?
+- User has multiple non-pending applications?
+
+**Recommendation**:
+```typescript
+// In review action, check current status
+const { data: app, error } = await supabase
+  .from('organiser_applications')
+  .select('status, user_id')
+  .eq('id', applicationId)
+  .single();
+
+if (app?.status !== 'pending') {
+  throw new Error('Application is no longer pending');
+}
+```
+
+### 8. **Missing Error States**
+**Issue**: Plan doesn't address:
+- What happens if database constraint fails (duplicate pending)?
+- What error messages users see?
+- How to handle network failures during submission?
+
+### 9. **Admin Panel Performance**
+**Issue**: Joining `organiser_applications` on every user search could degrade performance with many users.
+
+**Recommendation**:
+```sql
+-- Add composite index for admin queries
+CREATE INDEX idx_admin_pending ON organiser_applications 
+(status, created_at) WHERE status = 'pending';
+
+-- Consider materialized view for admin dashboard
+```
+
+## ð **Process Flow Gaps**
+
+### 10. **Role Change Notifications**
+**Issue**: Users won't know when they're approved unless they check their profile. This could delay tournament creation.
+
+**Recommendation**:
+- Add toast notification on next login
+- Simple email notification (optional for MVP but plan for it)
+- Consider in-app notification system
+
+### 11. **Admin Review Bottleneck**
+**Issue**: All applications go to all admins. No assignment or triage system.
+
+**Recommendation**:
+- Add `assigned_to` column for application assignment
+- Consider priority flagging for urgent applications
+
+### 12. **Missing Data Retention Policy**
+**Issue**: Applications accumulate indefinitely. No plan for archiving or deleting old data.
+
+**Recommendation**:
+- Add `archived` boolean column
+- Auto-archive applications older than 1 year
+- Soft delete instead of hard delete
+
+## ð¦ **Missing Dependencies**
+
+### 13. **Type Safety Gaps**
+**Issue**: Plan references generated DB types but doesn't specify regeneration process.
+
+**Recommendation**:
+```bash
+# Add to package.json scripts
+"db:generate-types": "supabase gen types --lang=typescript --project-id=xxx --schema=public > types/database.ts"
+```
+
+### 14. **Testing Dependencies**
+**Issue**: No mention of test data factories or mocking Supabase client.
+
+**Recommendation**:
+- Add `@testing-library/react` for component tests
+- Add `msw` for API mocking in tests
+- Create factory functions for test applications
+
+### 15. **Monitoring & Logging**
+**Issue**: No plan for tracking application metrics or audit logs.
+
+**Recommendation**:
+- Add logging to server actions
+- Track application counts by status
+- Log admin review actions for accountability
+
+## ð¯ **Open Questions Resolution**
+
+### League URL Validation
+**Recommendation**: Option (a) + enhanced validation
+- Validate exact domain pattern: `pokemon.com` or subdomains
+- Optionally validate URL path pattern `/us/play-pokemon/pokemon-events/leagues/`
+- Consider fetching and validating league ID from URL
+
+### Application History
+**Recommendation**: Full history with toggle
+- Show latest application by default
+- Expand to show full history on demand
+- Include withdrawn applications in history
+
+### Notifications
+**Recommendation**: Basic MVP + planned enhancement
+- MVP: Profile page status only
+- Phase 2: Toast notifications on status change
+- Phase 3: Email notifications
+
+## ð **Implementation Checklist Additions**
+
+### Before Deployment
+- [ ] Implement all RLS policies with test coverage
+- [ ] Add input validation and sanitization
+- [ ] Implement error handling for all edge cases
+- [ ] Add rate limiting to server actions
+- [ ] Create database backup before migration
+
+### Testing Requirements
+- [ ] Test concurrent application submissions
+- [ ] Test admin role permissions thoroughly
+- [ ] Test URL validation with edge cases
+- [ ] Load test admin panel with 1000+ applications
+
+### Documentation Needed
+- [ ] API documentation for server actions
+- [ ] Admin guide for review process
+- [ ] Data retention policy documentation
+- [ ] Rollback plan for migration
+
+## ð¨ **Emergency Rollback Plan**
+
+Since this adds a new table and modifies user roles, ensure:
+1. Migration is reversible
+2. Role changes can be reverted
+3. Old profile page works without new component
+4. Admin panel degrades gracefully if new table missing
+
+---
+
+**Overall Score**: 7/10 - Good foundation but needs security hardening and edge case handling.
