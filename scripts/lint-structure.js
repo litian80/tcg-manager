@@ -39,23 +39,47 @@ function checkServerActions() {
   }
 }
 
-// --- Rule 2: No SQL, Python, or report files in root ---
+// --- Rule 2: Root directory whitelist — only project config belongs here ---
 function checkRootCleanliness() {
+  // Files explicitly allowed in root (project config, docs, etc.)
+  const allowedFiles = new Set([
+    'README.md',
+    'package.json',
+    'package-lock.json',
+    'tsconfig.json',
+    'next.config.ts',
+    'middleware.ts',
+    'vitest.config.ts',
+    'postcss.config.mjs',
+    'eslint.config.mjs',
+    'components.json',
+    'next-env.d.ts',
+    '.cursorrules',
+    '.gitignore',
+    '.vercelignore',
+  ]);
+
+  // Patterns allowed (dotfiles, env files, generated files, editor config)
+  const allowedPatterns = [
+    /^\.env/,              // .env, .env.local, .env.production.local
+    /^\.git/,              // .gitignore, .gitattributes (dirs handled separately)
+    /\.tsbuildinfo$/,      // tsconfig.tsbuildinfo (generated build cache)
+    /\.code-workspace$/,   // VS Code workspace files
+  ];
+
   const rootFiles = fs.readdirSync(ROOT);
-  const banned = ['.sql', '.py', '.pyc', '.ipynb', '.html', '.csv'];
-  const bannedPatterns = ['schema.json', 'prod_simplified_schema.txt', 'credentials.json', 'token.json'];
-  
+
   for (const file of rootFiles) {
     const filePath = path.join(ROOT, file);
     if (!fs.statSync(filePath).isFile()) continue;
-    
-    const ext = path.extname(file).toLowerCase();
-    if (banned.includes(ext)) {
-      errors.push(`[ROOT_POLLUTION] "${file}" (${ext}) should not be in project root. See /file-placement workflow.`);
-    }
-    if (bannedPatterns.includes(file)) {
-      errors.push(`[ROOT_POLLUTION] "${file}" should not be in project root.`);
-    }
+
+    // Check whitelist
+    if (allowedFiles.has(file)) continue;
+
+    // Check patterns
+    if (allowedPatterns.some(p => p.test(file))) continue;
+
+    errors.push(`[ROOT_POLLUTION] "${file}" should not be in project root. Move to tmp/ for scratch files, tools/ for scripts. See /file-placement workflow.`);
   }
 }
 
