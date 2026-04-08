@@ -41,7 +41,9 @@ export function PlayerDashboard({
     allowOnlineReporting = false
 }: PlayerDashboardProps) {
     // Determine the current match (if any)
-    const currentMatch = myMatches.find(m => m.round_number === currentRound);
+    const currentMatch = tournamentStatus === 'completed' 
+        ? undefined 
+        : myMatches.find(m => m.round_number === currentRound && !m.is_finished);
 
     const isPlayer1 = currentMatch && currentMatch.player1_tom_id === myPlayerId;
     const myReport = currentMatch ? (isPlayer1 ? currentMatch.p1_reported_result : currentMatch.p2_reported_result) : null;
@@ -174,6 +176,12 @@ export function PlayerDashboard({
                                     <div className="text-4xl mb-3 opacity-80">⏳</div>
                                     <p className="font-medium text-foreground">Registration confirmed.</p>
                                     <p className="text-xs mt-1">Please see a judge to formally check in before the tournament starts.</p>
+                                </>
+                            ) : myMatches.some(m => m.round_number === currentRound && m.is_finished) ? (
+                                <>
+                                    <CheckCircle2 className="h-8 w-8 mb-2 opacity-50 text-green-500" />
+                                    <p className="font-medium text-foreground">Match completed.</p>
+                                    <p className="text-xs mt-1">Please wait for the next round to be posted.</p>
                                 </>
                             ) : (
                                 <>
