@@ -15,6 +15,7 @@ import { ExportPenaltyCard } from "@/components/organizer/export-penalty-card";
 import { TournamentPhaseIndicator } from "./_components/tournament-phase-indicator";
 import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs";
 import { DashboardWidgets } from "./_components/dashboard-widgets";
+import { AnnouncementManager } from "./_components/announcement-manager";
 
 
 
@@ -119,6 +120,12 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         })) || [];
     }
 
+    const { data: announcementsData } = await supabase
+        .from('tournament_announcements')
+        .select('*')
+        .eq('tournament_id', id)
+        .order('created_at', { ascending: false });
+
     // UX-022: Compute dashboard widget stats from existing data
     const activeRoster = currentRoster.filter(
         (p: any) => p.registration_status === 'registered' || p.registration_status === 'checked_in'
@@ -207,6 +214,15 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                             <div className="max-w-2xl">
                                 <AutoSyncUploader tournamentId={tournament.id} />
                             </div>
+                        </div>
+                    ),
+                    announcements: (
+                        <div className="space-y-6">
+                            <AnnouncementManager 
+                                tournamentId={tournament.id}
+                                activeAnnouncementId={tournament.active_announcement_id}
+                                preloadedAnnouncements={announcementsData || []} 
+                            />
                         </div>
                     ),
                     post: (

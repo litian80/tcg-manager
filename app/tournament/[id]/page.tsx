@@ -298,6 +298,43 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }
     }
 
+    let activeAnnouncement = null;
+    if (tournamentRecord.active_announcement_id) {
+        const { data: annData, error: annError } = await supabase
+            .from('tournament_announcements')
+            .select('*')
+            .eq('id', tournamentRecord.active_announcement_id)
+            .single();
+
+        if (!annError && annData) {
+            // Server-side audience filtering to prevent data leakage
+            const isEnrolledPlayer = !!profile?.pokemon_player_id && 
+                (myRegistrationStatus === 'registered' || 
+                 myRegistrationStatus === 'checked_in' || 
+                 myRegistrationStatus === 'dropped' || 
+                 myRegistrationStatus === 'finished');
+            const isPlayerStaff = canManageStaff || isAssignedJudge;
+            const isPlayerOrganizer = canManageStaff;
+            const isPlayerSpectator = !isEnrolledPlayer && !isPlayerStaff && !isPlayerOrganizer;
+
+            const audience = annData.target_audience || [];
+            let isTarget = false;
+            
+            if (audience.includes("all")) {
+                isTarget = true;
+            } else {
+                if (isEnrolledPlayer && audience.includes("participants")) isTarget = true;
+                if (isPlayerStaff && audience.includes("staff")) isTarget = true;
+                if (isPlayerOrganizer && audience.includes("organizers")) isTarget = true;
+                if (isPlayerSpectator && audience.includes("spectators")) isTarget = true;
+            }
+
+            if (isTarget) {
+                activeAnnouncement = annData;
+            }
+        }
+    }
+
     // 7. Fetch the current player's detailed penalties and deck checks for the Dashboard
     const [myPenaltiesRes, myDeckChecksRes] = profile?.pokemon_player_id ? await Promise.all([
         supabase
@@ -349,6 +386,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 myPenalties={myPenaltiesRes.data || []}
                 myDeckChecks={myDeckChecksRes.data || []}
                 isLoggedIn={!!user}
+                activeAnnouncement={activeAnnouncement}
             />
         </>
     );

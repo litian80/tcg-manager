@@ -580,6 +580,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_announcements: {
+        Row: {
+          banner_text: string
+          created_at: string
+          created_by: string
+          details_text: string
+          id: string
+          is_active: boolean
+          target_audience: string[] | null
+          title: string
+          tournament_id: string
+          type: string
+        }
+        Insert: {
+          banner_text: string
+          created_at?: string
+          created_by: string
+          details_text: string
+          id?: string
+          is_active?: boolean
+          target_audience?: string[] | null
+          title: string
+          tournament_id: string
+          type?: string
+        }
+        Update: {
+          banner_text?: string
+          created_at?: string
+          created_by?: string
+          details_text?: string
+          id?: string
+          is_active?: boolean
+          target_audience?: string[] | null
+          title?: string
+          tournament_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_announcements_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_judges: {
         Row: {
           assigned_at: string | null
@@ -797,6 +851,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          active_announcement_id: string | null
           allow_online_match_reporting: boolean | null
           capacity: number | null
           capacity_juniors: number | null
@@ -840,6 +895,7 @@ export type Database = {
           tournament_mode: string
         }
         Insert: {
+          active_announcement_id?: string | null
           allow_online_match_reporting?: boolean | null
           capacity?: number | null
           capacity_juniors?: number | null
@@ -877,12 +933,13 @@ export type Database = {
           seniors_birth_year_max?: number | null
           sideboard_size?: number | null
           start_time?: string | null
-          status: string
+          status?: string
           tom_uid?: string | null
           total_rounds: number
           tournament_mode?: string
         }
         Update: {
+          active_announcement_id?: string | null
           allow_online_match_reporting?: boolean | null
           capacity?: number | null
           capacity_juniors?: number | null
@@ -925,7 +982,15 @@ export type Database = {
           total_rounds?: number
           tournament_mode?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_active_announcement"
+            columns: ["active_announcement_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -947,6 +1012,7 @@ export type Database = {
           requesting_user_role: Database["public"]["Enums"]["app_role"]
         }
         Returns: {
+          active_announcement_id: string | null
           allow_online_match_reporting: boolean | null
           capacity: number | null
           capacity_juniors: number | null
@@ -1014,6 +1080,14 @@ export type Database = {
           p_tournament_id: string
         }
         Returns: Json
+      }
+      set_tournament_announcement_active: {
+        Args: { p_announcement_id: string; p_tournament_id: string }
+        Returns: undefined
+      }
+      set_tournament_announcement_inactive: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1149,3 +1223,4 @@ export const Constants = {
     },
   },
 } as const
+

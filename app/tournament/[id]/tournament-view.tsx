@@ -21,6 +21,7 @@ import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal
 import { toast } from "sonner";
 import type { ParsedCard } from "@/types/deck";
 import { getMatchReportingStatus } from "@/utils/match-reporting";
+import { AnnouncementBanner, Announcement } from "@/components/tournament/announcement-banner";
 
 /** Track the rendered height of an element via ResizeObserver. */
 function useStickyHeight() {
@@ -65,6 +66,7 @@ interface TournamentViewProps {
     myPenalties?: any[];
     myDeckChecks?: any[];
     isLoggedIn?: boolean;
+    activeAnnouncement?: Announcement | null;
 }
 
 export default function TournamentView({
@@ -88,6 +90,7 @@ export default function TournamentView({
     myPenalties = [],
     myDeckChecks = [],
     isLoggedIn = true,
+    activeAnnouncement = null,
 }: TournamentViewProps) {
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
@@ -330,8 +333,18 @@ export default function TournamentView({
         </div>
     ) : null;
 
+    const userRoleContext = {
+        isParticipant: isEnrolledPlayer,
+        isStaff: isJudge || canManageStaff,
+        isOrganizer: canManageStaff,
+        isSpectator: !isEnrolledPlayer && !isJudge && !canManageStaff,
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
+            {/* Announcement Banner */}
+            <AnnouncementBanner announcement={activeAnnouncement} userRoleContext={userRoleContext} />
+
             {/* Sticky Header & Search */}
             <div ref={headerRef} className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
                 <div className="p-4 pb-2 max-w-md mx-auto w-full space-y-3">
