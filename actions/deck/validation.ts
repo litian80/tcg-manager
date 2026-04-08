@@ -302,7 +302,11 @@ export async function validateDeckListAction(deckText: string, tournamentId?: st
                 let hasLegalReprint = false;
                 if (groupId && legalGroupIds.has(String(groupId))) {
                     hasLegalReprint = true;
-                } else if (!groupId && dbCard.primary_category !== 'Pokemon' && dbCard.primary_category !== 'Pokémon' && legalNames.has(normalizeCardName(dbCard.name).toLowerCase())) {
+                }
+                // Fallback: check by name for non-Pokemon cards (Trainers/Energy reprints)
+                // This handles cases where a card's equivalency group is incomplete
+                // (e.g., new set reprints not yet added to the group)
+                if (!hasLegalReprint && dbCard.primary_category !== 'Pokemon' && dbCard.primary_category !== 'Pokémon' && legalNames.has(normalizeCardName(dbCard.name).toLowerCase())) {
                     hasLegalReprint = true;
                 }
 
