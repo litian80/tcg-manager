@@ -1,47 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Globe } from "lucide-react";
 
-export function TimezoneIndicator() {
-    const [isMounted, setIsMounted] = useState(false);
-    const [tzName, setTzName] = useState("");
-    const [longTzName, setLongTzName] = useState("");
+function getTimezoneInfo(): { short: string; long: string; display: string } {
+    try {
+        const parts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date());
+        let tz = parts.find(part => part.type === 'timeZoneName')?.value || "";
 
-    useEffect(() => {
-        setIsMounted(true);
-        try {
-            // Get standard names
-            const parts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date());
-            let tz = parts.find(part => part.type === 'timeZoneName')?.value || "";
-            
-            const longParts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'long' }).formatToParts(new Date());
-            const longTz = longParts.find(part => part.type === 'timeZoneName')?.value;
-            if (longTz) setLongTzName(longTz);
+        const longParts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'long' }).formatToParts(new Date());
+        const longTz = longParts.find(part => part.type === 'timeZoneName')?.value || "";
 
-            // Attempt to get clear descriptive name like "Auckland (GMT+12)" or "New York (EST)"
-            const ianaZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            if (ianaZone) {
-                // e.g. "Pacific/Auckland" -> "Auckland"
-                const city = ianaZone.split('/').pop()?.replace(/_/g, ' ');
-                if (city) {
-                    // Try to avoid redundant GMT+12 (GMT+12)
-                    if (tz.startsWith('GMT') || tz.startsWith('UTC')) {
-                        tz = `${city} (${tz})`;
-                    } else {
-                        tz = `${city} (${tz})`;
-                    }
-                }
+        const ianaZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (ianaZone) {
+            const city = ianaZone.split('/').pop()?.replace(/_/g, ' ');
+            if (city) {
+                tz = `${city} (${tz})`;
             }
-            
-            setTzName(tz);
-        } catch (e) {
-            // fallback
         }
-    }, []);
 
-    if (!isMounted || !tzName) {
-        return <div className="h-6 w-16 invisible" />; // Placeholder to avoid layout shift
+        return { short: tz, long: longTz, display: tz };
+    } catch {
+        return { short: "", long: "", display: "" };
+    }
+}
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+export function TimezoneIndicator() {
+    const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+    if (!isMounted) {
+        return <div className="h-6 w-16 invisible" />;
+    }
+
+    const { display, long: longTzName } = getTimezoneInfo();
+
+    if (!display) {
+        return <div className="h-6 w-16 invisible" />;
     }
 
     return (
@@ -50,7 +48,7 @@ export function TimezoneIndicator() {
             title={longTzName ? `Your local timezone is ${longTzName}` : "Your local timezone"}
         >
             <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-medium tracking-wide">{tzName}</span>
+            <span className="text-[11px] font-medium tracking-wide">{display}</span>
         </div>
     );
 }

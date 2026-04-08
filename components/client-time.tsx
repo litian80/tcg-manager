@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { formatDate, formatDateTime, formatDateTimeCompact, formatTime, formatTimeShort } from "@/lib/utils";
+
+function getTimezone(): string {
+    try {
+        const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).formatToParts(new Date());
+        return parts.find(part => part.type === 'timeZoneName')?.value || "";
+    } catch {
+        return "";
+    }
+}
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 interface ClientTimeProps {
     date: string | Date;
@@ -11,23 +24,13 @@ interface ClientTimeProps {
 }
 
 export function ClientTime({ date, formatType = "timeShort", className, fallback = "...", showTimezone = false }: ClientTimeProps & { showTimezone?: boolean }) {
-    const [isMounted, setIsMounted] = useState(false);
-    const [tzName, setTzName] = useState("");
-
-    useEffect(() => {
-        setIsMounted(true);
-        try {
-            const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).formatToParts(new Date());
-            const tz = parts.find(part => part.type === 'timeZoneName')?.value;
-            if (tz) setTzName(tz);
-        } catch (e) {
-            // ignore
-        }
-    }, []);
+    const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
     if (!isMounted) {
         return <span className={className}>{fallback}</span>;
     }
+
+    const tzName = getTimezone();
 
     let formatted = "";
     switch (formatType) {

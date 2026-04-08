@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle, Info, ChevronRight, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -27,10 +27,13 @@ interface AnnouncementBannerProps {
 export function AnnouncementBanner({ announcement, userRoleContext }: AnnouncementBannerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
+    const lastAnnouncementId = useRef(announcement?.id);
 
-    useEffect(() => {
-        setIsDismissed(false);
-    }, [announcement?.id]);
+    // Reset dismissed state when announcement changes (without useEffect)
+    if (announcement?.id !== lastAnnouncementId.current) {
+        lastAnnouncementId.current = announcement?.id;
+        if (isDismissed) setIsDismissed(false);
+    }
 
     if (!announcement || isDismissed) return null;
 

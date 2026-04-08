@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Layers, CreditCard, Clock } from "lucide-react";
 import { cn, formatDateTimeCompact, formatTime } from "@/lib/utils";
@@ -74,6 +74,10 @@ function getProgressColor(value: number, max: number): string {
     return "bg-primary";
 }
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function DashboardWidgets({
     registeredCount,
     capacity,
@@ -84,10 +88,7 @@ export function DashboardWidgets({
     startTime,
     deckDeadline,
 }: DashboardWidgetsProps) {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
     const countdown = mounted && startTime ? getCountdownText(startTime) : null;
 
