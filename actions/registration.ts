@@ -151,7 +151,7 @@ export async function registerPlayer(tournamentId: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: "Please sign in to register for this tournament." };
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -345,7 +345,7 @@ export async function withdrawPlayer(tournamentId: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: "Please sign in to manage your registration." };
 
     const { data: profile } = await supabase
       .from("profiles")

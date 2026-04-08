@@ -64,6 +64,7 @@ interface TournamentViewProps {
     deckList?: any;
     myPenalties?: any[];
     myDeckChecks?: any[];
+    isLoggedIn?: boolean;
 }
 
 export default function TournamentView({
@@ -86,6 +87,7 @@ export default function TournamentView({
     deckList,
     myPenalties = [],
     myDeckChecks = [],
+    isLoggedIn = true,
 }: TournamentViewProps) {
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
@@ -419,6 +421,7 @@ export default function TournamentView({
                                 playerId={myPlayerId}
                                 division={myDivision}
                                 paymentRequired={!!tournament.payment_required}
+                                isLoggedIn={isLoggedIn}
                             />
                         </div>
                     )}

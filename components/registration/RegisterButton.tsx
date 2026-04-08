@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { registerPlayer, withdrawPlayer } from "@/actions/registration";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ interface RegisterButtonProps {
     playerId?: string | null;
     division?: string | null;
     paymentRequired?: boolean;
+    isLoggedIn?: boolean;
 }
 
 export function RegisterButton({ 
@@ -46,9 +48,11 @@ export function RegisterButton({
     playerId,
     division,
     paymentRequired = false,
+    isLoggedIn = true,
 }: RegisterButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
+    const router = useRouter();
     const [currentPaymentUrl, setCurrentPaymentUrl] = useState<string | null>(paymentUrl || null);
     
     const [currentStatus, setCurrentStatus] = useState<string | null>(status || null);
@@ -109,6 +113,10 @@ export function RegisterButton({
     const isRegistrationAvailable = registrationOpen && !isRegistrationUpcoming && !isRegistrationClosed;
 
     const handleRegister = async () => {
+        if (!isLoggedIn) {
+            router.push(`/login?next=/tournament/${tournamentId}`);
+            return;
+        }
         setIsLoading(true);
         try {
             const result = await registerPlayer(tournamentId);

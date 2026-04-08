@@ -348,6 +348,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 deckList={deckList}
                 myPenalties={myPenaltiesRes.data || []}
                 myDeckChecks={myDeckChecksRes.data || []}
+                isLoggedIn={!!user}
             />
         </>
     );
