@@ -13,8 +13,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     // Scratch/temp files:
-    "tmp_deepseek*.js",
-    "scratch.js",
+    "tmp/**",
     "tools/**",
   ]),
   {
