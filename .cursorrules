@@ -10,3 +10,9 @@ When asked to investigate or modify the legality, rotation status, or characteri
 
 ## 2. No Speculative Hacking
 Do not implement logic based on upcoming sets or "expected future prints" (e.g., Japanese subset releases that haven't synchronized to the local database yet). The validation engine must represent the exact structural state of the local database at the point in time of execution.
+
+## 3. File Placement Rules
+- **Scratch/temp files** (test scripts, API experiments, debug outputs, one-off queries) → `tmp/` (gitignored)
+- **Python scripts and scrapers** → `tools/scrapers/`
+- **Server actions** → `actions/<domain>/`
+- **NEVER create scratch files in the project root.** The root directory is whitelist-enforced by CI (`npm run lint:structure`).
