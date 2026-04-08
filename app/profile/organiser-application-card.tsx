@@ -20,8 +20,7 @@ import {
 import { toast } from 'sonner'
 import { Shield, Clock, CheckCircle2, XCircle, Undo2, Send, ExternalLink, Loader2 } from 'lucide-react'
 import { submitOrganiserApplication, withdrawOrganiserApplication } from '@/actions/organiser-application'
-import { formatDate } from '@/lib/utils'
-
+import { ClientTime } from '@/components/client-time'
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn'
 
 interface OrganiserApplication {
@@ -154,7 +153,7 @@ export function OrganiserApplicationCard({ application, userRole }: OrganiserApp
                             </div>
                             <div>
                                 <span className="font-medium text-muted-foreground">Submitted: </span>
-                                <span>{formatDate(application.created_at)}</span>
+                                <span><ClientTime date={application.created_at} formatType="date" /></span>
                             </div>
                         </div>
                     </CardContent>

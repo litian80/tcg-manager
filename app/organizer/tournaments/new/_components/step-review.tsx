@@ -57,7 +57,12 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
     const seasonLabel = getSeasonLabel();
 
+    // Compute exact UTC ISO string based on the user's local timezone for exact start time handling
+    const combinedDateTime = new Date(`${basics.date}T${basics.startTime}`);
+    const localIsoString = !isNaN(combinedDateTime.getTime()) ? combinedDateTime.toISOString() : "";
+
     const overallCap = parseInt(registration.overallCapacity || "0");
+
     const totalDivCap =
         parseInt(registration.capJuniors || "0") +
         parseInt(registration.capSeniors || "0") +
@@ -88,6 +93,7 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
                     <input type="hidden" name="tournament_mode" value={basics.tournamentMode} />
                     <input type="hidden" name="name" value={basics.name} />
                     <input type="hidden" name="date" value={basics.date} />
+                    <input type="hidden" name="start_time_local_iso" value={localIsoString} />
                     <input type="hidden" name="start_time" value={basics.startTime} />
                     <input type="hidden" name="city" value={basics.city} />
                     <input type="hidden" name="country" value={basics.country} />

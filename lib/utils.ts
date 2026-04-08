@@ -6,8 +6,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Format a date as human-friendly "10 Apr 2026" */
+/** Format a date as human-friendly "10 Apr 2026". Safely preserves exact YYYY-MM-DD input without timezone shifting. */
 export function formatDate(date: string | Date): string {
+  // If date is an ISO date string "YYYY-MM-DD", preserve its exact date regardless of timezone
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split('-').map(Number);
+    const local = new Date(y, m - 1, d); // Construct in local timezone to avoid shift back
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(local);
+  }
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",

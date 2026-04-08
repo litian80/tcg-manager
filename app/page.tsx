@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, Gavel, MapPin, Clock, ClipboardList, Swords, FileDown, RefreshCw, UserCheck, Radio } from "lucide-react";
 import { Tournament } from "@/types";
+import { ClientTime } from "@/components/client-time";
 
 const STATUS_PRIORITY: Record<string, number> = { not_started: 0, running: 1, completed: 2 };
 
@@ -45,7 +46,7 @@ function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: I
                   {tournament.start_time && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 shrink-0" />
-                      {formatTimeShort(tournament.start_time)}
+                      <ClientTime date={tournament.start_time} formatType="timeShort" fallback="--:--" />
                     </span>
                   )}
                   {location && (

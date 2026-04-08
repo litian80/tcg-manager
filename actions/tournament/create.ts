@@ -79,8 +79,17 @@ export async function createTournament(formData: FormData) {
 
 
     // Combine date and time to create start_time
-    const startDateTimeStr = `${date}T${startTime}`;
-    const startTimeDate = new Date(startDateTimeStr);
+    const start_time_local_iso = formData.get("start_time_local_iso") as string;
+    let startTimeDate: Date;
+    
+    if (start_time_local_iso) {
+        // Client correctly resolved local date/time to UTC based on user's timezone
+        startTimeDate = new Date(start_time_local_iso);
+    } else {
+        // Fallback: If no client info, server evaluates string. Highly likely to be wrong for non-UTC/non-local users.
+        const startDateTimeStr = `${date}T${startTime}`;
+        startTimeDate = new Date(startDateTimeStr);
+    }
     
     if (isNaN(startTimeDate.getTime())) {
         return { error: "Invalid date or time format." };

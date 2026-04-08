@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Layers, CreditCard, Clock } from "lucide-react";
 import { cn, formatDateTimeCompact, formatTime } from "@/lib/utils";
@@ -83,7 +84,12 @@ export function DashboardWidgets({
     startTime,
     deckDeadline,
 }: DashboardWidgetsProps) {
-    const countdown = startTime ? getCountdownText(startTime) : null;
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const countdown = mounted && startTime ? getCountdownText(startTime) : null;
 
     const capacityColor = capacity > 0
         ? (registeredCount >= capacity ? "bg-red-500" : registeredCount >= capacity * 0.9 ? "bg-amber-500" : "bg-primary")
@@ -131,7 +137,7 @@ export function DashboardWidgets({
                                 <span className="text-sm text-muted-foreground">/ {decksRequired}</span>
                             </div>
                             <ProgressBar value={decksSubmitted} max={decksRequired} colorClass={deckColor} />
-                            {deckDeadline && (
+                            {mounted && deckDeadline && (
                                 <p className="text-xs text-muted-foreground mt-1.5">
                                     Due {formatDateTimeCompact(deckDeadline)}
                                 </p>
