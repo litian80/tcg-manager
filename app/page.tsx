@@ -21,7 +21,7 @@ function sortTournamentsByStatus(tournaments: Tournament[]): Tournament[] {
   });
 }
 
-function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, children }: { tournaments: PublicTournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, children?: React.ReactNode }) {
+function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, registeredTournamentIds, children }: { tournaments: PublicTournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, registeredTournamentIds?: Set<string>, children?: React.ReactNode }) {
   if (!tournaments || tournaments.length === 0) {
     return (
       <div className="text-center py-12 border rounded-lg border-dashed bg-muted/20">
@@ -39,6 +39,7 @@ function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: I
         const config = getTournamentStatusConfig(tournament.status);
         const location = formatLocation(tournament.city, tournament.country);
         const modeLabel = MODE_LABELS[tournament.tournament_mode] || tournament.tournament_mode;
+        const isRegistered = registeredTournamentIds?.has(tournament.id);
 
         return (
           <Link key={tournament.id} href={`/tournament/${tournament.id}`} className="block group">
@@ -72,6 +73,11 @@ function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: I
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                {isRegistered && (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 text-xs">
+                    Registered
+                  </Badge>
+                )}
                 <Badge variant={config.variant} className={`${config.className} text-xs`}>
                   {config.label}
                 </Badge>
@@ -92,13 +98,15 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
 
   let userRole: string | null = null;
+  let playerPopId: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, pokemon_player_id')
       .eq('id', user.id)
       .single();
     userRole = profile?.role ?? null;
+    playerPopId = profile?.pokemon_player_id ?? null;
   }
 
   return (
@@ -114,7 +122,7 @@ export default async function Home() {
             {userRole !== 'admin' && <JudgeStaffBanner />}
 
             {/* All non-admin users see the public tournament hub */}
-            <PlayerOrUnauthView isAuth={!!user} />
+            <PlayerOrUnauthView isAuth={!!user} playerPopId={playerPopId} />
           </>
         )}
 
@@ -186,12 +194,25 @@ async function OrganizerStaffBanner() {
   );
 }
 
-async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
+async function PlayerOrUnauthView({ isAuth, playerPopId }: { isAuth: boolean, playerPopId: string | null }) {
   const upcomingRes = await getPublicTournaments({ statusFilter: 'upcoming' });
   const pastRes = await getPublicTournaments({ statusFilter: 'past' });
 
   const upcomingTournaments: PublicTournament[] = ('success' in upcomingRes ? upcomingRes.success : []) ?? [];
   const pastTournaments: PublicTournament[] = ('success' in pastRes ? pastRes.success : []) ?? [];
+
+  const registeredTournamentIds = new Set<string>();
+  if (playerPopId) {
+    const supabase = await createClient();
+    const { data: registrations } = await supabase
+      .from('tournament_players')
+      .select('tournament_id')
+      .eq('player_id', playerPopId);
+    
+    if (registrations) {
+      registrations.forEach(r => registeredTournamentIds.add(r.tournament_id));
+    }
+  }
 
   return (
     <div className="space-y-12">
@@ -216,6 +237,7 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
           emptyTitle="No upcoming tournaments" 
           emptyDesc="Check back soon for new events in your area!" 
           emptyIcon={Calendar} 
+          registeredTournamentIds={registeredTournamentIds}
         />
       </section>
 
@@ -228,6 +250,7 @@ async function PlayerOrUnauthView({ isAuth }: { isAuth: boolean }) {
           emptyTitle="No past tournaments" 
           emptyDesc="There are no completed public events yet." 
           emptyIcon={Trophy} 
+          registeredTournamentIds={registeredTournamentIds}
         />
       </section>
     </div>
