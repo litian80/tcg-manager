@@ -60,6 +60,7 @@ __pycache__/
 
 # local dev artifacts
 *.log
+*.bak
 lint*.json
 lint*.txt
 /tmp/

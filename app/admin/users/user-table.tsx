@@ -32,9 +32,10 @@ import {
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Pencil, Trash2, Shield } from 'lucide-react'
+import { Pencil, Trash2, Shield, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { RoleSelect } from './role-select'
 import { useDebounce } from '@/hooks/use-debounce'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ApplicationReviewDialog } from './application-review-dialog'
 import {
     getOrganiserApplications,
@@ -68,6 +69,10 @@ export default function UserTable() {
     const [deleteUserOpen, setDeleteUserOpen] = useState(false)
     const [userToDelete, setUserToDelete] = useState<any>(null)
 
+    // Sorting and Filtering
+    const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc'|'desc'}>({ key: 'created_at', direction: 'desc' })
+    const [filterRole, setFilterRole] = useState('all')
+
     // Organiser applications state
     const [applications, setApplications] = useState<OrganiserApplicationWithProfile[]>([])
     const [reviewingApp, setReviewingApp] = useState<OrganiserApplicationWithProfile | null>(null)
@@ -77,10 +82,10 @@ export default function UserTable() {
     const [pid, setPid] = useState('')
     const [byear, setByear] = useState('')
 
-    const fetchUsers = useCallback(async (query: string) => {
+    const fetchUsers = useCallback(async (query: string, sortKey: string, sortDirection: 'asc' | 'desc', role: string) => {
         setLoading(true)
         try {
-            const data = await searchUsers(query)
+            const data = await searchUsers(query, sortKey, sortDirection, role)
             setUsers(data || [])
         } catch (error) {
             console.error(error)
@@ -98,8 +103,8 @@ export default function UserTable() {
     }, [])
 
     useEffect(() => {
-        fetchUsers(debouncedSearch)
-    }, [debouncedSearch, fetchUsers])
+        fetchUsers(debouncedSearch, sortConfig.key, sortConfig.direction, filterRole)
+    }, [debouncedSearch, sortConfig, filterRole, fetchUsers])
 
     useEffect(() => {
         fetchApplications()
@@ -124,7 +129,7 @@ export default function UserTable() {
         } else {
             toast.success("User updated successfully")
             setOpen(false)
-            fetchUsers(debouncedSearch)
+            fetchUsers(debouncedSearch, sortConfig.key, sortConfig.direction, filterRole)
         }
     }
 
@@ -141,7 +146,7 @@ export default function UserTable() {
             toast.success("User deleted successfully")
             setDeleteUserOpen(false)
             setUserToDelete(null)
-            fetchUsers(debouncedSearch) // Refresh list
+            fetchUsers(debouncedSearch, sortConfig.key, sortConfig.direction, filterRole) // Refresh list
         } catch (err: any) {
             console.error(err)
             toast.error(err.message || "Failed to delete user")
@@ -177,7 +182,22 @@ export default function UserTable() {
 
     const handleReviewComplete = () => {
         fetchApplications()
-        fetchUsers(debouncedSearch)
+        fetchUsers(debouncedSearch, sortConfig.key, sortConfig.direction, filterRole)
+    }
+
+    const requestSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc'
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        }
+        setSortConfig({ key, direction })
+    }
+
+    const getSortIcon = (columnName: string) => {
+        if (sortConfig.key !== columnName) {
+            return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+        }
+        return sortConfig.direction === 'asc' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
     }
 
     return (
@@ -200,25 +220,49 @@ export default function UserTable() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="max-w-sm"
                 />
+                <Select value={filterRole} onValueChange={setFilterRole}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="organizer">Organizer</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                    </SelectContent>
+                </Select>
                 {loading && <span className="text-sm text-muted-foreground animate-pulse">Searching...</span>}
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border bg-background">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Player ID</TableHead>
-                            <TableHead>Birth Year</TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('first_name')}>
+                                <div className="flex items-center">Name {getSortIcon('first_name')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('email')}>
+                                <div className="flex items-center">Email {getSortIcon('email')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('role')}>
+                                <div className="flex items-center">Role {getSortIcon('role')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('pokemon_player_id')}>
+                                <div className="flex items-center">Player ID {getSortIcon('pokemon_player_id')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('birth_year')}>
+                                <div className="flex items-center">Birth Year {getSortIcon('birth_year')}</div>
+                            </TableHead>
+                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => requestSort('created_at')}>
+                                <div className="flex items-center">Registered {getSortIcon('created_at')}</div>
+                            </TableHead>
                             <TableHead className="w-[80px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {users.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                                     No users found.
                                 </TableCell>
                             </TableRow>
@@ -248,6 +292,9 @@ export default function UserTable() {
                                     </TableCell>
                                     <TableCell>{user.pokemon_player_id || '-'}</TableCell>
                                     <TableCell>{user.birth_year || '-'}</TableCell>
+                                    <TableCell suppressHydrationWarning>
+                                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                                    </TableCell>
                                     <TableCell className="flex gap-2">
                                         <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
                                             <Pencil className="h-4 w-4" />

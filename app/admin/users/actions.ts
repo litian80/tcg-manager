@@ -11,7 +11,12 @@ import { z } from 'zod'
 const RoleSchema = z.enum(['admin', 'organizer', 'user'])
 export type AppRole = z.infer<typeof RoleSchema>
 
-export async function searchUsers(query: string) {
+export async function searchUsers(
+    query: string,
+    sortKey: string = 'created_at',
+    sortDirection: 'asc' | 'desc' = 'desc',
+    filterRole: string = 'all'
+) {
     const supabase = await createClient()
 
     // 1. Check if current user is admin
@@ -36,17 +41,28 @@ export async function searchUsers(query: string) {
 
     const pendingUserIds = (pendingApps || []).map(a => a.user_id)
 
+    // Helper: apply filters and sorting
+    const applyFiltersAndSorting = (q: any) => {
+        let modifiedQuery = q
+        if (filterRole && filterRole !== 'all') {
+            modifiedQuery = modifiedQuery.eq('role', filterRole)
+        }
+        return modifiedQuery.order(sortKey, { ascending: sortDirection === 'asc' })
+    }
+
     // 3. Perform Search
     if (!query) {
         // Fetch pending users first
         let pendingUsers: any[] = []
         if (pendingUserIds.length > 0) {
-            const { data } = await supabase
+            let pendingQuery = supabase
                 .from('profiles')
                 .select('*')
                 .in('id', pendingUserIds)
-                .order('first_name', { ascending: true })
-
+            
+            pendingQuery = applyFiltersAndSorting(pendingQuery)
+            
+            const { data } = await pendingQuery
             pendingUsers = data || []
         }
 
@@ -54,8 +70,9 @@ export async function searchUsers(query: string) {
         let remainingQuery = supabase
             .from('profiles')
             .select('*')
-            .order('first_name', { ascending: true })
             .limit(20)
+
+        remainingQuery = applyFiltersAndSorting(remainingQuery)
 
         if (pendingUserIds.length > 0) {
             // Supabase doesn't have a NOT IN filter directly, use .not() with .in()
@@ -75,11 +92,15 @@ export async function searchUsers(query: string) {
     }
 
     const sanitized = sanitizeSearchQuery(query)
-    const { data, error } = await supabase
+    let searchQuery = supabase
         .from('profiles')
         .select('*')
         .or(`email.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%,pokemon_player_id.ilike.%${sanitized}%`)
         .limit(20)
+
+    searchQuery = applyFiltersAndSorting(searchQuery)
+
+    const { data, error } = await searchQuery
 
     if (error) {
         console.error('Search error:', error)
@@ -92,7 +113,9 @@ export async function searchUsers(query: string) {
         return data.sort((a, b) => {
             const ap = pendingSet.has(a.id) ? 0 : 1
             const bp = pendingSet.has(b.id) ? 0 : 1
-            return ap - bp
+            if (ap !== bp) return ap - bp;
+            // Otherwise maintain existing sorted order
+            return 0;
         })
     }
 
