@@ -59,10 +59,10 @@ export function parseDeckList(deckText: string): DeckParseResult {
     let currentCategory: keyof Omit<DeckParseResult, 'TotalCards' | 'Errors'> = "Pokemon";
     
     // Standard line pattern: "2 Entei V BRS 22" or "2 Entei V (BRS) 22"
-    const standardPattern = /^(\d+)[x\s]+(.+?)\s+\(?([A-Z0-9-]{2,7})\)?\s+(\d+)\s*$/i;
+    const standardPattern = /^(\d+)(?:x\s*|\s+)(.+?)\s+\(?([A-Z0-9-]{2,7})\)?\s+(\d+)\s*$/i;
     
     // Basic Energy pattern: 11 Basic {R} Energy SVE 2
-    const basicEnergyPattern = /^(\d+)[x\s]+(Basic\s+{[^}]+}\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
+    const basicEnergyPattern = /^(\d+)(?:x\s*|\s+)(Basic\s+{[^}]+}\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
 
     for (let line of lines) {
         line = line.trim();
@@ -108,7 +108,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         }
 
         // Try simple energy pattern (fallback for name + energy suffix + set/number)
-        const simpleEnergyPattern = /^(\d+)[x\s]+(.+?\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
+        const simpleEnergyPattern = /^(\d+)(?:x\s*|\s+)(.+?\s+Energy)(?:\s+([A-Z0-9-]{2,7})\s+(\d+))?$/i;
         const simpleMatch = line.match(simpleEnergyPattern);
         if (simpleMatch) {
             const qty = parseInt(simpleMatch[1], 10);
@@ -166,7 +166,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
         }
 
         // Try parenthesized format: "3 Munkidori (TWM-95)"
-        const parenPattern = /^(\d+)[x\s]+(.+?)\s+\(([A-Z0-9]+)-(\d+)\)\s*$/i;
+        const parenPattern = /^(\d+)(?:x\s*|\s+)(.+?)\s+\(([A-Z0-9]+)-(\d+)\)\s*$/i;
         const parenMatch = line.match(parenPattern);
         if (parenMatch) {
             const qty = parseInt(parenMatch[1], 10);
@@ -199,7 +199,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
 
         // Name-only fallback: "4 Arven" or "7 Darkness Energy"
         // Auto-detect energy by name; otherwise respect currentCategory
-        const nameOnlyPattern = /^(\d+)[x\s]+(.+?)\s*$/i;
+        const nameOnlyPattern = /^(\d+)(?:x\s*|\s+)(.+?)\s*$/i;
         const nameOnlyMatch = line.match(nameOnlyPattern);
         if (nameOnlyMatch) {
             const qty = parseInt(nameOnlyMatch[1], 10);

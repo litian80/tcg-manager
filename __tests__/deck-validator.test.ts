@@ -141,6 +141,16 @@ Energy: 12
     expect(result.Energy[0].category).toBe('energy')
   })
 
+  it('preserves card names starting with X (e.g. Xerosic)', () => {
+    const deck = `Trainer: 1
+1 Xerosic's Machinations SFA 64`
+    const result = parseDeckList(deck)
+    expect(result.Trainer).toHaveLength(1)
+    expect(result.Trainer[0].name).toBe("Xerosic's Machinations")
+    expect(result.Trainer[0].set).toBe('SFA')
+    expect(result.Trainer[0].number).toBe('64')
+  })
+
   it('returns empty result for empty input', () => {
     const result = parseDeckList('')
     expect(result.Pokemon).toHaveLength(0)
