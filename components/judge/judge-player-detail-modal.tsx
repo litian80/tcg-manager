@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDateTime, formatTimeShort } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface JudgePlayerDetailModalProps {
     isOpen: boolean;
@@ -92,7 +93,7 @@ export function JudgePlayerDetailModal({
     const [isLoading, setIsLoading] = useState(true);
     const [history, setHistory] = useState<{
         penalties: { id: string; category: string; severity: string; penalty: string; notes?: string; round_number: number; created_at: string; judge?: { first_name: string | null; last_name: string | null; nick_name: string | null; } | null }[];
-        deckChecks: { id: string; check_time: string; note?: string; round_number: number; judge?: { first_name: string | null; last_name: string | null; nick_name: string | null; } | null }[];
+        deckChecks: { id: string; check_time: string; note?: string; outcome?: string; round_number: number; judge?: { first_name: string | null; last_name: string | null; nick_name: string | null; } | null }[];
         paperMeta?: { accepted_at: string; accepted_by_name: string } | null;
     }>({ penalties: [], deckChecks: [] });
     const [isPending, startTransition] = useTransition();
@@ -114,6 +115,7 @@ export function JudgePlayerDetailModal({
 
     // Start with blank check note
     const [checkNote, setCheckNote] = useState("");
+    const [checkOutcome, setCheckOutcome] = useState("Passed");
 
     // Load History + Deck Status
     const refreshData = async () => {
@@ -260,6 +262,7 @@ export function JudgePlayerDetailModal({
         formData.append("player_id", player.id);
         formData.append("round_number", String(roundNumber));
         formData.append("note", checkNote);
+        formData.append("outcome", checkOutcome);
 
         startTransition(async () => {
             const res = await addDeckCheck(formData);
@@ -268,6 +271,7 @@ export function JudgePlayerDetailModal({
                 toast.success("Deck Check Logged");
                 setActionMode("none");
                 setCheckNote("");
+                setCheckOutcome("Passed");
                 refreshData();
             }
         });
@@ -394,9 +398,27 @@ export function JudgePlayerDetailModal({
 
                                     <div className="space-y-2">
                                         <Label>Outcome</Label>
-                                        <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded text-center font-medium border border-green-200 dark:border-green-800">
-                                            Passed
-                                        </div>
+                                        <RadioGroup 
+                                            value={checkOutcome} 
+                                            onValueChange={setCheckOutcome}
+                                            className="flex gap-4"
+                                            disabled={isPending}
+                                        >
+                                            <div 
+                                                className={`flex items-center space-x-2 border rounded-md p-3 flex-1 cursor-pointer transition-colors ${checkOutcome === 'Passed' ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-transparent hover:bg-muted'}`} 
+                                                onClick={() => setCheckOutcome("Passed")}
+                                            >
+                                                <RadioGroupItem value="Passed" id="outcome-passed" />
+                                                <Label htmlFor="outcome-passed" className="cursor-pointer text-green-700 dark:text-green-400 font-medium w-full">Passed</Label>
+                                            </div>
+                                            <div 
+                                                className={`flex items-center space-x-2 border rounded-md p-3 flex-1 cursor-pointer transition-colors ${checkOutcome === 'Failed' ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700' : 'bg-transparent hover:bg-muted'}`} 
+                                                onClick={() => setCheckOutcome("Failed")}
+                                            >
+                                                <RadioGroupItem value="Failed" id="outcome-failed" />
+                                                <Label htmlFor="outcome-failed" className="cursor-pointer text-red-700 dark:text-red-400 font-medium w-full">Failed</Label>
+                                            </div>
+                                        </RadioGroup>
                                     </div>
 
                                     <div className="space-y-2">
@@ -577,9 +599,11 @@ export function JudgePlayerDetailModal({
                                         <div className="space-y-3">
                                             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Deck Checks</h4>
                                             {history.deckChecks.map((dc) => (
-                                                <div key={dc.id} className="border-l-4 border-green-500 bg-muted/40 p-3 rounded-r text-sm">
+                                                <div key={dc.id} className={`border-l-4 bg-muted/40 p-3 rounded-r text-sm ${(dc.outcome || 'Passed') === 'Failed' ? 'border-destructive' : 'border-green-500'}`}>
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <span className="font-bold text-green-700 dark:text-green-400">PASSED</span>
+                                                        <span className={`font-bold ${(dc.outcome || 'Passed') === 'Failed' ? 'text-destructive' : 'text-green-700 dark:text-green-400'}`}>
+                                                            {(dc.outcome || 'Passed').toUpperCase()}
+                                                        </span>
                                                         <span className="text-xs text-muted-foreground">{formatTimeShort(dc.check_time)} (R{dc.round_number})</span>
                                                     </div>
                                                     {dc.note && <div className="text-muted-foreground mt-1 text-xs">{dc.note}</div>}

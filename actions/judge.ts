@@ -99,6 +99,7 @@ export async function addDeckCheck(formData: FormData) {
     const playerId = formData.get("player_id") as string;
     const roundNumber = Number(formData.get("round_number"));
     const note = formData.get("note") as string;
+    const outcome = (formData.get("outcome") as string) || "Passed";
 
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -118,7 +119,8 @@ export async function addDeckCheck(formData: FormData) {
         player_id: playerId,
         judge_user_id: user.id,
         round_number: roundNumber,
-        note: note ? note : null
+        note: note ? note : null,
+        outcome: outcome
     });
 
     if (error) {

@@ -186,7 +186,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         , (isAssignedJudge || canManageStaff) ? 
             supabase
                 .from('deck_checks')
-                .select('player_id')
+                .select('player_id, round_number')
                 .eq('tournament_id', id) : 
             Promise.resolve({ data: null, error: null })
     ]);
@@ -292,8 +292,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     if (deckChecksPromise) {
         const { data: checks } = await deckChecksPromise;
         if (checks) {
-            checks.forEach((c: { player_id: string }) => {
-                deckCheckCounts[c.player_id] = (deckCheckCounts[c.player_id] || 0) + 1;
+            checks.forEach((c: { player_id: string; round_number?: number }) => {
+                const currentMax = deckCheckCounts[c.player_id] || 0;
+                deckCheckCounts[c.player_id] = Math.max(currentMax, c.round_number || 0);
             });
         }
     }

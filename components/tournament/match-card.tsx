@@ -149,8 +149,8 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
                             {record || "0-0-0"}
                         </span>
                         {deckChecks > 0 && (
-                            <span className="px-1 py-[1px] bg-blue-100 text-blue-700 text-[9px] font-bold uppercase rounded border border-blue-200 leading-none">
-                                DC{deckChecks}
+                            <span className="px-1 py-[1px] bg-blue-100 text-blue-700 text-[9px] font-bold uppercase rounded border border-blue-200 leading-none" title={`Latest Deck Check in Round ${deckChecks}`}>
+                                DC R{deckChecks}
                             </span>
                         )}
                     </div>

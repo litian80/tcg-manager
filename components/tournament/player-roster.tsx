@@ -44,13 +44,29 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
     const showStatusColumn = canManage || canCheckIn;
     const isClickable = showStatusColumn && onPlayerClick;
 
-    // Sort players alphabetically by First Name
+    const getDivisionWeight = (div: string | null | undefined) => {
+        if (!div) return 4;
+        const d = div.toLowerCase();
+        if (d === 'juniors' || d === 'junior' || d === 'jr') return 1;
+        if (d === 'seniors' || d === 'senior' || d === 'sr') return 2;
+        if (d === 'masters' || d === 'master' || d === 'mr') return 3;
+        return 4;
+    };
+
+    // Sort players by Division (JR, SR, MR), then alphabetically by First Name
     const sortedPlayers = [...players].sort((a, b) => {
         const isMeA = myPlayerId && (a.id === myPlayerId || a.tom_player_id === myPlayerId);
         const isMeB = myPlayerId && (b.id === myPlayerId || b.tom_player_id === myPlayerId);
         
         if (isMeA && !isMeB) return -1;
         if (!isMeA && isMeB) return 1;
+
+        const weightA = getDivisionWeight(a.division);
+        const weightB = getDivisionWeight(b.division);
+
+        if (weightA !== weightB) {
+            return weightA - weightB;
+        }
 
         const nameA = (a.first_name || "").toLowerCase();
         const nameB = (b.first_name || "").toLowerCase();
@@ -141,11 +157,31 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                                                 })}
                                                 className="text-left hover:underline flex items-center gap-2"
                                             >
+                                                {player.division ? (
+                                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
+                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                                         ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
+                                                         ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
+                                                         player.division}
+                                                    </span>
+                                                ) : (
+                                                    <div className="w-7 flex-shrink-0" />
+                                                )}
                                                 <span>{player.first_name || "Unknown"} {player.last_name || "Unknown"}</span>
                                                 {isMe && <Badge variant="secondary" className="text-[10px] h-5 px-1.5 mt-0.5">You</Badge>}
                                             </button>
                                         ) : (
                                             <div className="flex items-center gap-2">
+                                                {player.division ? (
+                                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
+                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                                         ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
+                                                         ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
+                                                         player.division}
+                                                    </span>
+                                                ) : (
+                                                    <div className="w-7 flex-shrink-0" />
+                                                )}
                                                 <span>{player.first_name || "Unknown"} {player.last_name || "Unknown"}</span>
                                                 {isMe && <Badge variant="secondary" className="text-[10px] h-5 px-1.5">You</Badge>}
                                             </div>

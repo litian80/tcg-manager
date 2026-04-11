@@ -723,6 +723,15 @@ function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProp
     const paperCount = rosterPlayers.filter(p => p.deck_list_status === 'paper').length;
     const totalSubmitted = onlineCount + paperCount;
 
+    const getDivisionWeight = (div: string | null | undefined) => {
+        if (!div) return 4;
+        const d = div.toLowerCase();
+        if (d === 'juniors' || d === 'junior' || d === 'jr') return 1;
+        if (d === 'seniors' || d === 'senior' || d === 'sr') return 2;
+        if (d === 'masters' || d === 'master' || d === 'mr') return 3;
+        return 4;
+    };
+
     const filteredPlayers = [...rosterPlayers]
         .filter(p => {
             if (!searchQuery) return true;
@@ -730,6 +739,13 @@ function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProp
             return name.includes(searchQuery.toLowerCase());
         })
         .sort((a, b) => {
+            const weightA = getDivisionWeight(a.division);
+            const weightB = getDivisionWeight(b.division);
+
+            if (weightA !== weightB) {
+                return weightA - weightB;
+            }
+
             const nameA = (a.first_name || "").toLowerCase();
             const nameB = (b.first_name || "").toLowerCase();
             return nameA.localeCompare(nameB);
@@ -775,9 +791,19 @@ function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProp
                                     name: `${player.first_name || "Unknown"} ${player.last_name || "Unknown"}`,
                                     dbId: player.player_id || player.id
                                 })}
-                                className="text-sm font-medium text-left hover:underline truncate block"
+                                className="text-sm font-medium text-left hover:underline truncate flex items-center gap-2 w-full"
                             >
-                                {player.first_name || "Unknown"} {player.last_name || "Unknown"}
+                                {player.division ? (
+                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
+                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                         ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
+                                         ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
+                                         player.division}
+                                    </span>
+                                ) : (
+                                    <div className="w-7 flex-shrink-0" />
+                                )}
+                                <span className="truncate">{player.first_name || "Unknown"} {player.last_name || "Unknown"}</span>
                             </button>
                         </div>
 
