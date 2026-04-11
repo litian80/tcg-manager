@@ -125,6 +125,12 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             return;
         }
 
+        if (!jrMax || !srMax) {
+            toast.error("Juniors and Seniors division age cutoffs are mandatory.");
+            setIsLoading(false);
+            return;
+        }
+
         let startTimeValue = null;
         let deckListSubmissionDeadline = tournament.deck_list_submission_deadline;
 

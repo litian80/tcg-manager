@@ -34,7 +34,7 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
         if (result.error) {
             toast.error(result.error);
         } else if (result.success) {
-            const { xml, filename } = result.success;
+            const { xml, filename, warning } = result.success;
 
             // Trigger download
             const blob = new Blob([xml], { type: "application/octet-stream" });
@@ -47,7 +47,11 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            toast.success("TDF file exported successfully");
+            if (warning) {
+                toast.warning(warning, { duration: 10000 });
+            } else {
+                toast.success("TDF file exported successfully");
+            }
         }
         setIsExporting(false);
     };
@@ -78,9 +82,9 @@ export function TdfExportCard({ tournament }: TdfExportCardProps) {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Confirm TDF Export</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to export the TDF file? Ensure all players are registered and the Sanction ID is set before exporting. This file is used to import your tournament into TOM.
+                            <AlertDialogTitle>Confirm Roster Cutoff</AlertDialogTitle>
+                            <AlertDialogDescription className="text-foreground">
+                                You are exporting the player roster to TOM. By proceeding, you acknowledge that online registration is now closed, and BracketOps will only be updated via TOM syncs from this point forward.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

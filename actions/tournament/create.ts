@@ -52,8 +52,12 @@ export async function createTournament(formData: FormData) {
     const jr_max_raw = formData.get("juniors_birth_year_max") as string;
     const sr_max_raw = formData.get("seniors_birth_year_max") as string;
     
-    const juniors_birth_year_max = jr_max_raw ? parseInt(jr_max_raw, 10) : null;
-    const seniors_birth_year_max = sr_max_raw ? parseInt(sr_max_raw, 10) : null;
+    if (!jr_max_raw || !sr_max_raw) {
+        return { error: "Juniors and Seniors birth year cutoffs are mandatory." };
+    }
+    
+    const juniors_birth_year_max = parseInt(jr_max_raw, 10);
+    const seniors_birth_year_max = parseInt(sr_max_raw, 10);
     // Masters birth year is no longer an input - derived from seniors threshold in registration logic
 
     // Advanced settings (optional)

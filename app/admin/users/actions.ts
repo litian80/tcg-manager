@@ -145,6 +145,8 @@ export async function adminUpdateUser(targetUserId: string, payload: UpdatePaylo
         }
 
         const adminSupabase = createAdminClient()
+
+        // Update the profile only — POP ID changes apply to future tournaments
         const { error } = await adminSupabase
             .from('profiles')
             .update({

@@ -9,6 +9,7 @@ import { StepAdvanced, type StepAdvancedData } from "./step-advanced";
 import { StepReview } from "./step-review";
 import type { TemplateOption, TemplateId, TournamentFormDefaults } from "@/lib/tournament-templates";
 import { getSeasonCutoffs } from "@/lib/tournament-templates";
+import { toast } from "sonner";
 
 interface CreateTournamentPageClientProps {
     userRole: string;
@@ -138,6 +139,11 @@ export function CreateTournamentPageClient({
     };
 
     const handleNextFromRegistration = () => {
+        if (!registration.jrMax || !registration.srMax) {
+            toast.error("Juniors and Seniors age divisions cutoffs are mandatory.");
+            return;
+        }
+
         if (showAdvanced) {
             goToStep(advancedStep); // Go to Advanced
         } else {

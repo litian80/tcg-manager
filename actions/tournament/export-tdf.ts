@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { safeAction } from "@/lib/safe-action";
+import { revalidatePath } from "next/cache";
 
 export async function exportTournamentTDF(tournamentId: string) {
     return safeAction(async () => {
@@ -60,12 +61,11 @@ export async function exportTournamentTDF(tournamentId: string) {
                 last_name,
                 tom_player_id
             )
-        `)
+         `)
         .eq('tournament_id', tournamentId);
 
-    // Note: If `birth_year` is missing from the joined data, we will default to 2012 in the XML generation step.
-
     let players: any[] = [];
+    let warning: string | undefined;
 
     if (tpData) {
         // We only want to export actual participants.
@@ -103,13 +103,32 @@ export async function exportTournamentTDF(tournamentId: string) {
             }
         });
 
-        players = finalRoster.map((tp: any) => {
-            const tomId = tp.players?.tom_player_id;
-            const realBirthYear = tomId ? birthYearMap.get(tomId) : undefined;
+        // Separate players with and without birth years
+        const withBirthYear: any[] = [];
+        const missingBirthYear: any[] = [];
 
+        finalRoster.forEach((tp: any) => {
+            const tomId = tp.players?.tom_player_id;
+            if (tomId && birthYearMap.has(tomId)) {
+                withBirthYear.push(tp);
+            } else {
+                missingBirthYear.push(tp);
+            }
+        });
+
+        // Build warning for excluded players
+        if (missingBirthYear.length > 0) {
+            const names = missingBirthYear.map((tp: any) => 
+                `${tp.players?.first_name || 'Unknown'} ${tp.players?.last_name || 'Unknown'} (${tp.players?.tom_player_id || 'No ID'})`
+            ).join(', ');
+            warning = `The following players were excluded from the TDF export because they have no birth year on file: ${names}`;
+        }
+
+        players = withBirthYear.map((tp: any) => {
+            const tomId = tp.players?.tom_player_id;
             return {
                 ...tp.players,
-                birth_year: realBirthYear || 2012 // Use real year if found, else default
+                birth_year: birthYearMap.get(tomId!)
             };
         });
     }
@@ -143,7 +162,7 @@ export async function exportTournamentTDF(tournamentId: string) {
 
     // Players Tag
     const playersMap = players.map(p => {
-        const bYear = p.birth_year || 2012;
+        const bYear = p.birth_year;
         const bDate = `02/27/${bYear}`;
 
         // Creation dates: use current time as we are generating now
@@ -172,10 +191,19 @@ export async function exportTournamentTDF(tournamentId: string) {
     </finalsoptions>
 </tournament>`;
 
+    // Lock the tournament automatically after successful TDF generation
+    await supabase
+        .from('tournaments')
+        .update({ registration_open: false })
+        .eq('id', tournamentId);
+
+    revalidatePath(`/organizer/tournaments/${tournamentId}`);
+
     return {
         success: {
             xml,
-            filename: `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_${tournament.tom_uid}.tdf`
+            filename: `${tournament.name.replace(/[^a-z0-9]/gi, '_')}_${tournament.tom_uid}.tdf`,
+            warning
         }
     };
     });
