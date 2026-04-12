@@ -175,6 +175,10 @@ export async function registerPlayer(tournamentId: string) {
       return { error: "Registration is not open for this tournament." };
     }
 
+    if (tournament.status === 'cancelled') {
+      return { error: "This tournament has been cancelled." };
+    }
+
     if (tournament.registration_opens_at && new Date(tournament.registration_opens_at) > new Date()) {
       return { error: "Registration has not opened yet." };
     }

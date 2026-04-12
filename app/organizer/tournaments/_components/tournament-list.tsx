@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { formatDate, getTournamentStatusConfig } from "@/lib/utils";
 import type { Tournament } from "@/types/tournament";
 
-type StatusFilter = "all" | "not_started" | "running" | "completed";
+type StatusFilter = "all" | "not_started" | "running" | "completed" | "cancelled";
 
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "not_started", label: "Upcoming" },
     { value: "running", label: "Active" },
     { value: "completed", label: "Completed" },
+    { value: "cancelled", label: "Cancelled" },
 ];
 
 interface TournamentListProps {
@@ -51,9 +52,10 @@ export function TournamentList({ tournaments }: TournamentListProps) {
     const upcoming = filtered.filter((t) => t.status === "not_started");
     const active = filtered.filter((t) => t.status === "running");
     const completed = filtered.filter((t) => t.status === "completed");
+    const cancelled = filtered.filter((t) => t.status === "cancelled");
 
     // When status filter is "all" and we have multiple groups, show grouped view
-    const groupCount = [upcoming.length > 0, active.length > 0, completed.length > 0].filter(Boolean).length;
+    const groupCount = [upcoming.length > 0, active.length > 0, completed.length > 0, cancelled.length > 0].filter(Boolean).length;
     const showGrouped = statusFilter === "all" && groupCount > 1;
 
     const visibleCompleted = showAllCompleted
@@ -138,6 +140,15 @@ export function TournamentList({ tournaments }: TournamentListProps) {
                                     Show all {completed.length} completed
                                 </button>
                             )}
+                        </Section>
+                    )}
+
+                    {/* Cancelled Section */}
+                    {cancelled.length > 0 && (
+                        <Section title="Cancelled" count={cancelled.length}>
+                            {cancelled.map((t) => (
+                                <TournamentCard key={t.id} tournament={t} />
+                            ))}
                         </Section>
                     )}
                 </>

@@ -106,6 +106,8 @@ export function getTournamentStatusConfig(status: string): TournamentStatusConfi
       return { label: 'Upcoming', variant: 'outline', className: 'border-blue-500/50 text-blue-600' }
     case 'completed':
       return { label: 'Completed', variant: 'secondary', className: '' }
+    case 'cancelled':
+      return { label: 'Cancelled', variant: 'destructive', className: 'bg-red-600 hover:bg-red-700 text-white' }
     default:
       return {
         label: status.charAt(0).toUpperCase() + status.slice(1),

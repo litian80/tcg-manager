@@ -2,7 +2,7 @@
 
 import { UserResult } from "@/actions/tournament/staff";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock, Users } from "lucide-react";
+import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock, Users, Ban } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -382,9 +382,15 @@ export default function TournamentView({
                             )}
                             
                             {!hasMatches ? (
-                                <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30">
-                                    Pre-Tournament
-                                </Badge>
+                                tournament.status === 'cancelled' ? (
+                                    <Badge className="bg-red-600 hover:bg-red-700 border-transparent text-white">
+                                        Cancelled
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30">
+                                        Pre-Tournament
+                                    </Badge>
+                                )
                             ) : (
                                 <>
                                     {tournament.status === 'running' && (
@@ -395,6 +401,11 @@ export default function TournamentView({
                                     {tournament.status === 'completed' && (
                                         <Badge variant="secondary">
                                             Completed
+                                        </Badge>
+                                    )}
+                                    {tournament.status === 'cancelled' && (
+                                        <Badge className="bg-red-600 hover:bg-red-700 border-transparent text-white">
+                                            Cancelled
                                         </Badge>
                                     )}
                                 </>
@@ -410,8 +421,16 @@ export default function TournamentView({
                         </div>
                     </div>
 
+                    {/* Cancelled Banner */}
+                    {tournament.status === 'cancelled' && (
+                        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                            <Ban className="h-4 w-4 shrink-0" />
+                            <span>This tournament has been cancelled. All existing information is preserved.</span>
+                        </div>
+                    )}
+
                     {/* Registration Button (Visible if Registration is Enabled or User is Registered) */}
-                    {(!hasMatches && (tournament.registration_open || myRegistrationStatus)) && (
+                    {(!hasMatches && tournament.status !== 'cancelled' && (tournament.registration_open || myRegistrationStatus)) && (
                         <div className="pt-2 space-y-2">
                             {/* Payment Required display */}
                             {tournament.payment_required && (

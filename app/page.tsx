@@ -8,7 +8,7 @@ import { Calendar, Users, Trophy, ArrowRight, ShieldAlert, Gavel, MapPin, Clock,
 import { Tournament } from "@/types";
 import { ClientTime } from "@/components/client-time";
 
-const STATUS_PRIORITY: Record<string, number> = { not_started: 0, running: 1, completed: 2 };
+const STATUS_PRIORITY: Record<string, number> = { not_started: 0, running: 1, completed: 2, cancelled: 3 };
 
 function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: Icon, registeredTournamentIds, children }: { tournaments: PublicTournament[], emptyTitle: string, emptyDesc: React.ReactNode, emptyIcon: any, registeredTournamentIds?: Set<string>, children?: React.ReactNode }) {
   if (!tournaments || tournaments.length === 0) {

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { authorizeTournamentManagement } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, Printer } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Printer, Ban } from "lucide-react";
 import { TournamentSettingsForm } from "./_components/tournament-settings-form";
 import { TdfExportCard } from "./_components/tdf-export-card";
 import { RosterManager } from "./_components/roster-manager";
@@ -16,6 +16,7 @@ import { TournamentPhaseIndicator } from "./_components/tournament-phase-indicat
 import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs";
 import { DashboardWidgets } from "./_components/dashboard-widgets";
 import { AnnouncementManager } from "./_components/announcement-manager";
+import { CancelTournamentButton } from "./_components/cancel-tournament-button";
 
 
 
@@ -46,6 +47,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
         .eq("tournament_id", id);
 
     const isActive = matchesCount !== null && matchesCount > 0;
+    const isCancelled = tournament.status === 'cancelled';
 
     // Determine the default tab based on tournament state
     const defaultTab = isActive ? "during" : "pre";
@@ -157,6 +159,9 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {!isCancelled && tournament.status !== 'completed' && (
+                        <CancelTournamentButton tournamentId={tournament.id} tournamentName={tournament.name} />
+                    )}
                     <Button asChild>
                         <Link
                             href={`/organizer/tournaments/${id}/flyer`}
@@ -170,7 +175,18 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
             </div>
 
             {/* Phase Indicator */}
-            <TournamentPhaseIndicator isActive={isActive} />
+            {!isCancelled && <TournamentPhaseIndicator isActive={isActive} />}
+
+            {/* Cancelled Banner */}
+            {isCancelled && (
+                <Alert variant="destructive" className="border-red-600/50 bg-red-50 dark:bg-red-950/30">
+                    <Ban className="h-4 w-4" />
+                    <AlertTitle>Tournament Cancelled</AlertTitle>
+                    <AlertDescription>
+                        This tournament has been cancelled. All information is preserved in a read-only state. No further registrations or changes can be made.
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {/* Tabbed Dashboard */}
             <TournamentDashboardTabs defaultTab={defaultTab}>
@@ -192,17 +208,17 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
 
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div className="space-y-6">
-                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                    <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
                                         <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} />
                                     </div>
 
-                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                    <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
                                         <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} requiresDeckList={!!tournament.requires_deck_list} />
                                     </div>
                                 </div>
                                 <div className="space-y-6">
                                     <StaffManager tournamentId={tournament.id} judges={judges} />
-                                    <div className={isActive ? "opacity-50 pointer-events-none grayscale" : ""}>
+                                    <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
                                         <TdfExportCard tournament={tournament} />
                                     </div>
                                 </div>
