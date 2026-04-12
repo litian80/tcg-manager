@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 
 import { createAnnouncement, setAnnouncementActive, deleteAnnouncement } from "@/actions/announcements";
-import { format } from "date-fns";
+import { formatDateTimeCompact } from "@/lib/utils";
 import { Database } from "@/utils/supabase/database.types";
 
 type Announcement = Database['public']['Tables']['tournament_announcements']['Row'];
@@ -139,7 +139,7 @@ export function AnnouncementManager({
                                                     {isActive && <Badge variant="default" className="text-[10px] h-4 px-1.5 py-0">Active</Badge>}
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {format(new Date(ann.created_at), 'MMM d, yyyy h:mm a')}
+                                                    {formatDateTimeCompact(ann.created_at)}
                                                 </p>
                                             </div>
                                             <Badge variant={

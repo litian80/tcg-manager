@@ -100,7 +100,7 @@ export function CreateTournamentPageClient({
     let suggestedName: string | undefined;
     if (duplicateDefaults) {
         const now = new Date();
-        const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const monthYear = now.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
         suggestedName = `${duplicateDefaults.name} — ${monthYear}`;
     }
 

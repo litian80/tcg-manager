@@ -41,6 +41,7 @@ import {
     getOrganiserApplications,
     type OrganiserApplicationWithProfile
 } from '@/actions/organiser-application'
+import { formatDate } from '@/lib/utils'
 
 // Inline debounce hook since I'm not sure if the project has one
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -293,7 +294,7 @@ export default function UserTable() {
                                     <TableCell>{user.pokemon_player_id || '-'}</TableCell>
                                     <TableCell>{user.birth_year || '-'}</TableCell>
                                     <TableCell suppressHydrationWarning>
-                                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                                        {user.created_at ? formatDate(user.created_at) : '-'}
                                     </TableCell>
                                     <TableCell className="flex gap-2">
                                         <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
