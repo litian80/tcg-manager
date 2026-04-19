@@ -138,27 +138,43 @@ export async function POST(req: NextRequest) {
         const roundCount = 0; // Will update if we find rounds
 
         const targetId = searchParams.get('targetId');
+        const forceSync = searchParams.get('force') === 'true';
 
         // STRICT IDENTIFICATION CHECK
         // We use tom_uid, city, country, organizer_popid, date to identify.
         // OR, if the client provided a explicit targetId (e.g., updating an existing tournament), use that first.
-        let existingTournament: { id: string } | null = null;
+        let existingTournament: { id: string; currentName?: string } | null = null;
         
         if (targetId) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id, organizer_popid')
+                .select('id, organizer_popid, tom_uid, name')
                 .eq('id', targetId)
                 .single();
 
             if (data) {
+                // DB-003: Cross-validate TDF tom_uid against target tournament
+                // Prevents auto-sync from applying wrong TDF file to pinned tournament
+                if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+                    console.warn(`[TOM Sync] REJECTED: TDF Sanction ID ${tomUid} does not match target tournament ${targetId} (has ${data.tom_uid})`);
+                    return NextResponse.json({
+                        error: `TDF file mismatch: file contains Sanction ID ${tomUid} but target tournament has ${data.tom_uid}. Upload rejected to prevent data corruption.`
+                    }, { status: 400 });
+                }
+                if (!tomUid && data.tom_uid) {
+                    console.warn(`[TOM Sync] REJECTED: TDF has no Sanction ID but target tournament ${targetId} already has ${data.tom_uid}`);
+                    return NextResponse.json({
+                        error: `TDF file missing Sanction ID but target tournament already has one (${data.tom_uid}). Upload rejected.`
+                    }, { status: 400 });
+                }
+
                 // SEC-002: Verify the uploader owns the target tournament
                 if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
                     return NextResponse.json({
                         error: 'Forbidden: You do not own the target tournament.'
                     }, { status: 403 });
                 }
-                existingTournament = { id: data.id };
+                existingTournament = { id: data.id, currentName: data.name || undefined };
             }
         }
 
@@ -166,24 +182,24 @@ export async function POST(req: NextRequest) {
         if (!existingTournament && tomUid) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id')
+                .select('id, name')
                 .eq('tom_uid', tomUid)
                 .maybeSingle(); // Use maybeSingle in case there are duplicates, we grab the first.
             
-            if (data) existingTournament = data;
+            if (data) existingTournament = { id: data.id, currentName: data.name || undefined };
         }
 
         // Fallback 2: If no tom_uid in the file (unofficial tournament), match on Name, Date, Organizer
         if (!existingTournament) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id')
+                .select('id, name')
                 .eq('name', name)
                 .eq('date', date)
                 .eq('organizer_popid', organizerPopId)
                 .maybeSingle();
             
-            if (data) existingTournament = data;
+            if (data) existingTournament = { id: data.id, currentName: data.name || undefined };
         }
 
         let tournamentId: string;
@@ -191,15 +207,36 @@ export async function POST(req: NextRequest) {
 
         if (existingTournament) {
             tournamentId = existingTournament.id;
-            // Update mutable fields like status, total_rounds (later), and maybe name if changed?
+            // Update mutable fields like status, total_rounds (later)
+            // DB-003: Build update payload — only update name if current name is empty/null
+            const updatePayload: Record<string, unknown> = {
+                status: tournamentStatus,
+                is_published: isPublished,
+                parsed_data: parsedDataPayload
+            };
+            if (!existingTournament.currentName || existingTournament.currentName.trim() === '') {
+                updatePayload.name = name;
+            } else if (existingTournament.currentName !== name) {
+                console.log(`[TOM Sync] Name differs — DB: "${existingTournament.currentName}" vs TDF: "${name}". Keeping DB name.`);
+                // Store TDF name in parsed_data for reference
+                parsedDataPayload.tdf_name = name;
+                updatePayload.parsed_data = parsedDataPayload;
+            }
+            // If target tournament has no tom_uid yet, set it from TDF (first-time link)
+            if (tomUid && targetId) {
+                const { data: currentTournament } = await supabase
+                    .from('tournaments')
+                    .select('tom_uid')
+                    .eq('id', tournamentId)
+                    .single();
+                if (currentTournament && !currentTournament.tom_uid) {
+                    updatePayload.tom_uid = tomUid;
+                    console.log(`[TOM Sync] First-time link: set tom_uid=${tomUid} for tournament ${tournamentId}`);
+                }
+            }
             await supabase
                 .from('tournaments')
-                .update({
-                    status: tournamentStatus,
-                    name: name, // Update name just in case
-                    is_published: isPublished,
-                    parsed_data: parsedDataPayload
-                })
+                .update(updatePayload)
                 .eq('id', tournamentId);
         } else {
             const { data: newTournament, error: insertError } = await supabase
@@ -641,8 +678,15 @@ export async function POST(req: NextRequest) {
                 await supabase.from('matches').delete().in('id', orphanIds);
             }
         } else {
-            // No matches in XML — clean up all existing matches for this tournament
-            await supabase.from('matches').delete().eq('tournament_id', tournamentId);
+            // DB-003: No matches in XML — only delete existing matches if force flag is set.
+            // A TDF with no match data may be a partial/Stage-1 export; deleting matches here
+            // destroyed completed tournament data in production (see incident fd0237b9).
+            if (forceSync) {
+                console.log(`[TOM Sync] Force-deleting all matches for tournament ${tournamentId} (empty TDF + force flag)`);
+                await supabase.from('matches').delete().eq('tournament_id', tournamentId);
+            } else {
+                console.warn(`[TOM Sync] TDF contains no match data for tournament ${tournamentId}. Existing matches preserved.`);
+            }
         }
 
         // Update total rounds if we found some

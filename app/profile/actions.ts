@@ -73,6 +73,12 @@ export async function updateProfile(prevState: UpdateProfileState, formData: For
             if (error.message.includes("sensitive fields")) {
                 return { message: "Operation failed: Sensitive fields are immutable.", success: false };
             }
+            if (error.code === '23505') {
+                return {
+                    errors: { pokemon_player_id: ['This Pokemon Player ID is already registered to another account.'] },
+                    message: "Failed to update profile.", success: false
+                };
+            }
             console.error("Profile update error:", error);
             return { message: "Failed to update profile. " + (error.message || ""), success: false };
         }

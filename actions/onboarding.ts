@@ -73,7 +73,13 @@ export async function completeOnboarding(prevState: any, formData: FormData): Pr
 
     if (error) {
         console.error('Error updating profile:', error);
-        return { message: 'Database Error: Failed to update profile.' };
+        if (error.code === '23505') {
+            return {
+                errors: { pokemon_player_id: ['This Pokemon Player ID is already registered to another account.'] },
+                message: 'Failed to Complete Onboarding.',
+            };
+        }
+        return { message: `Database Error: Failed to update profile. (${error.message || 'Unknown'})` };
     }
 
     revalidatePath('/', 'layout');

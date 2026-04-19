@@ -68,7 +68,15 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
 
             if (!response.ok) {
                 const result = await response.json();
-                throw new Error(result.error || 'Upload failed');
+                const errorMsg = result.error || 'Upload failed';
+                // DB-003: Stop auto-sync on TDF mismatch (400) — the file belongs to a different tournament
+                if (response.status === 400 && errorMsg.includes('mismatch')) {
+                    stopWatching();
+                    setError('⚠️ Wrong TDF file: ' + errorMsg);
+                    toast.error('Auto-sync stopped: TDF file does not match this tournament. Please select the correct file.');
+                    return;
+                }
+                throw new Error(errorMsg);
             }
 
             setLastSynced(new Date());
@@ -78,7 +86,6 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
             console.error('Auto-sync error:', err);
             setError(err.message || 'Failed to sync');
             toast.error('Auto-sync failed: ' + (err.message || 'Unknown error'));
-            // Optional: Stop watching on fatal error? For now, keep trying or let user stop.
         } finally {
             setIsSyncing(false);
         }

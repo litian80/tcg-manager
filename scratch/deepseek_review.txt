@@ -1,0 +1,526 @@
+﻿REASONING:
+We are given a bug fix plan for a Pokemon TCG tournament management web application. The bug involves data corruption due to three code bugs in the `/api/upload-tom` endpoint and the Auto-Sync Uploader component.
+
+Let's break down the bugs and the proposed fixes:
+
+**Bug 1:** The `targetId` in the query string bypasses cross-validation of the TDF file's `tom_uid` with the target tournament's `tom_uid`. This allows a TDF file for Tournament B to be uploaded to Tournament A if the auto-sync is running for Tournament A.
+
+**Proposed Fix 1:** When a `targetId` is provided, we now also select the `tom_uid` of the target tournament and compare it with the `tom_uid` from the TDF file. If they don't match, we reject the upload. However, we must consider the case where the target tournament does not have a `tom_uid` yet (first upload) or the TDF file does not have a `tom_uid` (though that might be invalid). The proposed code does not handle the case where one of them is missing.
+
+**Bug 2:** The tournament name is unconditionally overwritten with the name from the TDF file.
+
+**Proposed Fix 2:** We are given two options: either remove the name update or conditionally update it.
+
+**Bug 3:** If the TDF file has no match data (e.g., a Stage 1 setup export), the code deletes all existing matches for the tournament. This is destructive and incorrect because the TDF file might just be a partial export (without matches) and we shouldn't delete existing matches.
+
+**Proposed Fix 3:** Only delete matches if `forceSync` is true. However, note that the `forceSync` parameter is not mentioned in the bug description. We must check if this parameter exists and is used appropriately. Alternatively, we might want to add additional safeguards.
+
+Now, let's answer the questions:
+
+1. **Cross-validation logic for Fix 1:**
+   The proposed fix checks if both `tomUid` (from TDF) and `data.tom_uid` (from the target tournament) exist and are not equal, then rejects. However, we must also consider:
+   - If the target tournament has no `tom_uid` (first upload), then we can set it. But note: the TDF file might have a `tom_uid` and we are uploading to a specific target tournament (by `targetId`). In this case, we should allow the upload and set the `tom_uid` of the target tournament to the one from the TDF? Or should we reject if they don't match? Actually, if the target tournament doesn't have a `tom_uid`, then this is the first TOM upload for that tournament, so we should accept the TDF and set the `tom_uid` accordingly.
+   - If the TDF file does not have a `tom_uid` (which might be invalid or a very old TOM version), then we might not want to reject but rather proceed with caution? However, the bug is about mismatching `tom_uid`, so if the TDF doesn't have one, we cannot cross-validate. In that case, we might want to allow the upload if the target tournament also doesn't have one, or if the target tournament already has a `tom_uid`, then we reject because we cannot guarantee it's the same tournament.
+
+   We propose to adjust the logic as follows:
+
+   ```typescript
+   if (targetId) {
+       const { data } = await supabase
+           .from('tournaments')
+           .select('id, organizer_popid, tom_uid')
+           .eq('id', targetId)
+           .single();
+       if (data) {
+           // Cross-validate: if TDF has a tom_uid and the target tournament has a tom_uid, they must match.
+           // If the target tournament does not have a tom_uid, we will set it from the TDF (if provided).
+           // If the TDF does not have a tom_uid, we cannot cross-validate, so we proceed with caution (maybe log a warning).
+           if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+               return NextResponse.json({
+                   error: `TDF file mismatch: file contains Sanction ID ${tomUid} but target tournament has ${data.tom_uid}. Upload rejected.`
+               }, { status: 400 });
+           }
+           // If the target tournament doesn't have a tom_uid, we will update it with the TDF's tom_uid (if provided) later.
+           if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
+               return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+           }
+           existingTournament = { id: data.id };
+       }
+   }
+   ```
+
+   Then, later in the code when updating the tournament, we should set the `tom_uid` if it's not set and we have it from the TDF.
+
+2. **Fix 2: Tournament name overwrite:**
+   We should not unconditionally overwrite the tournament name. The name in the TDF might be different from the one in the database because the organizer might have changed it on the web app. We should only update the name if the tournament is being created for the first time (i.e., we are creating a new tournament from the TDF) or if we are explicitly told to (e.g., by a `forceSync` flag). However, note that the bug report says that the name was overwritten when it shouldn't have been.
+
+   Alternatively, we can have a rule: if the tournament already exists and has a name, we don't update it from the TDF. But what if the TDF name is more accurate? Perhaps we can have a condition: only update the name if the current name is null or empty, or if the `forceSync` flag is set.
+
+   Since the bug report indicates that the name was overwritten incorrectly, we should be conservative. Let's only update the name if the tournament is new (i.e., we are creating it) or if the tournament does not have a name yet (or if the name is empty). Otherwise, we leave the existing name.
+
+   We can change the update to:
+
+   ```typescript
+   const updateData: any = {
+       status: tournamentStatus,
+       is_published: isPublished,
+       parsed_data: parsedDataPayload
+   };
+
+   // Only update the name if the tournament doesn't have a name yet, or if we are forced (but forceSync is not currently a parameter in the bug description).
+   // Alternatively, we can check if the current name is null or empty.
+   // We are not passing the current name, so we would need to fetch it or rely on the existing tournament data.
+
+   // Since we are already fetching the tournament for validation, we can extend that to get the current name.
+   // However, in the code, we fetch the tournament again when updating? Actually, we are updating by tournamentId.
+
+   // We propose: only update the name if the tournament is newly created (i.e., we are in the create block) or if the existing tournament's name is null/empty.
+
+   // We can adjust the code to conditionally add the name to the updateData.
+   if (shouldUpdateName) {
+       updateData.name = name;
+   }
+   ```
+
+   We need to define `shouldUpdateName`. We can fetch the current tournament name, or we can rely on the `existingTournament` object that we already fetched (but note: we only fetched `id`, `organizer_popid`, and `tom_uid`). We could extend the fetch to get the name as well.
+
+   Alternatively, we can change the fetch to get the name and then decide.
+
+   Since we are already modifying the fetch for `tom_uid`, we can also get the name. Then, we can set:
+
+   ```typescript
+   if (!data.name || data.name.trim() === '') {
+       updateData.name = name;
+   }
+   ```
+
+   But note: the bug report says that the name was overwritten for Tournament A (which already had a name) with the name from Tournament B. We don't want that. So, we should only update the name if the current name is empty.
+
+   However, what if the organizer changed the name in the web app and then re-uploads the TDF? They might want the TDF name to take precedence? That's a product decision. Given the bug, I think we should be safe and not overwrite an existing name.
+
+   Alternatively, we can add a query parameter `overwriteName` or use the `forceSync` flag (if we have one) to allow overwriting.
+
+   Since the bug is about data corruption, I propose to not update the name if the tournament already has a non-empty name. We can update the name only if the current name is null or empty.
+
+3. **Fix 3: Destructive match deletion on empty TDF:**
+   The proposed fix is to only delete matches if `forceSync` is true. However, we must check if `forceSync` is a parameter that is passed. The bug description does not mention `forceSync`. We must look at the code to see if there is a `forceSync` parameter.
+
+   Alternatively, we can change the logic to not delete matches if the TDF has no match data. We should only delete matches if we are doing a full sync and the TDF explicitly says there are no matches (which is different from not having match data). However, the TDF might not include match data in a Stage 1 export, so we should not assume that no match data means delete all matches.
+
+   We can do:
+
+   ```typescript
+   } else {
+        // No matches in XML â do nothing, because it might be a partial export.
+        // We should not delete existing matches.
+   }
+   ```
+
+   Alternatively, we can have a parameter that indicates a full sync (like `forceSync`). But without such a parameter, we should not delete.
+
+   Given the bug, the safe fix is to not delete matches when the TDF has no match data. We should only delete matches if we are sure that the TDF is intended to replace the entire tournament data. We can use the `forceSync` parameter if it exists, but if not, we should avoid deletion.
+
+   We should check the code for the `forceSync` parameter. The bug report does not mention it, so we must assume it's not there. Therefore, we should remove the deletion or condition it on a parameter that indicates a full sync.
+
+   Since the bug is about data loss, I propose to remove the deletion entirely in the absence of match data, unless we have an explicit flag (like `forceSync`) that is set. We can adjust the code to:
+
+   ```typescript
+   } else {
+        // No matches in XML â only delete if forceSync is true
+        if (forceSync) {
+            await supabase.from('matches').delete().eq('tournament_id', tournamentId);
+        } else {
+            // Do nothing, leave existing matches intact.
+        }
+   }
+   ```
+
+   But note: the original code had the deletion without condition. We are adding a condition. We must make sure that the `forceSync` parameter is passed appropriately. We should also consider that the `forceSync` parameter might be used in other parts of the code (like overwriting the name). We need to see if the `forceSync` parameter is part of the API.
+
+   Looking at the bug report, the auto-sync uploader does not use `forceSync`. It just uploads the file. So, we should not delete matches in the auto-sync scenario. Therefore, we should remove the deletion or condition it on a parameter that is not set by the auto-sync.
+
+   Alternatively, we can change the behavior: if the TDF has no match data, we do nothing to the matches. We only update matches when the TDF has match data.
+
+   This seems safer: only delete matches when we are replacing them with new matches. If the TDF has no match data, we leave the existing matches as they are.
+
+   We can adjust the code to:
+
+   ```typescript
+   if (matches.length > 0) {
+        // ... process matches
+   } else {
+        // No matches in XML â do nothing. We assume that the TDF does not intend to update matches.
+        // This might be a partial export (e.g., Stage 1) and we don't want to delete existing matches.
+   }
+   ```
+
+   This would fix the bug without introducing a new parameter.
+
+4. **Edge cases and secondary effects:**
+   - We must consider the case where the TDF file is for a different tournament (by `tom_uid`) but the `targetId` is provided and matches the `tom_uid` of the target tournament. That is handled by Fix 1.
+   - We must consider the case where the TDF file does not have a `tom_uid` and the target tournament does. We should reject the upload because we cannot guarantee it's the same tournament? Or we can allow it with a warning? Since the bug is about data corruption, I think we should reject if the TDF does not have a `tom_uid` and the target tournament already has one. But note: the TDF might be from an old TOM version that doesn't include `tom_uid`. We might want to allow the upload if the organizer is the same and the tournament name matches? That's more complex.
+   - We must consider the case where the target tournament does not have a `tom_uid` and the TDF does. We should set the `tom_uid` of the target tournament to the one from the TDF.
+   - For the name, we must be cautious not to overwrite a name that was set by the organizer on the web app. We should only update the name if the current name is empty.
+   - For matches, we must avoid deleting matches when the TDF has no match data. We should only update matches when the TDF has match data.
+
+   Additionally, we should consider logging these events for debugging and audit purposes.
+
+5. **Fix order:**
+   The proposed fix order is to fix the code first, then recover data. This is correct because we must prevent further corruption before attempting to recover. However, note that the data recovery is not part of the code fix. We must have a separate data recovery plan (e.g., from backups) for the corrupted tournaments.
+
+   The fixes should be deployed as soon as possible to prevent further data corruption.
+
+   We should also consider adding more validation and logging to the auto-sync feature to prevent similar issues in the future.
+
+   We should also consider changing the auto-sync to only sync when the TDF file's `tom_uid` matches the tournament's `tom_uid` (if set) or if the tournament doesn't have a `tom_uid`, then set it and sync. But note: the auto-sync is tied to a tournament by `targetId`. We are now validating that in the API.
+
+   We should also consider adding a confirmation step before overwriting data, but that might not be feasible for an auto-sync.
+
+   Given the above, let's summarize the fixes:
+
+   **Fix 1:** Adjust the cross-validation to allow setting `tom_uid` if the target tournament doesn't have one, and reject if there's a mismatch.
+
+   **Fix 2:** Only update the tournament name if the current name is null or empty.
+
+   **Fix 3:** Do not delete matches when the TDF has no match data.
+
+   We must also update the tournament's `tom_uid` if it's not set and the TDF has one.
+
+   Let's write the code changes accordingly.
+
+   Note: The code provided in the bug report is only partial. We must make sure we are updating the correct parts.
+
+   We'll now write the corrected code for the three fixes.
+
+   Since we are not given the entire code, we will write the changes in the context of the provided snippets.
+
+   We assume the following:
+
+   - We have a `tomUid` variable extracted from the TDF file.
+   - We have a `targetId` from the query string.
+   - We have an `existingTournament` object that we are building.
+
+   We will adjust the code for Fix 1, Fix 2, and Fix 3.
+
+   Let's start with Fix 1:
+
+   We modify the fetch to get `tom_uid` and `name` (for Fix 2). Then, we cross-validate.
+
+   ```typescript
+   if (targetId) {
+       const { data } = await supabase
+           .from('tournaments')
+           .select('id, organizer_popid, tom_uid, name')
+           .eq('id', targetId)
+           .single();
+       if (data) {
+           // Cross-validate: if TDF has a tom_uid and the target tournament has a tom_uid, they must match.
+           if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+               return NextResponse.json({
+                   error: `TDF file mismatch: file contains Sanction ID ${tomUid} but target tournament has ${data.tom_uid}. Upload rejected.`
+               }, { status: 400 });
+           }
+           // If the target tournament doesn't have a tom_uid, we will set it from the TDF (if provided) later.
+           if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
+               return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+           }
+           existingTournament = { 
+               id: data.id, 
+               tom_uid: data.tom_uid, 
+               name: data.name 
+           };
+       }
+   }
+   ```
+
+   Then, when we are about to update the tournament, we can conditionally update the `tom_uid` and the `name`.
+
+   For the update, we do:
+
+   ```typescript
+   const updateData: any = {
+       status: tournamentStatus,
+       is_published: isPublished,
+       parsed_data: parsedDataPayload
+   };
+
+   // If the tournament doesn't have a tom_uid and the TDF has one, set it.
+   if (tomUid && !existingTournament.tom_uid) {
+       updateData.tom_uid = tomUid;
+   }
+
+   // Only update the name if the current name is empty (or null)
+   if (!existingTournament.name || existingTournament.name.trim() === '') {
+       updateData.name = name;
+   }
+
+   await supabase.from('tournaments').update(updateData).eq('id', tournamentId);
+   ```
+
+   For Fix 3, we change the match deletion to only happen if we are processing matches and replacing them. If there are no matches in the TDF, we leave the existing matches alone.
+
+   We change:
+
+   ```typescript
+   if (matches.length > 0) {
+        // ... process and upsert matches
+   } else {
+        // Do nothing. We do not delete matches because the TDF might be a partial export.
+   }
+   ```
+
+   We must also consider that the `matches` array might be empty because the tournament has no matches (e.g., it's a new tournament). In that case, we don't need to delete anything anyway.
+
+   However, note that the original code had a `forceSync` parameter? We don't see it in the provided code. We are removing the deletion entirely. If we want to keep the `forceSync` behavior, we need to check if it's passed. But the bug report does not mention it, so we assume it's not used.
+
+   We must also update the `existingTournament` object to include the `tom_uid` and `name` when we are creating a new tournament? Actually, the `existingTournament` is only used when we are updating an existing tournament. For a new tournament, we set the `tom_uid` and `name` in the insert.
+
+   We must adjust the code for creating a new tournament as well:
+
+   ```typescript
+   if (!existingTournament) {
+        // Insert new tournament
+        const newTournament = {
+            // ... other fields
+            tom_uid: tomUid, // set the tom_uid if we have it
+            name: name, // set the name from TDF
+        };
+        // ... insert and get the tournamentId
+   } else {
+        // Update existing tournament with the conditional updateData as above
+   }
+   ```
+
+   We must also note that the `tom_uid` might be null in the TDF. In that case, we leave it as null.
+
+   We should also consider that the TDF might not have a `tom_uid` (if it's an old version). We can still allow the upload, but we cannot cross-validate by `tom_uid`. We might want to log a warning.
+
+   We can adjust the error condition in Fix 1 to only reject when there's a positive mismatch. If either is missing, we proceed but log a warning.
+
+   We can change the condition to:
+
+   ```typescript
+   if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+        // ... reject
+   }
+   ```
+
+   And then, if `tomUid` is missing, we might want to log: "TDF file does not contain a Sanction ID. Upload is allowed but cannot be cross-validated."
+
+   We can do:
+
+   ```typescript
+   if (!tomUid) {
+        console.warn('TDF file does not contain a Sanction ID (tom_uid).');
+   }
+   ```
+
+   We should also consider that the target tournament might have a `tom_uid` and the TDF doesn't. In that case, we are allowing the upload? We might want to reject because we cannot guarantee it's the same tournament. But note: the auto-sync is tied to a specific tournament by `targetId`. The organizer might be using an old TDF version. We can allow it if the organizer is the same? We are already checking the organizer. So, we allow.
+
+   We can adjust the condition to:
+
+   ```typescript
+   if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+        // reject
+   } else if (!tomUid && data.tom_uid) {
+        // We don't have a tom_uid in the TDF, but the tournament already has one.
+        // We can either reject or allow with a warning.
+        // Since we are using targetId, and the organizer is the same, we allow but log a warning.
+        console.warn(`TDF file does not contain a Sanction ID, but the target tournament (${data.id}) has one (${data.tom_uid}). Proceeding with upload because targetId and organizer match.`);
+   }
+   ```
+
+   We must be cautious. The bug report says that the auto-sync caused data corruption because the TDF file was for a different tournament. If the TDF doesn't have a `tom_uid`, we cannot tell if it's the same tournament. We are relying on the `targetId` and the organizer. Since the auto-sync is set up for a specific tournament, and the organizer is the same, it might be safe. However, the bug happened because the TDF file was overwritten by a new tournament. If the new tournament doesn't have a `tom_uid` (unlikely, because TOM assigns one) then we would still upload to the old tournament. So, we are still at risk.
+
+   We might want to reject if the TDF doesn't have a `tom_uid` and the tournament already has one, because we cannot guarantee it's the same tournament. But note: the organizer might be using an old TOM version that doesn't export `tom_uid`. We don't want to break that.
+
+   Alternatively, we can allow the upload only if the tournament doesn't have a `tom_uid` yet, and set it from the TDF (if provided). If the tournament already has a `tom_uid` and the TDF doesn't have one, we reject.
+
+   We can change the condition to:
+
+   ```typescript
+   if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+        return NextResponse.json({
+            error: `TDF file mismatch: file contains Sanction ID ${tomUid} but target tournament has ${data.tom_uid}. Upload rejected.`
+        }, { status: 400 });
+   } else if (!tomUid && data.tom_uid) {
+        return NextResponse.json({
+            error: `TDF file does not contain a Sanction ID, but the target tournament already has one (${data.tom_uid}). Upload rejected.`
+        }, { status: 400 });
+   }
+   ```
+
+   This is stricter and safer. It ensures that once a tournament has a `tom_uid`, we only accept TDF files that have a matching `tom_uid` or at least have a `tom_uid` (and we will check for match). If the TDF doesn't have a `tom_uid`, we reject.
+
+   We can adjust the error message accordingly.
+
+   This would prevent the auto-sync from uploading a TDF that doesn't have a `tom_uid` to a tournament that already has one.
+
+   However, note that the bug report says that the TDF file for the new tournament (Takapuna Cup) would have a different `tom_uid`. So, with this stricter condition, the upload would be rejected because the `tom_uid` in the TDF (for Takapuna Cup) doesn't match the `tom_uid` of the target tournament (Westcity League Challenge). This is good.
+
+   But what about the case where the tournament doesn't have a `tom_uid` yet? We allow the upload and set the `tom_uid` from the TDF (if provided). If the TDF doesn't have one, we leave it null.
+
+   We can adjust the update logic for `tom_uid` to:
+
+   ```typescript
+   if (tomUid && !existingTournament.tom_uid) {
+        updateData.tom_uid = tomUid;
+   }
+   ```
+
+   And for the name, we only set if the current name is empty.
+
+   We must also consider that the `existingTournament` object we built in the `targetId` block has the `tom_uid` and `name`. We must also consider the case where we are not using `targetId` and we are matching by `tom_uid` (the original code). We must adjust that part as well.
+
+   We are not given the code for the non-targetId path (matching by `tom_uid`). We must ensure that the same validation is applied.
+
+   We are only asked to review the fix plan, so we don't need to write the entire code. We just need to answer the questions and suggest improvements.
+
+   Given the above, let's answer the questions:
+
+   1. The cross-validation logic should be adjusted to handle the case where the target tournament has no `tom_uid` (set it from TDF) and reject if there's a mismatch. Also, reject if the TDF has no `tom_uid` and the target tournament already has one.
+
+   2. For the name, we should only update if the current name is empty (or null). We should not overwrite an existing name.
+
+   3. For matches, we should not delete all matches when the TDF has no match data. We should only delete matches if we are replacing them with new matches. We can condition the deletion on a `forceSync` flag if it exists, but if not, we should avoid deletion.
+
+   4. Edge cases: We have considered several edge cases in the above discussion.
+
+   5. The fix order is correct: fix the code first to prevent further corruption, then recover data.
+
+   We should also consider adding more logging and monitoring to the auto-sync feature to detect and alert on mismatches.
+
+   We should also consider changing the auto-sync to stop syncing if the TDF file's `tom_uid` changes (or if the file is for a different tournament). But that is a client-side change.
+
+   We must also consider that the auto-sync might be set up by the organizer for a specific tournament. If the TDF file is replaced by a new tournament, we want to stop the auto-sync and notify the organizer. We can do that by having the API return an error when there's a mismatch, and then the auto-sync can stop.
+
+   We are now ready to write the final answer.
+
+CONTENT:
+## Review of Bug Fix Plan
+
+This is a well-structured analysis of a serious data corruption issue. The proposed fixes address the core problems effectively. Let me provide detailed feedback on each question:
+
+## 1. Cross-validation logic for Fix 1
+
+**The proposed logic is good but needs refinement.** Here's my recommended approach:
+
+```typescript
+if (targetId) {
+    const { data } = await supabase
+        .from('tournaments')
+        .select('id, organizer_popid, tom_uid, name')
+        .eq('id', targetId)
+        .single();
+    
+    if (data) {
+        // Allow first-time setup: if tournament has no tom_uid, set it from TDF
+        if (!data.tom_uid && tomUid) {
+            // This is first sync - set tom_uid from TDF
+            // Continue with upload
+        } else if (tomUid && data.tom_uid && tomUid !== data.tom_uid) {
+            return NextResponse.json({
+                error: `TDF file mismatch: file contains Sanction ID ${tomUid} but target tournament has ${data.tom_uid}. Upload rejected.`
+            }, { status: 400 });
+        } else if (!tomUid && data.tom_uid) {
+            return NextResponse.json({
+                error: `TDF file missing Sanction ID but target tournament already has one (${data.tom_uid}). Upload rejected.`
+            }, { status: 400 });
+        }
+        
+        if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+        existingTournament = { id: data.id };
+    }
+}
+```
+
+**Additional recommendation:** Log these mismatch events for audit purposes.
+
+## 2. Tournament name update strategy
+
+**Never overwrite the name after initial setup unless explicitly requested.** Tournament names in the web app might be more user-friendly (e.g., "Westcity LC - June 2024" vs "Westcity League Challenge").
+
+Recommended approach:
+- Store the original TDF name in `parsed_data` or a dedicated column like `tdf_name`
+- Only update the display name (`name` column) if:
+  1. Tournament is new (no existing name)
+  2. Explicit `overwriteName` parameter is provided
+  3. Current name matches a known placeholder (e.g., "New Tournament", empty string)
+
+```typescript
+const updateData: any = {
+    status: tournamentStatus,
+    is_published: isPublished,
+    parsed_data: parsedDataPayload,
+    tdf_name: name  // Store but don't use for display
+};
+
+// Only update display name under specific conditions
+if (!existingTournament.name || 
+    existingTournament.name === 'New Tournament' ||
+    shouldOverwriteName) {
+    updateData.name = name;
+}
+```
+
+## 3. Match deletion safeguards
+
+`forceSync` alone is insufficient protection. The auto-sync shouldn't be able to delete matches unintentionally.
+
+Better approach:
+```typescript
+if (matches.length > 0) {
+    // Process matches as usual
+} else if (forceSync) {
+    // Only delete matches if explicitly requested
+    await supabase.from('matches').delete().eq('tournament_id', tournamentId);
+} else {
+    // No matches in XML - log warning but don't delete
+    console.warn(`TDF for tournament ${tournamentId} contains no match data. Existing matches preserved.`);
+    // Consider updating a 'last_sync_warning' timestamp for UI notification
+}
+```
+
+**Critical addition:** The auto-sync component should NEVER send `forceSync=true`. This should be a manual action only.
+
+## 4. Edge cases and secondary effects
+
+**Missing edge cases:**
+
+1. **Concurrent uploads:** The current flow could race with manual uploads. Consider adding a `last_sync_version` column and using optimistic concurrency.
+
+2. **Rollback capability:** Add a `tournament_snapshots` table to store previous states before major updates, especially when `forceSync=true`.
+
+3. **Auto-sync notification:** The component should:
+   - Verify TDF's tom_uid matches before uploading
+   - Show a warning if mismatch is detected
+   - Stop auto-sync if mismatches occur repeatedly
+
+4. **Partial TDF exports:** Some TOM exports might be partial (players but no matches). These should update players without touching matches.
+
+5. **Schema validation:** Add validation that TDF contains required fields before processing.
+
+## 5. Fix order
+
+**Yes, the order is correct:** Fix code first, then recover data. However:
+
+1. **Immediate hotfix:** Deploy the three fixes ASAP to prevent further corruption
+2. **Data recovery:** Since matches were deleted, you'll need to:
+   - Restore from backups if available
+   - Or reconstruct from `parsed_data` history if stored
+   - Or manually re-enter match data
+3. **Post-mortem:** Add monitoring/alerting for:
+   - TDF tom_uid mismatches
+   - Unexpected match deletions
+   - Tournament name changes via API
+
+## Additional Recommendations
+
+1. **Add a dry-run mode:** `/api/upload-tom?dryRun=true` that shows what would change without applying updates
+2. **Version the API:** Consider `/api/v2/upload-tom` with these fixes and proper validation
+3. **Document the behavior:** Clearly document what auto-sync does and doesn't do
+4. **Add admin override:** For recovery scenarios, add an admin-only `emergencyRecovery=true` parameter that bypasses some checks
+
+The proposed fixes are technically sound and address the root causes. The key is implementing them with appropriate safeguards and clear user communication about what the auto-sync feature actually does.
