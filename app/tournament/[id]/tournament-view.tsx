@@ -2,7 +2,7 @@
 
 import { UserResult } from "@/actions/tournament/staff";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock, Users, Ban } from "lucide-react";
+import { Search, ArrowLeft, Settings, ScrollText, AlertTriangle, Clock, Users, Ban, Eye } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { JudgePlayerDetailModal } from "@/components/judge/judge-player-detail-m
 import { TimeExtensionModal } from "@/components/judge/time-extension-modal";
 import { RegisterButton } from "@/components/registration/RegisterButton";
 import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
+import { DeckViewerModal } from "@/components/tournament/DeckViewerModal";
 import { toast } from "sonner";
 import type { ParsedCard } from "@/types/deck";
 import { getMatchReportingStatus } from "@/utils/match-reporting";
@@ -95,6 +96,7 @@ export default function TournamentView({
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
     const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
+    const [isDeckViewerOpen, setIsDeckViewerOpen] = useState(false);
     const [deckListState, setDeckListState] = useState(deckList);
     const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isWarning: boolean; isCritical: boolean; isPast: boolean } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
@@ -297,6 +299,18 @@ export default function TournamentView({
                     </span>
                 )}
             </Button>
+
+            {/* View My Deck — always visible when a deck has been submitted */}
+            {deckListState?.raw_text && (
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 text-muted-foreground"
+                    onClick={() => setIsDeckViewerOpen(true)}
+                >
+                    <Eye className="h-4 w-4" />
+                    View My Deck
+                </Button>
+            )}
             
             {/* Deadline Information */}
             {memoizedDeadline && (
@@ -330,6 +344,21 @@ export default function TournamentView({
                     </div>
                 </div>
             )}
+        </div>
+    ) : null;
+
+    // Standalone "View My Deck" button for when deck submission UI is hidden
+    // (tournament completed, player dropped/finished) but the player still has a submitted deck
+    const deckViewerElement = (!shouldShowDeckSubmission && deckListState?.raw_text && isEnrolledPlayer) ? (
+        <div className="pt-2">
+            <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 text-muted-foreground"
+                onClick={() => setIsDeckViewerOpen(true)}
+            >
+                <Eye className="h-4 w-4" />
+                View My Deck
+            </Button>
         </div>
     ) : null;
 
@@ -460,6 +489,7 @@ export default function TournamentView({
 
                     {/* Deck Submission Button with Deadline Warning */}
                     {(!hasMatches || viewMode !== 'dashboard') && deckSubmissionElement}
+                    {(!hasMatches || viewMode !== 'dashboard') && deckViewerElement}
 
                     {/* View Toggle - Show to staff, or to enrolled active players, or to everyone when completed */}
                     {hasMatches && (tournament.status === 'completed' || isJudge || canManageStaff || isEnrolledPlayer) && (
@@ -572,7 +602,7 @@ export default function TournamentView({
                                 currentRound={currentRound}
                                 myPenalties={myPenalties}
                                 myDeckChecks={myDeckChecks}
-                                deckListStatusElement={deckSubmissionElement}
+                                deckListStatusElement={<>{deckSubmissionElement}{deckViewerElement}</>}
                                 isDropped={myRegistrationStatus === 'dropped'}
                                 isFinished={myRegistrationStatus === 'finished'}
                                 tournamentStatus={tournament.status || 'running'}
@@ -692,6 +722,16 @@ export default function TournamentView({
                 initialDeckText={deckListState?.raw_text || ""}
                 onSuccess={handleDeckSubmissionSuccess}
             />
+
+            {/* Deck Viewer Modal (read-only, for players to review their submitted deck) */}
+            {deckListState?.raw_text && (
+                <DeckViewerModal
+                    isOpen={isDeckViewerOpen}
+                    onClose={() => setIsDeckViewerOpen(false)}
+                    rawText={deckListState.raw_text}
+                    submittedAt={deckListState.submitted_at}
+                />
+            )}
 
             {/* Judge Actions Modals */}
             {/* Penalty Modal -> Judge Player Detail Modal */}
