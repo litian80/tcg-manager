@@ -149,13 +149,13 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
                             {record || "0-0-0"}
                         </span>
                         {deckChecks > 0 && (
-                            <span className="px-1 py-[1px] bg-blue-100 text-blue-700 text-[9px] font-bold uppercase rounded border border-blue-200 leading-none" title={`Latest Deck Check in Round ${deckChecks}`}>
+                            <span className="px-1 py-[1px] bg-blue-100 text-blue-700 text-[9px] font-bold uppercase rounded border border-blue-200 leading-none dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800" title={`Latest Deck Check in Round ${deckChecks}`}>
                                 DC R{deckChecks}
                             </span>
                         )}
                     </div>
                     {penalties > 0 && (
-                        <span className="mt-0.5 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200">
+                        <span className="mt-0.5 px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
                             {penalties} Penalty
                         </span>
                     )}

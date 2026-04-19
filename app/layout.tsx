@@ -6,6 +6,7 @@ import { SecondaryNav } from "@/components/secondary-nav";
 import { createClient } from "@/utils/supabase/server";
 import { Toaster } from "@/components/ui/sonner";
 import { Role } from "@/lib/rbac";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,16 +57,23 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header initialUser={user} />
-        <SecondaryNav role={role} hasJudgeAssignments={hasJudgeAssignments} />
-        <main>
-          {children}
-        </main>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Header initialUser={user} />
+          <SecondaryNav role={role} hasJudgeAssignments={hasJudgeAssignments} />
+          <main>
+            {children}
+          </main>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

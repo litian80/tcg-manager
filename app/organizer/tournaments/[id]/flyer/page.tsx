@@ -95,10 +95,11 @@ export default async function TournamentFlyerPage({ params }: { params: Promise<
                         size: auto;
                         margin: 0mm;
                     }
-                    body {
-                        background-color: white;
-                        color: black;
+                    html, body {
+                        background-color: white !important;
+                        color: black !important;
                         -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     /* Hide everything else if specific parent classes interfere */
                     nav, header, aside, .sidebar {

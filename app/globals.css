@@ -188,6 +188,25 @@ html {
   flex-shrink: 0;
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: oklch(0.95 0 0);
+}
+.dark ::-webkit-scrollbar-track {
+  background: oklch(0.2 0 0);
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0 0);
+  border-radius: 5px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -195,5 +214,6 @@ html {
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }

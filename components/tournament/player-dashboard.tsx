@@ -278,7 +278,7 @@ export function PlayerDashboard({
                                         <span className="text-muted-foreground block text-xs mt-0.5">Checked at table</span>
                                     </div>
                                     <Badge variant={check.status === 'Pass' ? 'default' : 'destructive'} 
-                                           className={check.status === 'Pass' ? 'bg-green-100 text-green-700 hover:bg-green-100' : ''}>
+                                           className={check.status === 'Pass' ? 'bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/40' : ''}>
                                         {check.status === 'Pass' ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
                                         {check.status}
                                     </Badge>

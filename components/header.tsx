@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoIcon } from './logo-icon'
 import { TimezoneIndicator } from './timezone-indicator'
+import { ThemeToggle } from './theme-toggle'
 
 export function Header({ initialUser }: { initialUser: User | null }) {
     const [user, setUser] = useState<User | null>(initialUser)
@@ -43,6 +44,7 @@ export function Header({ initialUser }: { initialUser: User | null }) {
 
                 <div className="flex items-center gap-4">
                     <TimezoneIndicator />
+                    <ThemeToggle />
                     {user ? (
                         <UserNav user={user} />
                     ) : (

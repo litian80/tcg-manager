@@ -317,7 +317,7 @@ export function JudgePlayerDetailModal({
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-border text-foreground hover:bg-muted hover:text-foreground"
+                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-border text-foreground hover:bg-muted"
                                         onClick={() => setActionMode("check")}
                                     >
                                         <CheckCircle2 className="w-8 h-8 mb-1 text-muted-foreground" />
@@ -328,7 +328,7 @@ export function JudgePlayerDetailModal({
                                     <Button
                                         variant="outline"
                                         size="lg"
-                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-white border-red-200 text-red-700 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                        className="h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:border-red-800"
                                         onClick={() => setActionMode("penalty")}
                                     >
                                         <AlertCircle className="w-8 h-8 mb-1 text-red-500" />
@@ -341,8 +341,8 @@ export function JudgePlayerDetailModal({
                                             variant="outline"
                                             size="lg"
                                             className={deckStatus === 'paper'
-                                                ? "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                                                : "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                ? "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                                                : "h-24 text-lg font-medium flex flex-col gap-1 items-center justify-center bg-background border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/20"
                                             }
                                             disabled={paperLoading}
                                             onClick={async () => {
