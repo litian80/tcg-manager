@@ -795,6 +795,26 @@ export async function POST(req: NextRequest) {
             .update({ updated_at: new Date().toISOString() })
             .eq('id', tournamentId);
 
+        // --- Step E: Archive original TDF file to Storage ---
+        try {
+            const storagePath = `${tournamentId}/latest.tdf`;
+            const { error: storageError } = await supabase.storage
+                .from('tdf-files')
+                .upload(storagePath, xmlData, {
+                    contentType: 'text/xml',
+                    upsert: true,
+                });
+
+            if (storageError) {
+                console.error(`[TDF Archive] Failed to store TDF for tournament ${tournamentId}:`, storageError);
+            } else {
+                console.log(`[TDF Archive] Stored TDF for tournament ${tournamentId} at tdf-files/${storagePath}`);
+            }
+        } catch (archiveErr) {
+            // Non-blocking — don't fail the upload if archival fails
+            console.error('[TDF Archive] Unexpected error:', archiveErr);
+        }
+
         return NextResponse.json({
             success: true,
             tournamentId,

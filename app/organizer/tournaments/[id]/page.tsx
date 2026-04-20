@@ -17,6 +17,7 @@ import { TournamentDashboardTabs } from "./_components/tournament-dashboard-tabs
 import { DashboardWidgets } from "./_components/dashboard-widgets";
 import { AnnouncementManager } from "./_components/announcement-manager";
 import { CancelTournamentButton } from "./_components/cancel-tournament-button";
+import { DownloadOriginalTdfButton } from "./_components/download-original-tdf-button";
 
 
 
@@ -159,6 +160,9 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {profile.role === 'admin' && (
+                        <DownloadOriginalTdfButton tournamentId={tournament.id} />
+                    )}
                     {!isCancelled && tournament.status !== 'completed' && (
                         <CancelTournamentButton tournamentId={tournament.id} tournamentName={tournament.name} />
                     )}
