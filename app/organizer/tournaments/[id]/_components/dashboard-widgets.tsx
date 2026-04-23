@@ -14,6 +14,7 @@ interface DashboardWidgetsProps {
     paymentRequired: boolean;
     startTime: string | null;
     deckDeadline: string | null;
+    listLabel?: string;         // FEAT-010: "Deck Lists" or "Team Lists"
 }
 
 function ProgressBar({ value, max, colorClass }: { value: number; max: number; colorClass: string }) {
@@ -87,6 +88,7 @@ export function DashboardWidgets({
     paymentRequired,
     startTime,
     deckDeadline,
+    listLabel = "Deck Lists",
 }: DashboardWidgetsProps) {
     const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
@@ -129,7 +131,7 @@ export function DashboardWidgets({
                 <CardContent className="pt-4 pb-3 px-4">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Layers className="h-4 w-4" />
-                        <span className="text-xs font-medium uppercase tracking-wide">Deck Lists</span>
+                        <span className="text-xs font-medium uppercase tracking-wide">{listLabel}</span>
                     </div>
                     {decksRequired > 0 ? (
                         <>

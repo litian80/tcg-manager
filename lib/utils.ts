@@ -85,6 +85,20 @@ export const MODE_LABELS: Record<string, string> = {
   LEAGUECHALLENGE: "League Challenge",
   TCG1DAY: "League Cup",
   PRERELEASE: "Prerelease",
+  VGCPREMIER: "VGC Premier Challenge",
+}
+
+/** FEAT-010: Check if a game_type value represents a VGC tournament */
+export function isVGCGameType(gameType: string | null | undefined): boolean {
+  return gameType === 'VIDEO_GAME'
+}
+
+/**
+ * FEAT-010: Get the appropriate list submission label based on game type.
+ * Returns "Team List" for VGC, "Deck List" for TCG.
+ */
+export function getListLabel(gameType: string | null | undefined): string {
+  return isVGCGameType(gameType) ? 'Team List' : 'Deck List'
 }
 
 /** Format city/country into a single location string */

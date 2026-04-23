@@ -18,6 +18,7 @@ import { DashboardWidgets } from "./_components/dashboard-widgets";
 import { AnnouncementManager } from "./_components/announcement-manager";
 import { CancelTournamentButton } from "./_components/cancel-tournament-button";
 import { DownloadOriginalTdfButton } from "./_components/download-original-tdf-button";
+import { isVGCGameType, getListLabel } from "@/lib/utils";
 
 
 
@@ -53,8 +54,12 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
     // Determine the default tab based on tournament state
     const defaultTab = isActive ? "during" : "pre";
 
-    // Fetch Current Roster and Deck Lists for RosterManager
-    const [rosterResult, deckListResult] = await Promise.all([
+    // FEAT-010: Determine game type for conditional queries
+    const isVGC = isVGCGameType(tournament.game_type);
+    const listLabel = getListLabel(tournament.game_type);
+
+    // Fetch Current Roster and Deck/Team Lists for RosterManager
+    const [rosterResult, deckListResult, teamListResult] = await Promise.all([
         supabase
             .from('tournament_players')
             .select(`
@@ -68,21 +73,35 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                 )
             `)
             .eq('tournament_id', id),
-        // Fetch which players have submitted deck lists
-        tournament.requires_deck_list
+        // Fetch TCG deck lists (only for non-VGC)
+        (tournament.requires_deck_list && !isVGC)
             ? supabase
                 .from('deck_lists')
                 .select('player_id, validation_status, raw_text')
+                .eq('tournament_id', id)
+            : Promise.resolve({ data: null, error: null }),
+        // Fetch VGC team lists (only for VGC)
+        (tournament.requires_deck_list && isVGC)
+            ? supabase
+                .from('vgc_team_lists')
+                .select('player_id')
                 .eq('tournament_id', id)
             : Promise.resolve({ data: null, error: null })
     ]);
 
     const rosterData = rosterResult.data;
     const deckStatusData = deckListResult.data;
+    const teamStatusData = teamListResult.data;
     const deckStatusMap = new Map<string, string>();
     if (deckStatusData) {
         deckStatusData.forEach((item: any) => {
             deckStatusMap.set(item.player_id, item.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online');
+        });
+    }
+    // FEAT-010: For VGC, all submitted team lists are 'online'
+    if (teamStatusData) {
+        teamStatusData.forEach((item: any) => {
+            deckStatusMap.set(item.player_id, 'online');
         });
     }
 
@@ -208,7 +227,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                             )}
 
                             {/* UX-022: Dashboard Widgets */}
-                            <DashboardWidgets {...widgetStats} />
+                            <DashboardWidgets {...widgetStats} listLabel={`${listLabel}s`} />
 
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div className="space-y-6">

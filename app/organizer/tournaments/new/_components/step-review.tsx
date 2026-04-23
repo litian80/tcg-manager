@@ -10,7 +10,7 @@ import type { StepBasicsData } from "./step-basics";
 import type { StepRegistrationData } from "./step-registration";
 import type { StepAdvancedData } from "./step-advanced";
 import { getSeasonLabel } from "@/lib/tournament-templates";
-import { MODE_LABELS } from "@/lib/utils";
+import { MODE_LABELS, getListLabel } from "@/lib/utils";
 
 type FormState = { error: string } | undefined;
 
@@ -56,6 +56,8 @@ function BoolBadge({ value, trueLabel, falseLabel }: { value: boolean; trueLabel
 export function StepReview({ basics, registration, advanced, showAdvanced, onBack, onEditStep, advancedStepId }: StepReviewProps) {
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
     const seasonLabel = getSeasonLabel();
+    const isVGCMode = basics.tournamentMode === 'VGCPREMIER';
+    const listLabel = getListLabel(isVGCMode ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
 
     // Compute exact UTC ISO string based on the user's local timezone for exact start time handling
     const combinedDateTime = new Date(`${basics.date}T${basics.startTime}`);
@@ -181,7 +183,7 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
                                 value={<BoolBadge value={registration.allowOnlineMatch} />}
                             />
                             <ReviewRow
-                                label="Deck Lists"
+                                label={`${listLabel}s`}
                                 value={
                                     registration.requiresDeckList
                                         ? <Badge variant="default" className="text-[10px]">Required ({registration.deckCutoff}h cutoff)</Badge>

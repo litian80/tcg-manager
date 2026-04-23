@@ -32,10 +32,14 @@ export async function createTournament(formData: FormData) {
     const tournament_mode = formData.get("tournament_mode") as string || "LEAGUECHALLENGE";
 
     // Validate tournament mode
-    const validModes = ["LEAGUECHALLENGE", "TCG1DAY", "PRERELEASE"];
+    const validModes = ["LEAGUECHALLENGE", "TCG1DAY", "PRERELEASE", "VGCPREMIER"];
     if (!validModes.includes(tournament_mode)) {
         return { error: "Invalid tournament type selected." };
     }
+
+    // FEAT-010: Derive game_type from tournament_mode
+    const VGC_MODES = ["VGCPREMIER"];
+    const game_type = VGC_MODES.includes(tournament_mode) ? "VIDEO_GAME" : "TRADING_CARD_GAME";
     
     const requires_deck_list = formData.get("requires_deck_list") === "true" || formData.get("requires_deck_list") === "on";
     const deck_submission_cutoff_hours = parseInt((formData.get("deck_submission_cutoff_hours") as string) || "1", 10);
@@ -172,9 +176,10 @@ export async function createTournament(formData: FormData) {
             deck_submission_cutoff_hours,
             deck_list_submission_deadline,
             requires_deck_list,
-            deck_size: 60,
-            sideboard_size: 0,
+            deck_size: game_type === 'VIDEO_GAME' ? null : 60,
+            sideboard_size: game_type === 'VIDEO_GAME' ? null : 0,
             tournament_mode,
+            game_type,
             enable_queue,
             queue_batch_size,
             queue_promotion_window_minutes,

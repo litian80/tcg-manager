@@ -19,10 +19,13 @@ import { TimeExtensionModal } from "@/components/judge/time-extension-modal";
 import { RegisterButton } from "@/components/registration/RegisterButton";
 import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal";
 import { DeckViewerModal } from "@/components/tournament/DeckViewerModal";
+import { VGCTeamSubmitModal } from "@/components/tournament/VGCTeamSubmitModal";
+import { VGCTeamViewerModal } from "@/components/tournament/VGCTeamViewerModal";
 import { toast } from "sonner";
 import type { ParsedCard } from "@/types/deck";
 import { getMatchReportingStatus } from "@/utils/match-reporting";
 import { AnnouncementBanner, Announcement } from "@/components/tournament/announcement-banner";
+import { isVGCGameType, getListLabel } from "@/lib/utils";
 
 /** Track the rendered height of an element via ResizeObserver. */
 function useStickyHeight() {
@@ -64,6 +67,8 @@ interface TournamentViewProps {
     penaltyCounts?: Record<string, number>;
     deckCheckCounts?: Record<string, number>;
     deckList?: any;
+    teamList?: any;
+    gameType?: string;
     myPenalties?: any[];
     myDeckChecks?: any[];
     isLoggedIn?: boolean;
@@ -88,16 +93,23 @@ export default function TournamentView({
     penaltyCounts = {},
     deckCheckCounts = {},
     deckList,
+    teamList,
+    gameType = 'TRADING_CARD_GAME',
     myPenalties = [],
     myDeckChecks = [],
     isLoggedIn = true,
     activeAnnouncement = null,
 }: TournamentViewProps) {
+    const isVGC = isVGCGameType(gameType);
+    const listLabel = getListLabel(gameType);
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
     const [isDeckModalOpen, setIsDeckModalOpen] = useState(false);
     const [isDeckViewerOpen, setIsDeckViewerOpen] = useState(false);
+    const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+    const [isTeamViewerOpen, setIsTeamViewerOpen] = useState(false);
     const [deckListState, setDeckListState] = useState(deckList);
+    const [teamListState, setTeamListState] = useState(teamList);
     const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isWarning: boolean; isCritical: boolean; isPast: boolean } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -248,6 +260,10 @@ export default function TournamentView({
         setDeckListState(deckList);
     }, [deckList]);
 
+    useEffect(() => {
+        setTeamListState(teamList);
+    }, [teamList]);
+
     // Show deck submission button only if:
     // 1. Tournament requires deck list
     // 2. User is registered or checked in
@@ -257,7 +273,9 @@ export default function TournamentView({
         (myRegistrationStatus === 'registered' || myRegistrationStatus === 'checked_in') &&
         tournament.status !== 'completed';
     
-    const deckSubmissionButtonText = deckListState ? "Edit Deck List" : "Submit Deck List";
+    // FEAT-010: Determine the active list state based on game type
+    const activeListState = isVGC ? teamListState : deckListState;
+    const deckSubmissionButtonText = activeListState ? `Edit ${listLabel}` : `Submit ${listLabel}`;
 
     // Handle deck submission success
     const handleDeckSubmissionSuccess = (newDeckText: string) => {
@@ -267,19 +285,26 @@ export default function TournamentView({
             raw_text: newDeckText,
             submitted_at: new Date().toISOString()
         }));
-        // toast.success inside modal handled it, but we can do more here if needed
+    };
+
+    const handleTeamSubmissionSuccess = (newPasteText: string) => {
+        setTeamListState((prev: any) => ({
+            ...prev,
+            raw_text: newPasteText,
+            submitted_at: new Date().toISOString()
+        }));
     };
 
     const deckSubmissionElement = shouldShowDeckSubmission ? (
         <div className="pt-2 space-y-2">
             <Button
-                onClick={() => setIsDeckModalOpen(true)}
+                onClick={() => isVGC ? setIsTeamModalOpen(true) : setIsDeckModalOpen(true)}
                 disabled={isDeadlinePassed}
-                variant={deckListState ? "outline" : "default"}
+                variant={activeListState ? "outline" : "default"}
                 className={cn(
                     "w-full justify-start gap-2",
-                    !isDeadlinePassed && timeLeft?.isCritical && !deckListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
-                    !isDeadlinePassed && timeLeft?.isWarning && !deckListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    !isDeadlinePassed && timeLeft?.isCritical && !activeListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
+                    !isDeadlinePassed && timeLeft?.isWarning && !activeListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
                 )}
             >
                 <ScrollText className="h-4 w-4" />
@@ -289,7 +314,7 @@ export default function TournamentView({
                         {isTournamentStarted ? "Tournament Started" : "Deadline Passed"}
                     </span>
                 )}
-                {!isDeadlinePassed && !deckListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
+                {!isDeadlinePassed && !activeListState && (timeLeft?.isCritical || timeLeft?.isWarning) && (
                     <span className={cn(
                         "ml-auto flex items-center gap-1 text-xs",
                         timeLeft.isCritical ? "text-destructive" : "text-amber-600"
@@ -300,15 +325,15 @@ export default function TournamentView({
                 )}
             </Button>
 
-            {/* View My Deck — always visible when a deck has been submitted */}
-            {deckListState?.raw_text && (
+            {/* View My List — always visible when a list has been submitted */}
+            {activeListState?.raw_text && (
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-2 text-muted-foreground"
-                    onClick={() => setIsDeckViewerOpen(true)}
+                    onClick={() => isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
                 >
                     <Eye className="h-4 w-4" />
-                    View My Deck
+                    View My {listLabel}
                 </Button>
             )}
             
@@ -318,7 +343,7 @@ export default function TournamentView({
                     <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
                     <div className="space-y-1">
                         <p className="text-muted-foreground">
-                            Deck list submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `at ${isMounted ? formatDateTimeCompact(memoizedDeadline) : '...'}` : ''}
+                            {listLabel} submission {isDeadlinePassed ? "closed" : "closes"} {memoizedDeadline ? `at ${isMounted ? formatDateTimeCompact(memoizedDeadline) : '...'}` : ''}
                         </p>
                         
                         {timeLeft && !timeLeft.isPast && (
@@ -349,15 +374,15 @@ export default function TournamentView({
 
     // Standalone "View My Deck" button for when deck submission UI is hidden
     // (tournament completed, player dropped/finished) but the player still has a submitted deck
-    const deckViewerElement = (!shouldShowDeckSubmission && deckListState?.raw_text && isEnrolledPlayer) ? (
+    const deckViewerElement = (!shouldShowDeckSubmission && activeListState?.raw_text && isEnrolledPlayer) ? (
         <div className="pt-2">
             <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => setIsDeckViewerOpen(true)}
+                onClick={() => isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
             >
                 <Eye className="h-4 w-4" />
-                View My Deck
+                View My {listLabel}
             </Button>
         </div>
     ) : null;
@@ -403,10 +428,10 @@ export default function TournamentView({
                             {/* Deck Submission Status Badge */}
                             {shouldShowDeckSubmission && (
                                 <Badge 
-                                    variant={deckListState ? "default" : "destructive"} 
-                                    className={deckListState ? "bg-green-100 text-green-700 border-green-200" : ""}
+                                    variant={activeListState ? "default" : "destructive"} 
+                                    className={activeListState ? "bg-green-100 text-green-700 border-green-200" : ""}
                                 >
-                                    {deckListState ? "Deck Submitted" : "Deck Missing"}
+                                    {activeListState ? `${listLabel} Submitted` : `${listLabel} Missing`}
                                 </Badge>
                             )}
                             
@@ -714,22 +739,45 @@ export default function TournamentView({
                 )}
             </div>
 
-            {/* Deck Submission Modal */}
-            <DeckSubmissionModal
-                isOpen={isDeckModalOpen}
-                onClose={() => setIsDeckModalOpen(false)}
-                tournamentId={tournament.id}
-                initialDeckText={deckListState?.raw_text || ""}
-                onSuccess={handleDeckSubmissionSuccess}
-            />
+            {/* Deck Submission Modal (TCG) */}
+            {!isVGC && (
+                <DeckSubmissionModal
+                    isOpen={isDeckModalOpen}
+                    onClose={() => setIsDeckModalOpen(false)}
+                    tournamentId={tournament.id}
+                    initialDeckText={deckListState?.raw_text || ""}
+                    onSuccess={handleDeckSubmissionSuccess}
+                />
+            )}
 
-            {/* Deck Viewer Modal (read-only, for players to review their submitted deck) */}
-            {deckListState?.raw_text && (
+            {/* VGC Team Submission Modal */}
+            {isVGC && (
+                <VGCTeamSubmitModal
+                    isOpen={isTeamModalOpen}
+                    onClose={() => setIsTeamModalOpen(false)}
+                    tournamentId={tournament.id}
+                    initialPasteText={teamListState?.raw_text || ""}
+                    onSuccess={handleTeamSubmissionSuccess}
+                />
+            )}
+
+            {/* Deck Viewer Modal (TCG — read-only) */}
+            {!isVGC && deckListState?.raw_text && (
                 <DeckViewerModal
                     isOpen={isDeckViewerOpen}
                     onClose={() => setIsDeckViewerOpen(false)}
                     rawText={deckListState.raw_text}
                     submittedAt={deckListState.submitted_at}
+                />
+            )}
+
+            {/* VGC Team Viewer Modal (read-only) */}
+            {isVGC && teamListState?.raw_text && (
+                <VGCTeamViewerModal
+                    isOpen={isTeamViewerOpen}
+                    onClose={() => setIsTeamViewerOpen(false)}
+                    rawText={teamListState.raw_text}
+                    submittedAt={teamListState.submitted_at}
                 />
             )}
 

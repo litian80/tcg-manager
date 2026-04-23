@@ -200,6 +200,7 @@ export function CreateTournamentPageClient({
                             onBack={() => goToStep(1)}
                             showAdvanced={showAdvanced}
                             onToggleAdvanced={handleToggleAdvanced}
+                            tournamentMode={basics.tournamentMode}
                         />
                     )}
 

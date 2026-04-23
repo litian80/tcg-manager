@@ -141,8 +141,9 @@ export async function exportTournamentTDF(tournamentId: string) {
     // Header
     const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>`;
 
-    // Tournament mode from DB (LEAGUECHALLENGE, TCG1DAY, or PRERELEASE)
+    // Tournament mode and game type from DB
     const tdfMode = tournament.tournament_mode || "LEAGUECHALLENGE";
+    const tdfGametype = tournament.game_type || "TRADING_CARD_GAME";
 
     const tData = `
     <data>
@@ -180,7 +181,7 @@ export async function exportTournamentTDF(tournamentId: string) {
     }).join('');
 
     const xml = `${xmlHeader}
-<tournament type="2" stage="1" version="1.80" gametype="TRADING_CARD_GAME" mode="${tdfMode}">
+<tournament type="2" stage="1" version="1.80" gametype="${tdfGametype}" mode="${tdfMode}">
     ${tData}
     <timeelapsed>0</timeelapsed>
     <players>${playersMap}

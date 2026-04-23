@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Settings2, Sparkles } from "lucide-react";
 import { getSeasonCutoffs, getSeasonLabel } from "@/lib/tournament-templates";
+import { getListLabel } from "@/lib/utils";
 
 export interface StepRegistrationData {
     registrationOpen: boolean;
@@ -30,11 +31,13 @@ interface StepRegistrationProps {
     onBack: () => void;
     showAdvanced: boolean;
     onToggleAdvanced: () => void;
+    tournamentMode?: string;
 }
 
-export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced, onToggleAdvanced }: StepRegistrationProps) {
+export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced, onToggleAdvanced, tournamentMode }: StepRegistrationProps) {
     const season = getSeasonCutoffs();
     const seasonLabel = getSeasonLabel();
+    const listLabel = getListLabel(tournamentMode === 'VGCPREMIER' ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
     const isSeasonCurrent =
         data.jrMax === season.juniorsBornAfter.toString() &&
         data.srMax === season.seniorsBornAfter.toString();
@@ -90,10 +93,10 @@ export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced,
                     </div>
                 </div>
 
-                {/* Deck List Settings */}
+                {/* Deck/Team List Settings */}
                 <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Deck Lists
+                        {listLabel}s
                     </h3>
 
                     <div className="flex items-center space-x-2">
@@ -102,7 +105,7 @@ export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced,
                             checked={data.requiresDeckList}
                             onCheckedChange={(v) => update("requiresDeckList", v)}
                         />
-                        <Label htmlFor="deck_list">Require Deck List Submission</Label>
+                        <Label htmlFor="deck_list">Require {listLabel} Submission</Label>
                     </div>
 
                     {data.requiresDeckList && (

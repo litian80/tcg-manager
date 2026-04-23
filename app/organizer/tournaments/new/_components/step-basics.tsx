@@ -54,6 +54,7 @@ export function StepBasics({ data, onChange, onNext, userPopId, isAdmin, errors 
                             <SelectItem value="LEAGUECHALLENGE">League Challenge</SelectItem>
                             <SelectItem value="TCG1DAY">League Cup</SelectItem>
                             <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
+                            <SelectItem value="VGCPREMIER">VGC Premier Challenge</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

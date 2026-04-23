@@ -35,16 +35,20 @@ export function GeneralPanel({
             {/* Tournament Type */}
             <div className="space-y-2">
                 <Label htmlFor="tournament_mode">Tournament Type</Label>
-                <Select value={tournamentMode} onValueChange={setTournamentMode}>
-                    <SelectTrigger>
+                <Select value={tournamentMode} onValueChange={setTournamentMode} disabled>
+                    <SelectTrigger className="bg-muted cursor-not-allowed">
                         <SelectValue placeholder="Select tournament type" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="LEAGUECHALLENGE">League Challenge</SelectItem>
                         <SelectItem value="TCG1DAY">League Cup</SelectItem>
                         <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
+                        <SelectItem value="VGCPREMIER">VGC Premier Challenge</SelectItem>
                     </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                    Tournament type is locked after creation and cannot be changed.
+                </p>
             </div>
 
             {/* Tournament Timing */}

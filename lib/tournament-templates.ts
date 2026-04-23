@@ -7,9 +7,10 @@
  * as a per-organiser, per-mode template in `tournament_templates`.
  */
 
-export type TemplateId = 'league-challenge' | 'league-cup' | 'prerelease' | 'custom';
+export type TemplateId = 'league-challenge' | 'league-cup' | 'prerelease' | 'vgc-premier' | 'custom';
 
 export interface TournamentFormDefaults {
+    game_type: string;
     tournament_mode: string;
     city: string;
     country: string;
@@ -89,6 +90,7 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
         icon: '⚡',
         mode: 'LEAGUECHALLENGE',
         defaults: {
+            game_type: 'TRADING_CARD_GAME',
             tournament_mode: 'LEAGUECHALLENGE',
             city: '',
             country: '',
@@ -115,6 +117,7 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
         icon: '🏆',
         mode: 'TCG1DAY',
         defaults: {
+            game_type: 'TRADING_CARD_GAME',
             tournament_mode: 'TCG1DAY',
             city: '',
             country: '',
@@ -141,11 +144,39 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
         icon: '📦',
         mode: 'PRERELEASE',
         defaults: {
+            game_type: 'TRADING_CARD_GAME',
             tournament_mode: 'PRERELEASE',
             city: '',
             country: '',
             start_time: '10:00',
             requires_deck_list: false,
+            deck_submission_cutoff_hours: 0,
+            registration_open: true,
+            publish_roster: false,
+            allow_online_match_reporting: false,
+            capacity: 0,
+            capacity_juniors: 0,
+            capacity_seniors: 0,
+            capacity_masters: 32,
+            juniors_birth_year_max: juniorsBornAfter,
+            seniors_birth_year_max: seniorsBornAfter,
+            payment_required: false,
+            enable_queue: false,
+        },
+    },
+    {
+        id: 'vgc-premier' as TemplateId,
+        label: 'VGC Premier Challenge',
+        description: 'Video Game Championships event. Team list submission, best-of-3.',
+        icon: '🎮',
+        mode: 'VGCPREMIER',
+        defaults: {
+            game_type: 'VIDEO_GAME',
+            tournament_mode: 'VGCPREMIER',
+            city: '',
+            country: '',
+            start_time: '10:00',
+            requires_deck_list: true,
             deck_submission_cutoff_hours: 0,
             registration_open: true,
             publish_roster: false,
@@ -170,6 +201,7 @@ export function modeToTemplateId(mode: string): TemplateId | null {
         LEAGUECHALLENGE: 'league-challenge',
         TCG1DAY: 'league-cup',
         PRERELEASE: 'prerelease',
+        VGCPREMIER: 'vgc-premier',
     };
     return map[mode] || null;
 }

@@ -58,6 +58,7 @@ export async function getDuplicateDefaults(
         defaults: {
             name: tournament.name,
             date: tournament.date,
+            game_type: tournament.game_type || 'TRADING_CARD_GAME',
             tournament_mode: tournament.tournament_mode || 'LEAGUECHALLENGE',
             city: tournament.city || '',
             country: tournament.country || '',

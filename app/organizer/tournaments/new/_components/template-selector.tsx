@@ -66,7 +66,7 @@ export function TemplateSelector({ selected, onSelect, savedTemplates }: Templat
                                     )}
                                     {effectiveTemplate.defaults.requires_deck_list && (
                                         <Badge variant="outline" className="text-[10px]">
-                                            Deck lists
+                                            {effectiveTemplate.defaults.game_type === 'VIDEO_GAME' ? 'Team lists' : 'Deck lists'}
                                         </Badge>
                                     )}
                                     {effectiveTemplate.defaults.city && (

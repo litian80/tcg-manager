@@ -70,6 +70,7 @@ export type Database = {
           id: string
           judge_user_id: string
           note: string | null
+          outcome: string
           player_id: string
           round_number: number
           tournament_id: string
@@ -79,6 +80,7 @@ export type Database = {
           id?: string
           judge_user_id: string
           note?: string | null
+          outcome?: string
           player_id: string
           round_number: number
           tournament_id: string
@@ -88,6 +90,7 @@ export type Database = {
           id?: string
           judge_user_id?: string
           note?: string | null
+          outcome?: string
           player_id?: string
           round_number?: number
           tournament_id?: string
@@ -780,6 +783,7 @@ export type Database = {
           created_at: string | null
           deck_submission_cutoff_hours: number | null
           enable_queue: boolean | null
+          game_type: string
           id: string
           juniors_birth_year_max: number | null
           organizer_popid: string
@@ -806,6 +810,7 @@ export type Database = {
           created_at?: string | null
           deck_submission_cutoff_hours?: number | null
           enable_queue?: boolean | null
+          game_type?: string
           id?: string
           juniors_birth_year_max?: number | null
           organizer_popid: string
@@ -832,6 +837,7 @@ export type Database = {
           created_at?: string | null
           deck_submission_cutoff_hours?: number | null
           enable_queue?: boolean | null
+          game_type?: string
           id?: string
           juniors_birth_year_max?: number | null
           organizer_popid?: string
@@ -866,6 +872,7 @@ export type Database = {
           deck_submission_cutoff_hours: number | null
           details: string | null
           enable_queue: boolean | null
+          game_type: string
           id: string
           is_published: boolean | null
           juniors_birth_year_max: number | null
@@ -910,6 +917,7 @@ export type Database = {
           deck_submission_cutoff_hours?: number | null
           details?: string | null
           enable_queue?: boolean | null
+          game_type?: string
           id?: string
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
@@ -954,6 +962,7 @@ export type Database = {
           deck_submission_cutoff_hours?: number | null
           details?: string | null
           enable_queue?: boolean | null
+          game_type?: string
           id?: string
           is_published?: boolean | null
           juniors_birth_year_max?: number | null
@@ -988,6 +997,47 @@ export type Database = {
             columns: ["active_announcement_id"]
             isOneToOne: false
             referencedRelation: "tournament_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vgc_team_lists: {
+        Row: {
+          id: string
+          parsed_team: Json
+          player_id: string
+          raw_paste: string
+          submitted_at: string | null
+          tournament_id: string
+          validation_errors: Json | null
+          validation_status: string | null
+        }
+        Insert: {
+          id?: string
+          parsed_team: Json
+          player_id: string
+          raw_paste: string
+          submitted_at?: string | null
+          tournament_id: string
+          validation_errors?: Json | null
+          validation_status?: string | null
+        }
+        Update: {
+          id?: string
+          parsed_team?: Json
+          player_id?: string
+          raw_paste?: string
+          submitted_at?: string | null
+          tournament_id?: string
+          validation_errors?: Json | null
+          validation_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vgc_team_lists_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
             referencedColumns: ["id"]
           },
         ]
@@ -1027,6 +1077,7 @@ export type Database = {
           deck_submission_cutoff_hours: number | null
           details: string | null
           enable_queue: boolean | null
+          game_type: string
           id: string
           is_published: boolean | null
           juniors_birth_year_max: number | null
@@ -1223,4 +1274,3 @@ export const Constants = {
     },
   },
 } as const
-

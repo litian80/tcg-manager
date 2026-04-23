@@ -13,6 +13,7 @@ export type WebhookEvent =
   | 'payment.expired'
   | 'deck.submitted'
   | 'deck.reminder'
+  | 'team.submitted'
   | 'ping';
 
 export interface WebhookResult {

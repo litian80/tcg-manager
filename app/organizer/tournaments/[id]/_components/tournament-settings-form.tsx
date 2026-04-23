@@ -15,6 +15,7 @@ import { DeckPanel } from "./settings/deck-panel";
 import { PaymentPanel } from "./settings/payment-panel";
 import { QueuePanel } from "./settings/queue-panel";
 import { WebhookPanel } from "./settings/webhook-panel";
+import { getListLabel } from "@/lib/utils";
 
 interface TournamentSettingsFormProps {
     tournament: Tournament;
@@ -249,7 +250,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                             </TabsTrigger>
                             <TabsTrigger value="decks" className="gap-1.5 text-xs">
                                 <Layers className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Deck Lists</span>
+                                <span className="hidden sm:inline">{getListLabel(tournament.game_type)}s</span>
                             </TabsTrigger>
                             <TabsTrigger value="payment" className="gap-1.5 text-xs">
                                 <CreditCard className="h-3.5 w-3.5" />
@@ -295,6 +296,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                 <DeckPanel
                                     requiresDeckList={requiresDeckList} setRequiresDeckList={setRequiresDeckList}
                                     deckSubmissionCutoffHours={deckSubmissionCutoffHours} setDeckSubmissionCutoffHours={setDeckSubmissionCutoffHours}
+                                    gameType={tournament.game_type}
                                 />
                             </TabsContent>
 
