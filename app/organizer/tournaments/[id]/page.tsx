@@ -236,7 +236,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                                     </div>
 
                                     <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
-                                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} requiresDeckList={!!tournament.requires_deck_list} />
+                                        <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} requiresDeckList={!!tournament.requires_deck_list} listLabel={listLabel} />
                                     </div>
                                 </div>
                                 <div className="space-y-6">

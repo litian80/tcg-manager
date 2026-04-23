@@ -25,9 +25,10 @@ interface RosterManagerProps {
     tournamentId: string;
     currentRoster: Player[];
     requiresDeckList?: boolean;
+    listLabel?: string;
 }
 
-export function RosterManager({ tournamentId, currentRoster, requiresDeckList }: RosterManagerProps) {
+export function RosterManager({ tournamentId, currentRoster, requiresDeckList, listLabel = 'deck' }: RosterManagerProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<RosterCandidate[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -162,7 +163,7 @@ export function RosterManager({ tournamentId, currentRoster, requiresDeckList }:
                         {requiresDeckList && currentRoster.length > 0 && (
                             <Badge variant="outline" className="gap-1 text-xs">
                                 <ScrollText className="h-3 w-3" />
-                                {currentRoster.filter(p => p.deck_list_status === 'online' || p.deck_list_status === 'paper').length}/{currentRoster.length} decks
+                                {currentRoster.filter(p => p.deck_list_status === 'online' || p.deck_list_status === 'paper').length}/{currentRoster.length} {listLabel.toLowerCase()}s
                             </Badge>
                         )}
                     </div>
@@ -199,7 +200,7 @@ export function RosterManager({ tournamentId, currentRoster, requiresDeckList }:
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="destructive" className="text-xs px-1.5 py-0">
-                                                        No deck
+                                                        No {listLabel.toLowerCase()}
                                                     </Badge>
                                                 )
                                             )}

@@ -33,9 +33,10 @@ interface PlayerRosterProps {
     requiresDeckList?: boolean;
     myPlayerId?: string;
     onPlayerClick?: (player: { id: string; name: string; dbId?: string }) => void;
+    listLabel?: string;
 }
 
-export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, requiresDeckList, myPlayerId, onPlayerClick }: PlayerRosterProps) {
+export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, requiresDeckList, myPlayerId, onPlayerClick, listLabel = 'deck' }: PlayerRosterProps) {
     const [isPending, startTransition] = useTransition();
     const [togglingId, setTogglingId] = useState<string | null>(null);
     // Local optimistic state for registration statuses
@@ -119,7 +120,7 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                         {requiresDeckList && players.length > 0 && (
                             <Badge variant="outline" className="gap-1 text-xs">
                                 <ScrollText className="h-3 w-3" />
-                                {totalSubmitted}/{players.length} decks
+                                {totalSubmitted}/{players.length} {listLabel.toLowerCase()}s
                             </Badge>
                         )}
                     </div>
@@ -236,7 +237,7 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                                                     ) : (
                                                         <span className="text-xs text-destructive flex items-center gap-0.5">
                                                             <ScrollText className="h-3 w-3" />
-                                                            No deck
+                                                            No {listLabel.toLowerCase()}
                                                         </span>
                                                     )
                                                 )}

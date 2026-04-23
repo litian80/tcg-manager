@@ -605,6 +605,7 @@ export default function TournamentView({
                                 tournamentId={tournament.id}
                                 requiresDeckList={!!tournament.requires_deck_list}
                                 myPlayerId={myPlayerId}
+                                listLabel={listLabel}
                                 onPlayerClick={isJudge || canManageStaff ? (player) => {
                                     setSelectedPlayer({ ...player, tomId: player.id, dbId: player.dbId || player.id });
                                     setPenaltyModalOpen(true);
@@ -641,6 +642,7 @@ export default function TournamentView({
                         ) : viewMode === 'roster' ? (
                             <RosterTabContent
                                 rosterPlayers={rosterPlayers}
+                                listLabel={listLabel}
                                 onPlayerClick={(player) => {
                                     setSelectedPlayer({ ...player, tomId: player.id, dbId: player.dbId || player.id });
                                     setPenaltyModalOpen(true);
@@ -821,9 +823,10 @@ export default function TournamentView({
 interface RosterTabContentProps {
     rosterPlayers: RosterPlayer[];
     onPlayerClick: (player: { id: string; name: string; dbId?: string }) => void;
+    listLabel?: string;
 }
 
-function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProps) {
+function RosterTabContent({ rosterPlayers, onPlayerClick, listLabel = 'deck' }: RosterTabContentProps) {
     const [searchQuery, setSearchQuery] = useState("");
 
     const onlineCount = rosterPlayers.filter(p => p.deck_list_status === 'online').length;
@@ -925,7 +928,7 @@ function RosterTabContent({ rosterPlayers, onPlayerClick }: RosterTabContentProp
                             </Badge>
                         ) : (
                             <Badge variant="destructive" className="text-xs">
-                                No deck
+                                No {listLabel.toLowerCase()}
                             </Badge>
                         )}
                     </div>
