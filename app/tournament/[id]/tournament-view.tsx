@@ -275,7 +275,8 @@ export default function TournamentView({
     
     // FEAT-010: Determine the active list state based on game type
     const activeListState = isVGC ? teamListState : deckListState;
-    const deckSubmissionButtonText = activeListState ? `Edit ${listLabel}` : `Submit ${listLabel}`;
+    const hasSubmittedList = isVGC ? !!activeListState?.raw_paste : !!activeListState?.raw_text;
+    const deckSubmissionButtonText = hasSubmittedList ? `Edit ${listLabel}` : `Submit ${listLabel}`;
 
     // Handle deck submission success
     const handleDeckSubmissionSuccess = (newDeckText: string) => {
@@ -290,7 +291,7 @@ export default function TournamentView({
     const handleTeamSubmissionSuccess = (newPasteText: string) => {
         setTeamListState((prev: any) => ({
             ...prev,
-            raw_text: newPasteText,
+            raw_paste: newPasteText,
             submitted_at: new Date().toISOString()
         }));
     };
@@ -303,8 +304,8 @@ export default function TournamentView({
                 variant={activeListState ? "outline" : "default"}
                 className={cn(
                     "w-full justify-start gap-2",
-                    !isDeadlinePassed && timeLeft?.isCritical && !activeListState && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
-                    !isDeadlinePassed && timeLeft?.isWarning && !activeListState && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    !isDeadlinePassed && timeLeft?.isCritical && !hasSubmittedList && "border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive",
+                    !isDeadlinePassed && timeLeft?.isWarning && !hasSubmittedList && "border-amber-500 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
                 )}
             >
                 <ScrollText className="h-4 w-4" />
@@ -326,7 +327,7 @@ export default function TournamentView({
             </Button>
 
             {/* View My List — always visible when a list has been submitted */}
-            {activeListState?.raw_text && (
+            {hasSubmittedList && (
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-2 text-muted-foreground"
@@ -374,7 +375,7 @@ export default function TournamentView({
 
     // Standalone "View My Deck" button for when deck submission UI is hidden
     // (tournament completed, player dropped/finished) but the player still has a submitted deck
-    const deckViewerElement = (!shouldShowDeckSubmission && activeListState?.raw_text && isEnrolledPlayer) ? (
+    const deckViewerElement = (!shouldShowDeckSubmission && hasSubmittedList && isEnrolledPlayer) ? (
         <div className="pt-2">
             <Button
                 variant="ghost"
@@ -758,7 +759,7 @@ export default function TournamentView({
                     isOpen={isTeamModalOpen}
                     onClose={() => setIsTeamModalOpen(false)}
                     tournamentId={tournament.id}
-                    initialPasteText={teamListState?.raw_text || ""}
+                    initialPasteText={teamListState?.raw_paste || ""}
                     onSuccess={handleTeamSubmissionSuccess}
                 />
             )}
@@ -774,11 +775,11 @@ export default function TournamentView({
             )}
 
             {/* VGC Team Viewer Modal (read-only) */}
-            {isVGC && teamListState?.raw_text && (
+            {isVGC && teamListState?.raw_paste && (
                 <VGCTeamViewerModal
                     isOpen={isTeamViewerOpen}
                     onClose={() => setIsTeamViewerOpen(false)}
-                    rawText={teamListState.raw_text}
+                    rawText={teamListState.raw_paste}
                     submittedAt={teamListState.submitted_at}
                 />
             )}
@@ -797,6 +798,7 @@ export default function TournamentView({
                     roundNumber={currentRound}
                     canEditPenalties={canManageStaff}
                     requiresDeckList={!!tournament.requires_deck_list}
+                    gameType={gameType}
                 />
             )}
 
@@ -838,7 +840,7 @@ function RosterTabContent({ rosterPlayers, onPlayerClick, listLabel = 'deck' }: 
         const d = div.toLowerCase();
         if (d === 'juniors' || d === 'junior' || d === 'jr') return 1;
         if (d === 'seniors' || d === 'senior' || d === 'sr') return 2;
-        if (d === 'masters' || d === 'master' || d === 'mr') return 3;
+        if (d === 'masters' || d === 'master' || d === 'ma') return 3;
         return 4;
     };
 
@@ -905,7 +907,7 @@ function RosterTabContent({ rosterPlayers, onPlayerClick, listLabel = 'deck' }: 
                             >
                                 {player.division ? (
                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
-                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MA' : 
                                          ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
                                          ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
                                          player.division}

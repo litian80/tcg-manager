@@ -105,13 +105,13 @@ Level: 50
         expect(result.pokemon[0].item).toBeUndefined();
     });
 
-    it('defaults level to 50 when not specified', () => {
+    it('defaults level to 100 when not specified (Showdown convention)', () => {
         const paste = `Pikachu @ Light Ball
 Ability: Static
 - Thunderbolt`;
 
         const result = parseShowdownPaste(paste);
-        expect(result.pokemon[0].level).toBe(50);
+        expect(result.pokemon[0].level).toBe(100);
     });
 
     it('parses shiny correctly', () => {

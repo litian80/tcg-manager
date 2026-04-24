@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { isVGCGameType } from "@/lib/utils";
 
 /**
  * Helper to check if a user is authorized to act as a judge/organizer/admin for a specific tournament.
@@ -147,8 +148,16 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
 
     const adminClient = createAdminClient();
 
-    // Fetch penalties, deck checks, and deck submission status in parallel
-    const [penaltiesResult, checksResult, deckListResult] = await Promise.all([
+    // Determine if VGC tournament
+    const { data: tournamentRecord } = await supabase
+        .from('tournaments')
+        .select('game_type')
+        .eq('id', tournamentId)
+        .single();
+    const isVGC = isVGCGameType(tournamentRecord?.game_type);
+
+    // Fetch penalties, deck checks, and deck/team submission status in parallel
+    const [penaltiesResult, checksResult, deckListResult, teamListResult] = await Promise.all([
         supabase
             .from('player_penalties')
             .select('*')
@@ -161,12 +170,18 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
             .eq('tournament_id', tournamentId)
             .eq('player_id', playerTomId)
             .order('check_time', { ascending: false }),
-        adminClient
+        !isVGC ? adminClient
             .from('deck_lists')
             .select('validation_status, raw_text, validation_errors')
             .eq('tournament_id', tournamentId)
             .eq('player_id', playerTomId)
-            .maybeSingle()
+            .maybeSingle() : Promise.resolve({ data: null, error: null }),
+        isVGC ? adminClient
+            .from('vgc_team_lists')
+            .select('raw_paste, submitted_at')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerTomId)
+            .maybeSingle() : Promise.resolve({ data: null, error: null })
     ]);
 
     const { data: rawPenalties, error: penaltiesError } = penaltiesResult;
@@ -196,10 +211,14 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
         }
     }
 
-    // Derive deck status
+    // Derive deck/team status
     let deckStatus: 'online' | 'paper' | 'missing' = 'missing';
     let paperMeta: any = null;
-    if (deckListResult.data) {
+    if (isVGC) {
+        if (teamListResult.data) {
+            deckStatus = 'online';
+        }
+    } else if (deckListResult.data) {
         deckStatus = deckListResult.data.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online';
         if (deckStatus === 'paper' && deckListResult.data.validation_errors) {
             paperMeta = deckListResult.data.validation_errors;
@@ -335,6 +354,31 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
 
     const adminClient = createAdminClient();
 
+    // Determine if VGC tournament
+    const { data: tournamentRecord } = await supabase
+        .from('tournaments')
+        .select('game_type')
+        .eq('id', tournamentId)
+        .single();
+    const isVGC = isVGCGameType(tournamentRecord?.game_type);
+
+    if (isVGC) {
+        // Fetch VGC team list
+        const { data: teamList, error } = await adminClient
+            .from('vgc_team_lists')
+            .select('id, raw_paste, submitted_at')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching team list:', error);
+            return { error: 'Failed to fetch team list' };
+        }
+
+        return { deckList: null, teamList };
+    }
+
     const { data: deckList, error } = await adminClient
         .from("deck_lists")
         .select(`
@@ -354,5 +398,5 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
         return { error: "Failed to fetch deck list" };
     }
 
-    return { deckList };
+    return { deckList, teamList: null };
 }

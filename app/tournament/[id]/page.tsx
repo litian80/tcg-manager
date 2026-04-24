@@ -260,17 +260,31 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         if (rosterError) {
             console.error("Error fetching roster:", rosterError);
         } else if (rosterData) {
-            const { data: deckStatusData } = tournamentRecord.requires_deck_list
-                ? await supabase
-                    .from('deck_lists')
-                    .select('player_id, validation_status, raw_text')
-                    .eq('tournament_id', id)
-                : { data: [] };
+            const [{ data: deckStatusData }, { data: teamStatusData }] = await Promise.all([
+                (tournamentRecord.requires_deck_list && !isVGC)
+                    ? supabase
+                        .from('deck_lists')
+                        .select('player_id, validation_status, raw_text')
+                        .eq('tournament_id', id)
+                    : Promise.resolve({ data: null }),
+                (tournamentRecord.requires_deck_list && isVGC)
+                    ? supabase
+                        .from('vgc_team_lists')
+                        .select('player_id')
+                        .eq('tournament_id', id)
+                    : Promise.resolve({ data: null })
+            ]);
 
             const deckStatusMap = new Map<string, string>();
             if (deckStatusData) {
                 deckStatusData.forEach((item: any) => {
                     deckStatusMap.set(item.player_id, item.raw_text === '[PAPER DECKLIST]' ? 'paper' : 'online');
+                });
+            }
+            // FEAT-010: For VGC, all submitted team lists are 'online'
+            if (teamStatusData) {
+                teamStatusData.forEach((item: any) => {
+                    deckStatusMap.set(item.player_id, 'online');
                 });
             }
 

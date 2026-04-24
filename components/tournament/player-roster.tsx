@@ -50,11 +50,11 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
         const d = div.toLowerCase();
         if (d === 'juniors' || d === 'junior' || d === 'jr') return 1;
         if (d === 'seniors' || d === 'senior' || d === 'sr') return 2;
-        if (d === 'masters' || d === 'master' || d === 'mr') return 3;
+        if (d === 'masters' || d === 'master' || d === 'ma') return 3;
         return 4;
     };
 
-    // Sort players by Division (JR, SR, MR), then alphabetically by First Name
+    // Sort players by Division (JR, SR, MA), then alphabetically by First Name
     const sortedPlayers = [...players].sort((a, b) => {
         const isMeA = myPlayerId && (a.id === myPlayerId || a.tom_player_id === myPlayerId);
         const isMeB = myPlayerId && (b.id === myPlayerId || b.tom_player_id === myPlayerId);
@@ -160,7 +160,7 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                                             >
                                                 {player.division ? (
                                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
-                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MA' : 
                                                          ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
                                                          ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
                                                          player.division}
@@ -175,7 +175,7 @@ export function PlayerRoster({ players, canManage, canCheckIn, tournamentId, req
                                             <div className="flex items-center gap-2">
                                                 {player.division ? (
                                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted py-0.5 rounded-sm flex-shrink-0 w-7 text-center">
-                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MR' : 
+                                                        {['masters', 'master'].includes(player.division.toLowerCase()) ? 'MA' : 
                                                          ['seniors', 'senior'].includes(player.division.toLowerCase()) ? 'SR' : 
                                                          ['juniors', 'junior'].includes(player.division.toLowerCase()) ? 'JR' : 
                                                          player.division}

@@ -93,7 +93,7 @@ function parsePokemonBlock(block: string, index: number): PokemonBlockResult {
     }
 
     let ability = '';
-    let level = 50; // VGC default
+    let level = 100; // Showdown default: omitted Level line = 100
     let teraType: string | undefined;
     let nature: string | undefined;
     let shiny = false;

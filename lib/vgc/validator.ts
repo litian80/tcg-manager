@@ -16,7 +16,7 @@ const SPECIES_SET = new Set((speciesData as string[]).map(s => s.toLowerCase()))
 const MOVES_SET = new Set((movesData as string[]).map(s => s.toLowerCase()));
 const ABILITIES_SET = new Set((abilitiesData as string[]).map(s => s.toLowerCase()));
 const ITEMS_SET = new Set((itemsData as string[]).map(s => s.toLowerCase()));
-const NATURES_SET = new Set((naturesData as string[]).map(s => s.toLowerCase()));
+const NATURES_SET = new Set(Object.keys(naturesData as Record<string, unknown>).map(s => s.toLowerCase()));
 
 const TERA_TYPES = new Set([
     'normal', 'fire', 'water', 'electric', 'grass', 'ice',
