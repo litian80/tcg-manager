@@ -520,8 +520,8 @@ export function VGCTeamSubmitModal({
             </TabsContent>
 
             {/* Preview Tab */}
-            <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden min-h-0">
-              <div className="h-full overflow-y-auto border rounded-lg bg-muted/30 p-4">
+            <TabsContent value="preview" className="mt-0">
+              <div className="h-[55vh] max-h-[500px] overflow-y-auto border rounded-lg bg-muted/30 p-4">
                 {parsedTeam.length > 0 ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
