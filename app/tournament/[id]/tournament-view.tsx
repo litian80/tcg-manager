@@ -288,11 +288,14 @@ export default function TournamentView({
         }));
     };
 
-    const handleTeamSubmissionSuccess = (newPasteText: string) => {
+    const handleTeamSubmissionSuccess = (newPasteText: string, gameProfile: { trainerName?: string; battleTeamName?: string; switchProfileName?: string }) => {
         setTeamListState((prev: any) => ({
             ...prev,
             raw_paste: newPasteText,
-            submitted_at: new Date().toISOString()
+            submitted_at: new Date().toISOString(),
+            trainer_name: gameProfile.trainerName || null,
+            battle_team_name: gameProfile.battleTeamName || null,
+            switch_profile_name: gameProfile.switchProfileName || null,
         }));
     };
 
@@ -760,6 +763,11 @@ export default function TournamentView({
                     onClose={() => setIsTeamModalOpen(false)}
                     tournamentId={tournament.id}
                     initialPasteText={teamListState?.raw_paste || ""}
+                    initialGameProfile={{
+                        trainerName: teamListState?.trainer_name || undefined,
+                        battleTeamName: teamListState?.battle_team_name || undefined,
+                        switchProfileName: teamListState?.switch_profile_name || undefined,
+                    }}
                     onSuccess={handleTeamSubmissionSuccess}
                 />
             )}

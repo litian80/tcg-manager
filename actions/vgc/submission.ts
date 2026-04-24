@@ -13,7 +13,12 @@ import type { VGCValidationResult } from "@/lib/vgc/types";
  */
 export async function submitVGCTeamAction(
     tournamentId: string,
-    pasteText: string
+    pasteText: string,
+    gameProfile?: {
+        trainerName?: string;
+        battleTeamName?: string;
+        switchProfileName?: string;
+    }
 ): Promise<VGCValidationResult> {
     const supabase = await createClient();
 
@@ -156,6 +161,9 @@ export async function submitVGCTeamAction(
                 validation_status: 'valid',
                 validation_errors: [],
                 submitted_at: new Date().toISOString(),
+                trainer_name: gameProfile?.trainerName || null,
+                battle_team_name: gameProfile?.battleTeamName || null,
+                switch_profile_name: gameProfile?.switchProfileName || null,
             }, {
                 onConflict: 'tournament_id,player_id',
             });

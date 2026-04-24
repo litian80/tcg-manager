@@ -12,6 +12,9 @@ export interface VGCTeamListRow {
     validation_status: string | null;
     validation_errors: any;
     submitted_at: string | null;
+    trainer_name: string | null;
+    battle_team_name: string | null;
+    switch_profile_name: string | null;
 }
 
 /**

@@ -163,6 +163,30 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false }: DeckDispl
                     </span>
                 </div>
 
+                {/* Game Profile Info (For Tournament Staff) */}
+                {(teamListData.trainer_name || teamListData.battle_team_name || teamListData.switch_profile_name) && (
+                    <div className="grid grid-cols-3 gap-2 p-2 rounded-md bg-muted/50 border text-xs">
+                        {teamListData.trainer_name && (
+                            <div>
+                                <span className="text-muted-foreground">IGN:</span>{" "}
+                                <span className="font-medium">{teamListData.trainer_name}</span>
+                            </div>
+                        )}
+                        {teamListData.battle_team_name && (
+                            <div>
+                                <span className="text-muted-foreground">Battle Team:</span>{" "}
+                                <span className="font-medium">{teamListData.battle_team_name}</span>
+                            </div>
+                        )}
+                        {teamListData.switch_profile_name && (
+                            <div>
+                                <span className="text-muted-foreground">Switch Profile:</span>{" "}
+                                <span className="font-medium">{teamListData.switch_profile_name}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <Tabs defaultValue="structured" className="w-full h-full flex flex-col">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="structured">Structured</TabsTrigger>

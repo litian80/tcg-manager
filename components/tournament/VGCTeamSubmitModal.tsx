@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +31,12 @@ interface VGCTeamSubmitModalProps {
   onClose: () => void;
   tournamentId: string;
   initialPasteText?: string;
-  onSuccess?: (newPasteText: string) => void;
+  initialGameProfile?: {
+    trainerName?: string;
+    battleTeamName?: string;
+    switchProfileName?: string;
+  };
+  onSuccess?: (newPasteText: string, gameProfile: { trainerName?: string; battleTeamName?: string; switchProfileName?: string }) => void;
 }
 
 // --- Constants ---
@@ -244,6 +251,7 @@ export function VGCTeamSubmitModal({
   onClose,
   tournamentId,
   initialPasteText = "",
+  initialGameProfile,
   onSuccess,
 }: VGCTeamSubmitModalProps) {
   const autoSaveKey = `${AUTO_SAVE_KEY_PREFIX}${tournamentId}`;
@@ -257,6 +265,11 @@ export function VGCTeamSubmitModal({
       return initialPasteText;
     }
   });
+
+  // Game profile fields
+  const [trainerName, setTrainerName] = useState(initialGameProfile?.trainerName || "");
+  const [battleTeamName, setBattleTeamName] = useState(initialGameProfile?.battleTeamName || "");
+  const [switchProfileName, setSwitchProfileName] = useState(initialGameProfile?.switchProfileName || "");
 
   const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -379,11 +392,19 @@ export function VGCTeamSubmitModal({
 
     setIsSubmitting(true);
     try {
-      const result = await submitVGCTeamAction(stateRef.current.tournamentId, trimmed);
+      const result = await submitVGCTeamAction(stateRef.current.tournamentId, trimmed, {
+        trainerName: trainerName.trim() || undefined,
+        battleTeamName: battleTeamName.trim() || undefined,
+        switchProfileName: switchProfileName.trim() || undefined,
+      });
       if (result.isValid) {
         toast.success("Team list submitted successfully!");
         try { localStorage.removeItem(stateRef.current.autoSaveKey); } catch { /* ignore */ }
-        onSuccess?.(trimmed);
+        onSuccess?.(trimmed, {
+          trainerName: trainerName.trim() || undefined,
+          battleTeamName: battleTeamName.trim() || undefined,
+          switchProfileName: switchProfileName.trim() || undefined,
+        });
         onClose();
       } else {
         setErrors(result.errors);
@@ -439,6 +460,44 @@ export function VGCTeamSubmitModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             {/* Left: Editor */}
             <div className="flex flex-col overflow-hidden">
+              {/* Game Profile Fields */}
+              <div className="space-y-2 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <Label htmlFor="vgc-trainer-name" className="text-xs text-muted-foreground">Trainer Name in Game</Label>
+                    <Input
+                      id="vgc-trainer-name"
+                      placeholder="e.g. Red"
+                      value={trainerName}
+                      onChange={(e) => setTrainerName(e.target.value)}
+                      className="h-8 text-sm"
+                      maxLength={24}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vgc-battle-team" className="text-xs text-muted-foreground">Battle Team Number / Name</Label>
+                    <Input
+                      id="vgc-battle-team"
+                      placeholder="e.g. Team 1"
+                      value={battleTeamName}
+                      onChange={(e) => setBattleTeamName(e.target.value)}
+                      className="h-8 text-sm"
+                      maxLength={24}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vgc-switch-profile" className="text-xs text-muted-foreground">Switch Profile Name</Label>
+                    <Input
+                      id="vgc-switch-profile"
+                      placeholder="e.g. Player1"
+                      value={switchProfileName}
+                      onChange={(e) => setSwitchProfileName(e.target.value)}
+                      className="h-8 text-sm"
+                      maxLength={24}
+                    />
+                  </div>
+                </div>
+              </div>
               <TeamEditor
                 value={pasteText}
                 onChange={setPasteText}

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { authorizeTournamentManagement } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, Printer, Ban } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Printer, Ban, Swords } from "lucide-react";
 import { TournamentSettingsForm } from "./_components/tournament-settings-form";
 import { TdfExportCard } from "./_components/tdf-export-card";
 import { RosterManager } from "./_components/roster-manager";
@@ -194,6 +194,17 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                             Print QR Poster
                         </Link>
                     </Button>
+                    {isVGC && (
+                        <Button asChild variant="outline">
+                            <Link
+                                href={`/organizer/tournaments/${id}/team-sheets`}
+                                target="_blank"
+                            >
+                                <Swords className="w-4 h-4" />
+                                Print Team Sheets
+                            </Link>
+                        </Button>
+                    )}
                 </div>
             </div>
 
