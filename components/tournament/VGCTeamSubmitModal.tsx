@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, AlertCircle, CheckCircle2, Info, Copy, Swords } from "lucide-react";
 import { submitVGCTeamAction } from "@/actions/vgc/submission";
 import { toast } from "sonner";
@@ -447,26 +448,35 @@ export function VGCTeamSubmitModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl w-[95vw] h-[95vh] sm:h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Swords className="h-6 w-6" />
+      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-3">
+          <DialogTitle className="text-lg font-bold flex items-center gap-2">
+            <Swords className="h-5 w-5" />
             Submit Team List
           </DialogTitle>
-          <DialogDescription>
-            Paste your Pokémon Showdown team export below. (Ctrl+Enter to validate/submit)
+          <DialogDescription className="text-xs">
+            Paste your Pokémon Showdown team export. (Ctrl+Enter to validate/submit)
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6 py-2 min-h-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full min-h-0">
-            {/* Left: Editor */}
-            <div className="flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden px-6 pb-2 min-h-0">
+          <Tabs defaultValue="edit" className="h-full flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="preview">
+                  Preview {parsedTeam.length > 0 && `(${parsedTeam.length})`}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Edit Tab */}
+            <TabsContent value="edit" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
               {/* Game Profile Fields */}
               <div className="space-y-2 mb-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label htmlFor="vgc-trainer-name" className="text-xs text-muted-foreground">Trainer Name in Game</Label>
+                    <Label htmlFor="vgc-trainer-name" className="text-xs text-muted-foreground">Trainer Name</Label>
                     <Input
                       id="vgc-trainer-name"
                       placeholder="e.g. Red"
@@ -477,7 +487,7 @@ export function VGCTeamSubmitModal({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="vgc-battle-team" className="text-xs text-muted-foreground">Battle Team Number / Name</Label>
+                    <Label htmlFor="vgc-battle-team" className="text-xs text-muted-foreground">Battle Team</Label>
                     <Input
                       id="vgc-battle-team"
                       placeholder="e.g. Team 1"
@@ -488,7 +498,7 @@ export function VGCTeamSubmitModal({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="vgc-switch-profile" className="text-xs text-muted-foreground">Switch Profile Name</Label>
+                    <Label htmlFor="vgc-switch-profile" className="text-xs text-muted-foreground">Switch Profile</Label>
                     <Input
                       id="vgc-switch-profile"
                       placeholder="e.g. Player1"
@@ -500,48 +510,50 @@ export function VGCTeamSubmitModal({
                   </div>
                 </div>
               </div>
-              <TeamEditor
-                value={pasteText}
-                onChange={setPasteText}
-                maxLength={MAX_CHAR_LIMIT}
-              />
-            </div>
+              <div className="flex-1 min-h-0">
+                <TeamEditor
+                  value={pasteText}
+                  onChange={setPasteText}
+                  maxLength={MAX_CHAR_LIMIT}
+                />
+              </div>
+            </TabsContent>
 
-            {/* Right: Preview + Validation */}
-            <div className="flex flex-col rounded-xl border bg-muted/30 min-h-0 overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-4">
+            {/* Preview Tab */}
+            <TabsContent value="preview" className="flex-1 mt-0 overflow-hidden min-h-0">
+              <div className="h-full overflow-y-auto border rounded-lg bg-muted/30 p-4">
                 {parsedTeam.length > 0 ? (
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">Team Preview</span>
-                      <Badge variant="default" className="text-xs">
-                        {parsedTeam.length} / 6 Pokémon
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                      <span className="font-semibold text-sm">Team Preview</span>
+                      <Badge variant="default" className="text-sm px-3 shadow-sm">
+                        {parsedTeam.length} Pokémon
                       </Badge>
                     </div>
                     {parsedTeam.map((poke, i) => (
                       <PokemonPreview key={i} pokemon={poke} index={i} />
                     ))}
+
+                    {(isValid !== null || isValidating) && (
+                      <div className="pt-2 border-t mt-4">
+                        <VGCValidationFeedback
+                          errors={errors}
+                          warnings={warnings}
+                          isValid={isValid}
+                          isValidating={isValidating}
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-muted-foreground gap-2 py-10">
+                  <div className="flex flex-col items-center justify-center text-muted-foreground gap-2 py-16">
                     <Swords className="h-8 w-8" />
                     <p className="text-sm">Paste your team and click &quot;Validate&quot; to preview.</p>
                   </div>
                 )}
-
-                {(isValid !== null || isValidating) && (
-                  <div className="pt-2 border-t">
-                    <VGCValidationFeedback
-                      errors={errors}
-                      warnings={warnings}
-                      isValid={isValid}
-                      isValidating={isValidating}
-                    />
-                  </div>
-                )}
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <DialogFooter className="p-6 pt-2 border-t bg-muted/20">
