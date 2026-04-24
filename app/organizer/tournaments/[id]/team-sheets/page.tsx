@@ -90,24 +90,30 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Print-specific styles: suppress browser header/footer, force clean pages */}
+            {/* Print-specific styles */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
                     @page {
-                        margin: 12mm;
+                        margin: 10mm 12mm;
                         size: A4 portrait;
                     }
                     html, body {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
-                        font-size: 14pt !important;
+                        font-size: 12pt !important;
                     }
                     body {
                         background: white !important;
                         color: black !important;
                     }
-                    /* Hide Next.js root-level nav/footer if any */
                     header, footer, nav { display: none !important; }
+                    .ots-sheet {
+                        page-break-after: always;
+                        page-break-inside: avoid;
+                    }
+                    .ots-sheet:last-child {
+                        page-break-after: auto;
+                    }
                 }
             `}} />
 
@@ -131,15 +137,15 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
             </div>
 
             {/* Team Sheets */}
-            <div className="max-w-5xl mx-auto px-4 py-6 print:px-0 print:py-0 print:max-w-none">
+            <div className="print:px-0 print:py-0 print:max-w-none">
                 {sheets.length === 0 ? (
-                    <div className="text-center py-20 text-muted-foreground print:hidden">
+                    <div className="text-center py-20 text-muted-foreground print:hidden max-w-5xl mx-auto px-4">
                         <p className="text-lg">No team lists have been submitted yet.</p>
                     </div>
                 ) : (
-                    <div className="space-y-8 print:space-y-0">
+                    <div>
                         {sheets.map((sheet, idx) => (
-                            <OTSCard key={idx} sheet={sheet} isLast={idx === sheets.length - 1} />
+                            <OTSSheet key={idx} sheet={sheet} />
                         ))}
                     </div>
                 )}
@@ -148,96 +154,118 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
     );
 }
 
-function OTSCard({ sheet, isLast }: { sheet: PlayerTeamSheet; isLast: boolean }) {
-    const divisionLabel = sheet.division.charAt(0).toUpperCase() + sheet.division.slice(1);
+/* ── Official-style OTS Sheet (one per page) ── */
+
+function OTSSheet({ sheet }: { sheet: PlayerTeamSheet }) {
+    const padded = [...sheet.team];
+    while (padded.length < 6) padded.push(null as any);
 
     return (
-        <div className={`bg-white dark:bg-card border rounded-lg p-6 print:border-none print:rounded-none print:p-0 print:shadow-none ${!isLast ? 'print:break-after-page' : ''}`}>
-            {/* Player Header */}
-            <div className="border-b pb-3 mb-4 print:pb-4 print:mb-5">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-lg font-bold print:text-2xl">{sheet.playerName}</h2>
-                        <p className="text-sm text-muted-foreground print:text-base print:mt-1">
-                            Division: <span className="font-semibold text-foreground">{divisionLabel}</span>
-                        </p>
+        <div className="ots-sheet max-w-4xl mx-auto px-6 py-6 print:max-w-none print:px-0 print:py-0">
+            <div className="border-2 border-black rounded-none p-6 print:border-0 print:p-0 bg-white text-black" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+
+                {/* Title */}
+                <div className="text-center mb-1">
+                    <h1 className="text-[17pt] font-bold leading-tight">Pokémon Video Game Team List</h1>
+                    <p className="text-[13pt] font-bold">2 of 2: <em>For Opponents</em></p>
+                    <p className="text-[9pt] italic mt-0.5">Do not lose this page! Keep it throughout the tournament, sharing it with your opponent each round.</p>
+                </div>
+
+                {/* Player Info Block */}
+                <div className="mt-4 space-y-[6px] text-[11pt]">
+                    {/* Row 1: Player Name + Age Division */}
+                    <div className="flex items-end gap-6">
+                        <div className="flex items-end gap-1 flex-1">
+                            <span className="font-bold whitespace-nowrap">Player Name:</span>
+                            <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.playerName}</span>
+                        </div>
+                        <div className="flex items-center gap-3 whitespace-nowrap">
+                            <span className="font-bold">Age Division:</span>
+                            <label className="flex items-center gap-1">
+                                <span className="inline-block w-[14px] h-[14px] border-2 border-black text-center text-[9px] leading-[12px]">
+                                    {sheet.division === 'junior' ? '✓' : ''}
+                                </span>
+                                Juniors
+                            </label>
+                            <label className="flex items-center gap-1">
+                                <span className="inline-block w-[14px] h-[14px] border-2 border-black text-center text-[9px] leading-[12px]">
+                                    {sheet.division === 'senior' ? '✓' : ''}
+                                </span>
+                                Seniors
+                            </label>
+                            <label className="flex items-center gap-1">
+                                <span className="inline-block w-[14px] h-[14px] border-2 border-black text-center text-[9px] leading-[12px]">
+                                    {sheet.division === 'master' ? '✓' : ''}
+                                </span>
+                                Masters
+                            </label>
+                        </div>
                     </div>
-                    <div className="text-right text-xs text-muted-foreground print:text-sm">
-                        <p className="font-medium text-foreground">For Opponents</p>
-                        <p>Open Team Sheet</p>
+
+                    {/* Row 2: Trainer Name in Game */}
+                    <div className="flex items-end gap-1">
+                        <span className="font-bold whitespace-nowrap text-[10pt]">Trainer Name in Game:</span>
+                        <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.trainerName || ''}</span>
+                    </div>
+
+                    {/* Row 3: Battle Team Number / Name */}
+                    <div className="flex items-end gap-1">
+                        <span className="font-bold whitespace-nowrap text-[10pt]">Battle Team Number / Name:</span>
+                        <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.battleTeamName || ''}</span>
+                    </div>
+
+                    {/* Row 4: Switch Profile Name */}
+                    <div className="flex items-end gap-1">
+                        <span className="font-bold whitespace-nowrap text-[10pt] text-red-700">Switch Profile Name:</span>
+                        <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.switchProfileName || ''}</span>
                     </div>
                 </div>
 
-                {/* Game Profile Fields */}
-                <div className="grid grid-cols-3 gap-3 mt-2 text-sm print:text-base print:mt-3 print:gap-4">
-                    <div>
-                        <span className="text-muted-foreground">Trainer Name: </span>
-                        <span className="font-medium">{sheet.trainerName || '—'}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Battle Team: </span>
-                        <span className="font-medium">{sheet.battleTeamName || '—'}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Switch Profile: </span>
-                        <span className="font-medium">{sheet.switchProfileName || '—'}</span>
-                    </div>
+                {/* Pokémon Grid: 2 columns × 3 rows */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-4">
+                    {padded.map((pokemon, i) => (
+                        <PokemonTable key={i} pokemon={pokemon} />
+                    ))}
                 </div>
-            </div>
 
-            {/* Pokémon Grid — 2 columns × 3 rows */}
-            <div className="grid grid-cols-2 gap-3 print:gap-4">
-                {sheet.team.map((pokemon, i) => (
-                    <OTSPokemonCard key={i} pokemon={pokemon} index={i} />
-                ))}
-                {/* Fill empty slots to always show 6 */}
-                {Array.from({ length: Math.max(0, 6 - sheet.team.length) }).map((_, i) => (
-                    <div key={`empty-${i}`} className="rounded-lg border border-dashed p-3 flex items-center justify-center text-muted-foreground text-xs print:text-sm print:p-4">
-                        (empty slot)
-                    </div>
-                ))}
+                {/* Footer */}
+                <div className="mt-4 text-center">
+                    <p className="text-[8pt] italic">All Pokémon must be listed exactly as they appear in the Battle Team, at the level they are in the game.</p>
+                </div>
             </div>
         </div>
     );
 }
 
-function OTSPokemonCard({ pokemon, index }: { pokemon: VGCPokemon; index: number }) {
+/* ── Table-style Pokémon card matching official form ── */
+
+function PokemonTable({ pokemon }: { pokemon: VGCPokemon | null }) {
+    const rows = [
+        { label: 'Pokémon', value: pokemon ? (pokemon.nickname ? `${pokemon.nickname} (${pokemon.species})` : pokemon.species) : '' },
+        { label: 'Tera Type', value: pokemon?.teraType || '' },
+        { label: 'Ability', value: pokemon?.ability || '' },
+        { label: 'Held Item', value: pokemon?.item || '' },
+        { label: 'Move 1', value: pokemon?.moves?.[0] || '' },
+        { label: 'Move 2', value: pokemon?.moves?.[1] || '' },
+        { label: 'Move 3', value: pokemon?.moves?.[2] || '' },
+        { label: 'Move 4', value: pokemon?.moves?.[3] || '' },
+    ];
+
     return (
-        <div className="rounded-lg border p-3 space-y-1.5 print:p-4 print:space-y-2">
-            {/* Species + Item */}
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-xs font-mono text-muted-foreground print:text-sm">#{index + 1}</span>
-                    <span className="font-semibold text-sm truncate print:text-base">
-                        {pokemon.nickname ? `${pokemon.nickname} (${pokemon.species})` : pokemon.species}
-                    </span>
-                    {pokemon.gender && (
-                        <span className={`text-xs font-bold print:text-sm ${pokemon.gender === "M" ? "text-blue-500" : "text-pink-500"}`}>
-                            {pokemon.gender === "M" ? "♂" : "♀"}
-                        </span>
-                    )}
-                </div>
-                {pokemon.item && (
-                    <span className="text-[10px] font-mono text-muted-foreground border rounded px-1.5 py-0.5 flex-shrink-0 print:text-sm print:px-2 print:py-1">
-                        {pokemon.item}
-                    </span>
-                )}
-            </div>
-
-            {/* Tera Type + Ability (NO Level, NO stats for OTS) */}
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground print:text-sm print:gap-x-4">
-                <span><strong>Ability:</strong> {pokemon.ability}</span>
-                {pokemon.teraType && <span><strong>Tera:</strong> {pokemon.teraType}</span>}
-            </div>
-
-            {/* Moves */}
-            <div className="flex flex-wrap gap-1 print:gap-2">
-                {pokemon.moves.map((move, i) => (
-                    <span key={i} className="text-[10px] bg-muted px-1.5 py-0.5 rounded print:text-sm print:px-2 print:py-1">
-                        {move}
-                    </span>
+        <table className="w-full border-collapse border-2 border-black text-[10pt]">
+            <tbody>
+                {rows.map((row, i) => (
+                    <tr key={i} className="border border-black">
+                        <td className="font-bold px-2 py-[3px] border-r border-black w-[95px] whitespace-nowrap bg-white">
+                            {row.label}
+                        </td>
+                        <td className="px-2 py-[3px] min-h-[1.5em]">
+                            {row.value}
+                        </td>
+                    </tr>
                 ))}
-            </div>
-        </div>
+            </tbody>
+        </table>
     );
 }
+

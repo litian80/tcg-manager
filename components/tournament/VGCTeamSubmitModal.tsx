@@ -285,11 +285,14 @@ export function VGCTeamSubmitModal({
     tournamentId,
     autoSaveKey,
     isValid,
+    trainerName,
+    battleTeamName,
+    switchProfileName,
   });
 
   useEffect(() => {
-    stateRef.current = { pasteText, isValidating, isSubmitting, tournamentId, autoSaveKey, isValid };
-  }, [pasteText, isValidating, isSubmitting, tournamentId, autoSaveKey, isValid]);
+    stateRef.current = { pasteText, isValidating, isSubmitting, tournamentId, autoSaveKey, isValid, trainerName, battleTeamName, switchProfileName };
+  }, [pasteText, isValidating, isSubmitting, tournamentId, autoSaveKey, isValid, trainerName, battleTeamName, switchProfileName]);
 
   const isLoaded = useRef(false);
 
@@ -393,17 +396,17 @@ export function VGCTeamSubmitModal({
     setIsSubmitting(true);
     try {
       const result = await submitVGCTeamAction(stateRef.current.tournamentId, trimmed, {
-        trainerName: trainerName.trim() || undefined,
-        battleTeamName: battleTeamName.trim() || undefined,
-        switchProfileName: switchProfileName.trim() || undefined,
+        trainerName: stateRef.current.trainerName.trim() || undefined,
+        battleTeamName: stateRef.current.battleTeamName.trim() || undefined,
+        switchProfileName: stateRef.current.switchProfileName.trim() || undefined,
       });
       if (result.isValid) {
         toast.success("Team list submitted successfully!");
         try { localStorage.removeItem(stateRef.current.autoSaveKey); } catch { /* ignore */ }
         onSuccess?.(trimmed, {
-          trainerName: trainerName.trim() || undefined,
-          battleTeamName: battleTeamName.trim() || undefined,
-          switchProfileName: switchProfileName.trim() || undefined,
+          trainerName: stateRef.current.trainerName.trim() || undefined,
+          battleTeamName: stateRef.current.battleTeamName.trim() || undefined,
+          switchProfileName: stateRef.current.switchProfileName.trim() || undefined,
         });
         onClose();
       } else {
