@@ -85,7 +85,7 @@ export const MODE_LABELS: Record<string, string> = {
   LEAGUECHALLENGE: "League Challenge",
   TCG1DAY: "League Cup",
   PRERELEASE: "Prerelease",
-  VGCPREMIER: "VGC Premier Challenge",
+  VGCPREMIER: "VGC Premier",
 }
 
 /** FEAT-010: Check if a game_type value represents a VGC tournament */
