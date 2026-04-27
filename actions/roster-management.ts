@@ -152,7 +152,7 @@ export async function addPlayerToRoster(tournamentId: string, profileId: string)
 
     // 6. Insert into tournament_players
     // We need to save `birth_year` here as per `export-tdf.ts` logic which reads `tp.birth_year`.
-    const { error: joinError } = await supabase
+    const { error: joinError } = await adminSupabase
         .from('tournament_players')
         .insert({
             tournament_id: tournamentId,
