@@ -325,7 +325,9 @@ export async function updateMatchTimeExtension(matchId: string, minutes: number)
         return { error: "Unauthorized" };
     }
 
-    const { error } = await supabase
+    // SEC-007: Use admin client for update — user is already validated via checkTournamentAuth above
+    const adminClient = createAdminClient();
+    const { error } = await adminClient
         .from('matches')
         .update({ time_extension_minutes: minutes })
         .eq('id', matchId);

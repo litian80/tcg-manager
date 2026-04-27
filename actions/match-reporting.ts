@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { safeAction, ActionResult } from "@/lib/safe-action";
 import { MatchReportValue } from "@/utils/match-reporting";
 import { revalidatePath } from "next/cache";
@@ -69,7 +69,9 @@ export async function reportMatchResult(
 
     const updateColumn = isPlayer1 ? "p1_reported_result" : "p2_reported_result";
 
-    const { error: updateError } = await supabase
+    // SEC-007: Use admin client for update — user is already validated as a match participant above
+    const adminSupabase = await createAdminClient();
+    const { error: updateError } = await adminSupabase
       .from("matches")
       .update({ [updateColumn]: result })
       .eq("id", matchId);
