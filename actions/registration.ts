@@ -7,7 +7,7 @@ import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { tryDispatchNotification } from "@/utils/webhook-helpers";
 import { createAdminClient } from "@/utils/supabase/server";
 
-export type Division = "junior" | "senior" | "master";
+export type Division = "junior" | "senior" | "master" | "open";
 
 // Helper to deduce division by birth year
 export async function calculatePlayerDivision(
@@ -17,11 +17,16 @@ export async function calculatePlayerDivision(
   const supabase = await createClient();
   const { data: tournament, error } = await supabase
     .from("tournaments")
-    .select("juniors_birth_year_max, seniors_birth_year_max")
+    .select("juniors_birth_year_max, seniors_birth_year_max, game_type")
     .eq("id", tournamentId)
     .single();
 
   if (error || !tournament) throw new Error("Tournament not found");
+
+  // GO tournaments use a single "open" division — bypass age-based division logic
+  if (tournament.game_type === 'GO') {
+    return "open";
+  }
 
   // Simplified logic: Juniors are >= jr threshold, Seniors are >= sr threshold, others are Masters.
   if (tournament.juniors_birth_year_max && birthYear >= tournament.juniors_birth_year_max) {
@@ -39,7 +44,9 @@ export async function checkDivisionCapacity(
   division: Division
 ): Promise<{ available: boolean; currentCount: number; capacity: number; overallCount: number; overallCapacity: number }> {
   const supabase = await createClient();
-  const capacityColumn = `capacity_${division}s` as "capacity_juniors" | "capacity_seniors" | "capacity_masters";
+  // For "open" division (GO), use capacity_open; for others, use capacity_<division>s
+  const isOpen = division === 'open';
+  const capacityColumn = isOpen ? 'capacity_open' : `capacity_${division}s` as "capacity_juniors" | "capacity_seniors" | "capacity_masters";
 
   // Fetch division count and overall count in parallel
   const [divCountRes, overallCountRes, tournamentRes] = await Promise.all([
@@ -201,7 +208,7 @@ export async function registerPlayer(tournamentId: string) {
 
     const division = await calculatePlayerDivision(profile.birth_year, tournamentId);
 
-    const urlColumnMap = { junior: 'payment_url_juniors', senior: 'payment_url_seniors', master: 'payment_url_masters' } as const;
+    const urlColumnMap: Record<Division, string> = { junior: 'payment_url_juniors', senior: 'payment_url_seniors', master: 'payment_url_masters', open: 'payment_url_masters' };
     const targetUrl = (tournament as any)[urlColumnMap[division]] as string | null;
 
     if (tournament.payment_required && !targetUrl) {

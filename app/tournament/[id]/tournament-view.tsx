@@ -21,11 +21,13 @@ import { DeckSubmissionModal } from "@/components/tournament/DeckSubmissionModal
 import { DeckViewerModal } from "@/components/tournament/DeckViewerModal";
 import { VGCTeamSubmitModal } from "@/components/tournament/VGCTeamSubmitModal";
 import { VGCTeamViewerModal } from "@/components/tournament/VGCTeamViewerModal";
+import { GOTeamSubmitForm } from "@/components/tournament/GOTeamSubmitForm";
+import { GOTeamViewerModal } from "@/components/tournament/GOTeamViewerModal";
 import { toast } from "sonner";
 import type { ParsedCard } from "@/types/deck";
 import { getMatchReportingStatus } from "@/utils/match-reporting";
 import { AnnouncementBanner, Announcement } from "@/components/tournament/announcement-banner";
-import { isVGCGameType, getListLabel } from "@/lib/utils";
+import { isVGCGameType, isGOGameType, getListLabel } from "@/lib/utils";
 
 /** Track the rendered height of an element via ResizeObserver. */
 function useStickyHeight() {
@@ -101,6 +103,7 @@ export default function TournamentView({
     activeAnnouncement = null,
 }: TournamentViewProps) {
     const isVGC = isVGCGameType(gameType);
+    const isGO = isGOGameType(gameType);
     const listLabel = getListLabel(gameType);
     const canEditMatch = isJudge;
     const [searchQuery, setSearchQuery] = useState("");
@@ -110,6 +113,8 @@ export default function TournamentView({
     const [isTeamViewerOpen, setIsTeamViewerOpen] = useState(false);
     const [deckListState, setDeckListState] = useState(deckList);
     const [teamListState, setTeamListState] = useState(teamList);
+    const [isGOSubmitOpen, setIsGOSubmitOpen] = useState(false);
+    const [isGOViewerOpen, setIsGOViewerOpen] = useState(false);
     const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isWarning: boolean; isCritical: boolean; isPast: boolean } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
 
@@ -274,8 +279,8 @@ export default function TournamentView({
         tournament.status !== 'completed';
     
     // FEAT-010: Determine the active list state based on game type
-    const activeListState = isVGC ? teamListState : deckListState;
-    const hasSubmittedList = isVGC ? !!activeListState?.raw_paste : !!activeListState?.raw_text;
+    const activeListState = isVGC ? teamListState : isGO ? teamListState : deckListState;
+    const hasSubmittedList = isVGC ? !!activeListState?.raw_paste : isGO ? !!activeListState?.parsed_team : !!activeListState?.raw_text;
     const deckSubmissionButtonText = hasSubmittedList ? `Edit ${listLabel}` : `Submit ${listLabel}`;
 
     // Handle deck submission success
@@ -299,10 +304,20 @@ export default function TournamentView({
         }));
     };
 
+    const handleGOSubmissionSuccess = (team: any[], playerInfo: { playerName: string; inGameNickname: string }) => {
+        setTeamListState((prev: any) => ({
+            ...prev,
+            parsed_team: team,
+            player_name: playerInfo.playerName,
+            in_game_nickname: playerInfo.inGameNickname,
+            submitted_at: new Date().toISOString(),
+        }));
+    };
+
     const deckSubmissionElement = shouldShowDeckSubmission ? (
         <div className="pt-2 space-y-2">
             <Button
-                onClick={() => isVGC ? setIsTeamModalOpen(true) : setIsDeckModalOpen(true)}
+                onClick={() => isGO ? setIsGOSubmitOpen(true) : isVGC ? setIsTeamModalOpen(true) : setIsDeckModalOpen(true)}
                 disabled={isDeadlinePassed}
                 variant={activeListState ? "outline" : "default"}
                 className={cn(
@@ -334,7 +349,7 @@ export default function TournamentView({
                 <Button
                     variant="ghost"
                     className="w-full justify-start gap-2 text-muted-foreground"
-                    onClick={() => isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
+                    onClick={() => isGO ? setIsGOViewerOpen(true) : isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
                 >
                     <Eye className="h-4 w-4" />
                     View My {listLabel}
@@ -383,7 +398,7 @@ export default function TournamentView({
             <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-muted-foreground"
-                onClick={() => isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
+                onClick={() => isGO ? setIsGOViewerOpen(true) : isVGC ? setIsTeamViewerOpen(true) : setIsDeckViewerOpen(true)}
             >
                 <Eye className="h-4 w-4" />
                 View My {listLabel}
@@ -788,6 +803,31 @@ export default function TournamentView({
                     isOpen={isTeamViewerOpen}
                     onClose={() => setIsTeamViewerOpen(false)}
                     rawText={teamListState.raw_paste}
+                    submittedAt={teamListState.submitted_at}
+                />
+            )}
+
+            {/* GO Team Submission Modal */}
+            {isGO && (
+                <GOTeamSubmitForm
+                    isOpen={isGOSubmitOpen}
+                    onClose={() => setIsGOSubmitOpen(false)}
+                    tournamentId={tournament.id}
+                    initialTeam={teamListState?.parsed_team || undefined}
+                    initialPlayerName={teamListState?.player_name || ''}
+                    initialInGameNickname={teamListState?.in_game_nickname || ''}
+                    onSuccess={handleGOSubmissionSuccess}
+                />
+            )}
+
+            {/* GO Team Viewer Modal (Staff View) */}
+            {isGO && teamListState?.parsed_team && (
+                <GOTeamViewerModal
+                    isOpen={isGOViewerOpen}
+                    onClose={() => setIsGOViewerOpen(false)}
+                    team={teamListState.parsed_team}
+                    playerName={teamListState.player_name}
+                    inGameNickname={teamListState.in_game_nickname}
                     submittedAt={teamListState.submitted_at}
                 />
             )}

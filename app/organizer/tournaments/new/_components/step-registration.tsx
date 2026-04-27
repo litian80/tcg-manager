@@ -37,7 +37,12 @@ interface StepRegistrationProps {
 export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced, onToggleAdvanced, tournamentMode }: StepRegistrationProps) {
     const season = getSeasonCutoffs();
     const seasonLabel = getSeasonLabel();
-    const listLabel = getListLabel(tournamentMode === 'VGCPREMIER' ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
+    const isGO = tournamentMode === 'GOPREMIER';
+    const listLabel = getListLabel(
+        tournamentMode === 'VGCPREMIER' ? 'VIDEO_GAME' :
+        tournamentMode === 'GOPREMIER' ? 'GO' :
+        'TRADING_CARD_GAME'
+    );
     const isSeasonCurrent =
         data.jrMax === season.juniorsBornAfter.toString() &&
         data.srMax === season.seniorsBornAfter.toString();
@@ -144,10 +149,13 @@ export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced,
                             onChange={(e) => update("overallCapacity", e.target.value)}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Total players across all divisions. Set to 0 for unlimited. Overrides division caps when reached.
-                        </p>
-                    </div>
+                        {isGO 
+                            ? 'Total players for this event. Pokémon GO uses a unified Open division. Set to 0 for unlimited.'
+                            : 'Total players across all divisions. Set to 0 for unlimited. Overrides division caps when reached.'}
+                    </p>
+                </div>
 
+                    {!isGO && (
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="cap_jr">Juniors</Label>
@@ -180,12 +188,16 @@ export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced,
                             />
                         </div>
                     </div>
+                    )}
+                    {!isGO && (
                     <p className="text-xs text-muted-foreground">
                         Set to 0 for unlimited capacity in a division.
                     </p>
+                    )}
                 </div>
 
                 {/* Age Division Cutoffs (UX-021) */}
+                {!isGO && (
                 <div className="space-y-3 pt-4 border-t">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -255,6 +267,7 @@ export function StepRegistration({ data, onChange, onNext, onBack, showAdvanced,
                         </ul>
                     </div>
                 </div>
+                )}
 
                 {/* Navigation */}
                 <div className="pt-4 border-t space-y-3">

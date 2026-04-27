@@ -55,6 +55,7 @@ export function StepBasics({ data, onChange, onNext, userPopId, isAdmin, errors 
                             <SelectItem value="TCG1DAY">League Cup</SelectItem>
                             <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
                             <SelectItem value="VGCPREMIER">VGC Premier Challenge</SelectItem>
+                            <SelectItem value="GOPREMIER">Pokémon GO Tournament</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

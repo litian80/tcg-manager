@@ -32,14 +32,18 @@ export async function createTournament(formData: FormData) {
     const tournament_mode = formData.get("tournament_mode") as string || "LEAGUECHALLENGE";
 
     // Validate tournament mode
-    const validModes = ["LEAGUECHALLENGE", "TCG1DAY", "PRERELEASE", "VGCPREMIER"];
+    const validModes = ["LEAGUECHALLENGE", "TCG1DAY", "PRERELEASE", "VGCPREMIER", "GOPREMIER"];
     if (!validModes.includes(tournament_mode)) {
         return { error: "Invalid tournament type selected." };
     }
 
     // FEAT-010: Derive game_type from tournament_mode
     const VGC_MODES = ["VGCPREMIER"];
-    const game_type = VGC_MODES.includes(tournament_mode) ? "VIDEO_GAME" : "TRADING_CARD_GAME";
+    const GO_MODES = ["GOPREMIER"];
+    const game_type = VGC_MODES.includes(tournament_mode) ? "VIDEO_GAME" 
+                    : GO_MODES.includes(tournament_mode) ? "GO" 
+                    : "TRADING_CARD_GAME";
+    const isGO = game_type === 'GO';
     
     const requires_deck_list = formData.get("requires_deck_list") === "true" || formData.get("requires_deck_list") === "on";
     const deck_submission_cutoff_hours = parseInt((formData.get("deck_submission_cutoff_hours") as string) || "1", 10);
@@ -51,18 +55,27 @@ export async function createTournament(formData: FormData) {
     const capacity_seniors = parseInt((formData.get("capacity_seniors") as string) || "0", 10);
     const capacity_masters = parseInt((formData.get("capacity_masters") as string) || "0", 10);
     const capacity = parseInt((formData.get("capacity") as string) || "0", 10);
+    const capacity_open = parseInt((formData.get("capacity_open") as string) || "0", 10);
     
     // Convert empty string to null for optional integer birth year constraints
     const jr_max_raw = formData.get("juniors_birth_year_max") as string;
     const sr_max_raw = formData.get("seniors_birth_year_max") as string;
     
-    if (!jr_max_raw || !sr_max_raw) {
-        return { error: "Juniors and Seniors birth year cutoffs are mandatory." };
-    }
+    // Birth year cutoffs are mandatory for TCG/VGC but not for GO (no age divisions)
+    let juniors_birth_year_max: number | null = null;
+    let seniors_birth_year_max: number | null = null;
     
-    const juniors_birth_year_max = parseInt(jr_max_raw, 10);
-    const seniors_birth_year_max = parseInt(sr_max_raw, 10);
-    // Masters birth year is no longer an input - derived from seniors threshold in registration logic
+    if (isGO) {
+        // GO tournaments use a single "open" division — no age cutoffs needed
+        juniors_birth_year_max = null;
+        seniors_birth_year_max = null;
+    } else {
+        if (!jr_max_raw || !sr_max_raw) {
+            return { error: "Juniors and Seniors birth year cutoffs are mandatory." };
+        }
+        juniors_birth_year_max = parseInt(jr_max_raw, 10);
+        seniors_birth_year_max = parseInt(sr_max_raw, 10);
+    }
 
     // Advanced settings (optional)
     const enable_queue = formData.get("enable_queue") === "true";
@@ -176,10 +189,11 @@ export async function createTournament(formData: FormData) {
             deck_submission_cutoff_hours,
             deck_list_submission_deadline,
             requires_deck_list,
-            deck_size: game_type === 'VIDEO_GAME' ? null : 60,
-            sideboard_size: game_type === 'VIDEO_GAME' ? null : 0,
+            deck_size: (game_type === 'VIDEO_GAME' || isGO) ? null : 60,
+            sideboard_size: (game_type === 'VIDEO_GAME' || isGO) ? null : 0,
             tournament_mode,
             game_type,
+            capacity_open: isGO ? capacity_open : 0,
             enable_queue,
             queue_batch_size,
             queue_promotion_window_minutes,
@@ -219,6 +233,7 @@ export async function createTournament(formData: FormData) {
                 capacity_juniors,
                 capacity_seniors,
                 capacity_masters,
+                capacity_open: isGO ? capacity_open : 0,
                 juniors_birth_year_max,
                 seniors_birth_year_max,
                 updated_at: new Date().toISOString(),

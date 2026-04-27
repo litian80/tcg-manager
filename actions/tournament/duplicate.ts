@@ -74,6 +74,7 @@ export async function getDuplicateDefaults(
             capacity_masters: tournament.capacity_masters || 0,
             juniors_birth_year_max: tournament.juniors_birth_year_max || null,
             seniors_birth_year_max: tournament.seniors_birth_year_max || null,
+            capacity_open: (tournament as any).capacity_open || 0,
             payment_required: tournament.payment_required || false,
             enable_queue: tournament.enable_queue || false,
         },

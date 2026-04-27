@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDateTime, formatTimeShort, isVGCGameType, getListLabel } from "@/lib/utils";
+import { formatDateTime, formatTimeShort, isVGCGameType, isGOGameType, getListLabel } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface JudgePlayerDetailModalProps {
@@ -92,6 +92,7 @@ export function JudgePlayerDetailModal({
     gameType = 'TRADING_CARD_GAME'
 }: JudgePlayerDetailModalProps) {
     const isVGC = isVGCGameType(gameType);
+    const isGO = isGOGameType(gameType);
     const listLabel = getListLabel(gameType);
     const [activeTab, setActiveTab] = useState("actions");
     const [isLoading, setIsLoading] = useState(true);
@@ -300,7 +301,7 @@ export function JudgePlayerDetailModal({
                     <div className="px-6 pt-2">
                         <TabsList className="w-full grid grid-cols-3">
                             <TabsTrigger value="actions">Actions</TabsTrigger>
-                            <TabsTrigger value="deck">{isVGC ? 'Team' : 'Deck'}</TabsTrigger>
+                            <TabsTrigger value="deck">{(isVGC || isGO) ? 'Team' : 'Deck'}</TabsTrigger>
                             <TabsTrigger value="history">
                                 History
                                 {(history.penalties.length + history.deckChecks.length) > 0 && (
@@ -340,7 +341,7 @@ export function JudgePlayerDetailModal({
                                         <span className="text-xs font-normal text-red-600/70">Warning, Game Loss, etc.</span>
                                     </Button>
 
-                                    {requiresDeckList && !isVGC && deckStatus !== 'online' && !isLoading && (
+                                    {requiresDeckList && !isVGC && !isGO && deckStatus !== 'online' && !isLoading && (
                                         <Button
                                             variant="outline"
                                             size="lg"
@@ -535,7 +536,7 @@ export function JudgePlayerDetailModal({
                         </TabsContent>
 
                         <TabsContent value="deck" className="mt-0">
-                            <DeckDisplay tournamentId={tournamentId} playerId={player.id} isVGC={isVGC} />
+                            <DeckDisplay tournamentId={tournamentId} playerId={player.id} isVGC={isVGC} isGO={isGO} />
                         </TabsContent>
 
                         <TabsContent value="history" className="mt-0">

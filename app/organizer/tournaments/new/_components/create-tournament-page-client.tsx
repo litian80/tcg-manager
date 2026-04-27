@@ -68,19 +68,24 @@ export function CreateTournamentPageClient({
     );
 
     const buildRegistrationFromDefaults = useCallback(
-        (defaults?: TournamentFormDefaults | null): StepRegistrationData => ({
-            registrationOpen: defaults?.registration_open ?? false,
-            publishRoster: defaults?.publish_roster ?? false,
-            allowOnlineMatch: defaults?.allow_online_match_reporting ?? false,
-            requiresDeckList: defaults?.requires_deck_list ?? false,
-            deckCutoff: defaults?.deck_submission_cutoff_hours?.toString() ?? "0",
-            overallCapacity: (defaults as any)?.capacity?.toString() ?? "0",
-            capJuniors: defaults?.capacity_juniors?.toString() ?? "0",
-            capSeniors: defaults?.capacity_seniors?.toString() ?? "0",
-            capMasters: defaults?.capacity_masters?.toString() ?? "0",
-            jrMax: defaults?.juniors_birth_year_max?.toString() ?? season.juniorsBornAfter.toString(),
-            srMax: defaults?.seniors_birth_year_max?.toString() ?? season.seniorsBornAfter.toString(),
-        }),
+        (defaults?: TournamentFormDefaults | null): StepRegistrationData => {
+            const isGO = defaults?.game_type === 'GO';
+            return {
+                registrationOpen: defaults?.registration_open ?? false,
+                publishRoster: defaults?.publish_roster ?? false,
+                allowOnlineMatch: defaults?.allow_online_match_reporting ?? false,
+                requiresDeckList: defaults?.requires_deck_list ?? false,
+                deckCutoff: defaults?.deck_submission_cutoff_hours?.toString() ?? "0",
+                overallCapacity: isGO
+                    ? (defaults?.capacity_open?.toString() ?? "0")
+                    : ((defaults as any)?.capacity?.toString() ?? "0"),
+                capJuniors: defaults?.capacity_juniors?.toString() ?? "0",
+                capSeniors: defaults?.capacity_seniors?.toString() ?? "0",
+                capMasters: defaults?.capacity_masters?.toString() ?? "0",
+                jrMax: defaults?.juniors_birth_year_max?.toString() ?? (isGO ? "" : season.juniorsBornAfter.toString()),
+                srMax: defaults?.seniors_birth_year_max?.toString() ?? (isGO ? "" : season.seniorsBornAfter.toString()),
+            };
+        },
         [season.juniorsBornAfter, season.seniorsBornAfter]
     );
 
@@ -139,7 +144,8 @@ export function CreateTournamentPageClient({
     };
 
     const handleNextFromRegistration = () => {
-        if (!registration.jrMax || !registration.srMax) {
+        const isGOMode = basics.tournamentMode === 'GOPREMIER';
+        if (!isGOMode && (!registration.jrMax || !registration.srMax)) {
             toast.error("Juniors and Seniors age divisions cutoffs are mandatory.");
             return;
         }

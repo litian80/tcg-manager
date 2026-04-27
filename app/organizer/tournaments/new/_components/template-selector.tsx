@@ -64,9 +64,14 @@ export function TemplateSelector({ selected, onSelect, savedTemplates }: Templat
                                             {effectiveTemplate.defaults.capacity_masters} Masters
                                         </Badge>
                                     )}
+                                    {effectiveTemplate.defaults.capacity_open > 0 && (
+                                        <Badge variant="outline" className="text-[10px]">
+                                            {effectiveTemplate.defaults.capacity_open} Open
+                                        </Badge>
+                                    )}
                                     {effectiveTemplate.defaults.requires_deck_list && (
                                         <Badge variant="outline" className="text-[10px]">
-                                            {effectiveTemplate.defaults.game_type === 'VIDEO_GAME' ? 'Team lists' : 'Deck lists'}
+                                            {effectiveTemplate.defaults.game_type === 'VIDEO_GAME' || effectiveTemplate.defaults.game_type === 'GO' ? 'Team lists' : 'Deck lists'}
                                         </Badge>
                                     )}
                                     {effectiveTemplate.defaults.city && (

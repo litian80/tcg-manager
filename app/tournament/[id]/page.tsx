@@ -8,7 +8,7 @@ import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { calculatePlayerDivision, Division } from "@/actions/registration";
-import { isVGCGameType } from "@/lib/utils";
+import { isVGCGameType, isGOGameType } from "@/lib/utils";
 
 interface Profile {
     role?: string;
@@ -68,6 +68,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
     // 3. Fetch user's registration status and deck/team list in parallel if user has profile
     const isVGC = isVGCGameType(tournamentRecord.game_type);
+    const isGO = isGOGameType(tournamentRecord.game_type);
     let myRegistrationStatus: string | null = null;
     let myWaitlistPosition: number | null = null;
     let myPaymentUrl: string | null = null;
@@ -77,14 +78,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     let myDivision: Division | null = null;
     
     if (profile?.pokemon_player_id) {
-        const [registrationData, deckListData, teamListData] = await Promise.all([
+        const [registrationData, deckListData, teamListData, goTeamListData] = await Promise.all([
             supabase
                 .from("tournament_players")
                 .select("registration_status, created_at, division, payment_callback_token, payment_pending_since")
                 .eq("tournament_id", id)
                 .eq("player_id", profile.pokemon_player_id)
                 .maybeSingle(),
-            (tournamentRecord.requires_deck_list && !isVGC) ? 
+            (tournamentRecord.requires_deck_list && !isVGC && !isGO) ? 
                 supabase
                     .from("deck_lists")
                     .select("*")
@@ -99,13 +100,21 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                     .eq("tournament_id", id)
                     .eq("player_id", profile.pokemon_player_id)
                     .maybeSingle() :
+                Promise.resolve({ data: null }),
+            (tournamentRecord.requires_deck_list && isGO) ?
+                supabase
+                    .from("go_team_lists" as any)
+                    .select("*")
+                    .eq("tournament_id", id)
+                    .eq("player_id", profile.pokemon_player_id)
+                    .maybeSingle() :
                 Promise.resolve({ data: null })
         ]);
 
     myRegistrationStatus = registrationData.data?.registration_status || null;
     myPaymentPendingSince = registrationData.data?.payment_pending_since || null;
     deckList = deckListData.data || null;
-    teamList = teamListData.data || null;
+    teamList = teamListData.data || (goTeamListData as any)?.data || null;
 
     // REG-004: Compute player's division and fee for display
     const profileBirthYear = (profile as any)?.birth_year;
@@ -270,6 +279,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 (tournamentRecord.requires_deck_list && isVGC)
                     ? supabase
                         .from('vgc_team_lists')
+                        .select('player_id')
+                        .eq('tournament_id', id)
+                    : (tournamentRecord.requires_deck_list && isGO)
+                    ? supabase
+                        .from('go_team_lists' as any)
                         .select('player_id')
                         .eq('tournament_id', id)
                     : Promise.resolve({ data: null })

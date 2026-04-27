@@ -16,11 +16,13 @@ import { calculateStats } from "@/lib/vgc/stat-calculator";
 import type { ParsedCard } from "@/types/deck";
 import type { VGCPokemon } from "@/lib/vgc/types";
 import type { StatBlock } from "@/lib/vgc/types";
+import type { GOPokemon } from "@/lib/go/types";
 
 interface DeckDisplayProps {
     tournamentId: string;
     playerId: string; // tom_player_id
     isVGC?: boolean;
+    isGO?: boolean;
 }
 
 
@@ -74,9 +76,43 @@ function PokemonCard({ pokemon, index }: { pokemon: VGCPokemon; index: number })
     );
 }
 
-export function DeckDisplay({ tournamentId, playerId, isVGC = false }: DeckDisplayProps) {
+function GOPokemonCard({ pokemon, index }: { pokemon: GOPokemon; index: number }) {
+    return (
+        <div className="rounded-lg border bg-card p-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-mono text-muted-foreground w-4 text-right">#{index + 1}</span>
+                    <span className="font-semibold text-sm truncate">
+                        {pokemon.nickname ? `${pokemon.nickname} (${pokemon.species})` : pokemon.species}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {pokemon.isBestBuddy && (
+                        <Badge variant="outline" className="text-[10px] font-mono border-amber-400 text-amber-600">
+                            ★ Best Buddy
+                        </Badge>
+                    )}
+                </div>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                <span><strong>CP:</strong> {pokemon.cp}</span>
+                <span><strong>HP:</strong> {pokemon.hp}</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+                <Badge variant="secondary" className="text-[10px] font-normal">{pokemon.fastAttack}</Badge>
+                <Badge variant="secondary" className="text-[10px] font-normal">{pokemon.chargedAttack1}</Badge>
+                {pokemon.chargedAttack2 && (
+                    <Badge variant="secondary" className="text-[10px] font-normal">{pokemon.chargedAttack2}</Badge>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export function DeckDisplay({ tournamentId, playerId, isVGC = false, isGO = false }: DeckDisplayProps) {
     const [deckListData, setDeckListData] = useState<any>(null);
     const [teamListData, setTeamListData] = useState<any>(null);
+    const [goTeamListData, setGoTeamListData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDeckList = async () => {
@@ -88,6 +124,7 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false }: DeckDispl
             } else {
                 setDeckListData(res.deckList);
                 setTeamListData(res.teamList);
+                setGoTeamListData(res.goTeamList ?? null);
             }
         } catch (error) {
             console.error("Error fetching deck/team list:", error);
@@ -138,7 +175,7 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false }: DeckDispl
         return (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
                 <Loader2 className="w-8 h-8 animate-spin" />
-                <p>Loading {isVGC ? 'team' : 'deck'} list...</p>
+                <p>Loading {(isVGC || isGO) ? 'team' : 'deck'} list...</p>
             </div>
         );
     }
@@ -237,6 +274,64 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false }: DeckDispl
                         </div>
                     </TabsContent>
                 </Tabs>
+            </div>
+        );
+    }
+
+    // --- GO Team Display ---
+    if (isGO) {
+        if (!goTeamListData) {
+            return (
+                <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-2">
+                    <AlertCircle className="w-8 h-8 opacity-20" />
+                    <p>No team list submitted yet.</p>
+                </div>
+            );
+        }
+
+        const goTeam: GOPokemon[] = goTeamListData.parsed_team || [];
+
+        return (
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <Badge variant="default" className="bg-green-600">SUBMITTED</Badge>
+                    <span className="text-xs text-muted-foreground">
+                        Submitted: {formatDateTime(goTeamListData.submitted_at)}
+                    </span>
+                </div>
+
+                {/* GO Profile Info */}
+                <div className="grid grid-cols-2 gap-2 p-2 rounded-md bg-muted/50 border text-xs">
+                    {goTeamListData.player_name && (
+                        <div>
+                            <span className="text-muted-foreground">Player:</span>{" "}
+                            <span className="font-medium">{goTeamListData.player_name}</span>
+                        </div>
+                    )}
+                    {goTeamListData.in_game_nickname && (
+                        <div>
+                            <span className="text-muted-foreground">IGN:</span>{" "}
+                            <span className="font-medium">{goTeamListData.in_game_nickname}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* GO Team Cards */}
+                <div className="h-[55vh] min-h-[400px]">
+                    <ScrollArea className="h-full px-2 py-1">
+                        <div className="space-y-2 pb-4">
+                            <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                                <span className="font-semibold text-sm">Team Size</span>
+                                <Badge variant="default" className="text-sm px-3 shadow-sm">
+                                    {goTeam.length} Pokémon
+                                </Badge>
+                            </div>
+                            {goTeam.map((mon, i) => (
+                                <GOPokemonCard key={i} pokemon={mon} index={i} />
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </div>
             </div>
         );
     }

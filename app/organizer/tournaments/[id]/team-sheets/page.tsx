@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { parseShowdownPaste } from "@/lib/vgc/parser";
 import { PrintTeamSheetsButton } from "./print-button";
 import type { VGCPokemon } from "@/lib/vgc/types";
+import type { GOPokemon } from "@/lib/go/types";
+import { isGOGameType } from "@/lib/utils";
 
 interface PlayerTeamSheet {
     playerName: string;
@@ -15,6 +17,13 @@ interface PlayerTeamSheet {
     battleTeamName: string | null;
     switchProfileName: string | null;
     team: VGCPokemon[];
+}
+
+interface GOPlayerTeamSheet {
+    playerName: string;
+    inGameNickname: string;
+    team: GOPokemon[];
+    submittedAt: string | null;
 }
 
 export default async function TeamSheetsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +45,7 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
 
     const { tournament } = authResult;
     const supabase = await createClient();
+    const isGO = isGOGameType(tournament.game_type);
 
     // Fetch all VGC team lists for this tournament
     const { data: teamLists, error: teamError } = await supabase
@@ -88,6 +98,27 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
         }
     }
 
+    // Fetch GO team lists if applicable
+    const goSheets: GOPlayerTeamSheet[] = [];
+    if (isGO) {
+        const { data: goTeamLists } = await supabase
+            .from('go_team_lists' as any)
+            .select('*')
+            .eq('tournament_id', id)
+            .order('submitted_at', { ascending: true });
+
+        if (goTeamLists) {
+            for (const tl of goTeamLists as any[]) {
+                goSheets.push({
+                    playerName: tl.player_name || 'Unknown',
+                    inGameNickname: tl.in_game_nickname || '',
+                    team: (tl.parsed_team as unknown as GOPokemon[]) || [],
+                    submittedAt: tl.submitted_at,
+                });
+            }
+        }
+    }
+
     return (
         <div className="min-h-screen bg-background">
             {/* Print-specific styles */}
@@ -128,8 +159,8 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
                             </Link>
                         </Button>
                         <div>
-                            <h1 className="text-xl font-bold">Open Team Sheets — For Opponents</h1>
-                            <p className="text-sm text-muted-foreground">{tournament.name} · {sheets.length} team{sheets.length !== 1 ? 's' : ''}</p>
+                            <h1 className="text-xl font-bold">{isGO ? 'GO Team Sheets — For Staff' : 'Team Sheets — For Opponents'}</h1>
+                            <p className="text-sm text-muted-foreground">{tournament.name} · {isGO ? goSheets.length : sheets.length} team{(isGO ? goSheets.length : sheets.length) !== 1 ? 's' : ''}</p>
                         </div>
                     </div>
                     <PrintTeamSheetsButton />
@@ -138,16 +169,30 @@ export default async function TeamSheetsPage({ params }: { params: Promise<{ id:
 
             {/* Team Sheets */}
             <div className="print:px-0 print:py-0 print:max-w-none">
-                {sheets.length === 0 ? (
-                    <div className="text-center py-20 text-muted-foreground print:hidden max-w-5xl mx-auto px-4">
-                        <p className="text-lg">No team lists have been submitted yet.</p>
-                    </div>
+                {isGO ? (
+                    goSheets.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground print:hidden max-w-5xl mx-auto px-4">
+                            <p className="text-lg">No GO team lists have been submitted yet.</p>
+                        </div>
+                    ) : (
+                        <div>
+                            {goSheets.map((sheet, idx) => (
+                                <GOOTSSheet key={idx} sheet={sheet} />
+                            ))}
+                        </div>
+                    )
                 ) : (
-                    <div>
-                        {sheets.map((sheet, idx) => (
-                            <OTSSheet key={idx} sheet={sheet} />
-                        ))}
-                    </div>
+                    sheets.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground print:hidden max-w-5xl mx-auto px-4">
+                            <p className="text-lg">No team lists have been submitted yet.</p>
+                        </div>
+                    ) : (
+                        <div>
+                            {sheets.map((sheet, idx) => (
+                                <OTSSheet key={idx} sheet={sheet} />
+                            ))}
+                        </div>
+                    )
                 )}
             </div>
         </div>
@@ -269,3 +314,78 @@ function PokemonTable({ pokemon }: { pokemon: VGCPokemon | null }) {
     );
 }
 
+/* ── GO Official-style Team Sheet (one per page) ── */
+
+function GOOTSSheet({ sheet }: { sheet: GOPlayerTeamSheet }) {
+    const padded = [...sheet.team];
+    while (padded.length < 6) padded.push(null as any);
+
+    return (
+        <div className="ots-sheet max-w-4xl mx-auto px-6 py-6 print:max-w-none print:px-0 print:py-0">
+            <div className="border-2 border-black rounded-none p-6 print:border-0 print:p-0 bg-white text-black" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+
+                {/* Title */}
+                <div className="text-center mb-1">
+                    <h1 className="text-[17pt] font-bold leading-tight">Pokémon GO Team List</h1>
+                    <p className="text-[13pt] font-bold">1 of 2: <em>For Tournament Staff</em></p>
+                    <p className="text-[9pt] italic mt-0.5">This page contains sensitive team information. Do not share with opponents.</p>
+                </div>
+
+                {/* Player Info Block */}
+                <div className="mt-4 space-y-[6px] text-[11pt]">
+                    <div className="flex items-end gap-1 flex-1">
+                        <span className="font-bold whitespace-nowrap">Player Name:</span>
+                        <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.playerName}</span>
+                    </div>
+                    <div className="flex items-end gap-1 flex-1">
+                        <span className="font-bold whitespace-nowrap">In-Game Nickname:</span>
+                        <span className="flex-1 border-b border-black pb-0.5 min-h-[1.4em] pl-1">{sheet.inGameNickname}</span>
+                    </div>
+                </div>
+
+                {/* Pokémon Grid: 2 columns × 3 rows */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-4">
+                    {padded.map((pokemon, i) => (
+                        <GOPokemonTable key={i} pokemon={pokemon} />
+                    ))}
+                </div>
+
+                {/* Footer */}
+                <div className="mt-4 text-center">
+                    <p className="text-[8pt] italic">Team must remain unchanged for the entire tournament. Great League format (CP ≤ 1500).</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ── Table-style GO Pokémon card matching official staff form ── */
+
+function GOPokemonTable({ pokemon }: { pokemon: GOPokemon | null }) {
+    const rows = [
+        { label: 'Pokémon', value: pokemon?.species || '' },
+        { label: 'Nickname', value: pokemon?.nickname || '' },
+        { label: 'CP / HP', value: pokemon ? `${pokemon.cp} / ${pokemon.hp}` : '' },
+        { label: 'Fast Attack', value: pokemon?.fastAttack || '' },
+        { label: 'Charged 1', value: pokemon?.chargedAttack1 || '' },
+        { label: 'Charged 2', value: pokemon?.chargedAttack2 || '' },
+        { label: 'Best Buddy', value: pokemon?.isBestBuddy ? '★ Yes' : '' },
+    ];
+
+    return (
+        <table className="w-full border-collapse border-2 border-black text-[10pt]">
+            <tbody>
+                {rows.map((row, i) => (
+                    <tr key={i} className="border border-black">
+                        <td className="font-bold px-2 py-[3px] border-r border-black w-[95px] whitespace-nowrap bg-white">
+                            {row.label}
+                        </td>
+                        <td className="px-2 py-[3px] min-h-[1.5em]">
+                            {row.value}
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}

@@ -44,6 +44,7 @@ export function GeneralPanel({
                         <SelectItem value="TCG1DAY">League Cup</SelectItem>
                         <SelectItem value="PRERELEASE">Prerelease / Draft</SelectItem>
                         <SelectItem value="VGCPREMIER">VGC Premier Challenge</SelectItem>
+                        <SelectItem value="GOPREMIER">Pokémon GO Tournament</SelectItem>
                     </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">

@@ -86,6 +86,7 @@ export const MODE_LABELS: Record<string, string> = {
   TCG1DAY: "League Cup",
   PRERELEASE: "Prerelease",
   VGCPREMIER: "VGC Premier",
+  GOPREMIER: "GO Premier",
 }
 
 /** FEAT-010: Check if a game_type value represents a VGC tournament */
@@ -93,12 +94,17 @@ export function isVGCGameType(gameType: string | null | undefined): boolean {
   return gameType === 'VIDEO_GAME'
 }
 
+/** Check if a game_type value represents a Pokémon GO tournament */
+export function isGOGameType(gameType: string | null | undefined): boolean {
+  return gameType === 'GO'
+}
+
 /**
  * FEAT-010: Get the appropriate list submission label based on game type.
- * Returns "Team List" for VGC, "Deck List" for TCG.
+ * Returns "Team List" for VGC and GO, "Deck List" for TCG.
  */
 export function getListLabel(gameType: string | null | undefined): string {
-  return isVGCGameType(gameType) ? 'Team List' : 'Deck List'
+  return (isVGCGameType(gameType) || isGOGameType(gameType)) ? 'Team List' : 'Deck List'
 }
 
 /** Format city/country into a single location string */

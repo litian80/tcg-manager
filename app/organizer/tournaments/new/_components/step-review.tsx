@@ -57,7 +57,8 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
     const [state, formAction, isPending] = useActionState(submitTournament, undefined);
     const seasonLabel = getSeasonLabel();
     const isVGCMode = basics.tournamentMode === 'VGCPREMIER';
-    const listLabel = getListLabel(isVGCMode ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
+    const isGOMode = basics.tournamentMode === 'GOPREMIER';
+    const listLabel = getListLabel(isGOMode ? 'GO' : isVGCMode ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
 
     // Compute exact UTC ISO string based on the user's local timezone for exact start time handling
     const combinedDateTime = new Date(`${basics.date}T${basics.startTime}`);
@@ -114,6 +115,7 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
                     <input type="hidden" name="capacity_juniors" value={registration.capJuniors} />
                     <input type="hidden" name="capacity_seniors" value={registration.capSeniors} />
                     <input type="hidden" name="capacity_masters" value={registration.capMasters} />
+                    <input type="hidden" name="capacity_open" value={isGOMode ? registration.overallCapacity : '0'} />
                     <input type="hidden" name="juniors_birth_year_max" value={registration.jrMax} />
                     <input type="hidden" name="seniors_birth_year_max" value={registration.srMax} />
                     {/* Advanced hidden fields */}
@@ -194,23 +196,33 @@ export function StepReview({ basics, registration, advanced, showAdvanced, onBac
                                 label="Overall Capacity"
                                 value={overallCap > 0 ? `${overallCap} players` : "Unlimited"}
                             />
-                            <ReviewRow
-                                label="Division Caps"
-                                value={
-                                    totalDivCap > 0
-                                        ? `Jr: ${registration.capJuniors}, Sr: ${registration.capSeniors}, Ma: ${registration.capMasters}`
-                                        : "Unlimited per division"
-                                }
-                            />
-                            <ReviewRow
-                                label="Age Cutoffs"
-                                value={
-                                    <span className="text-right">
-                                        Jr ≥ {registration.jrMax}, Sr ≥ {registration.srMax}
-                                        <span className="text-muted-foreground ml-1 text-[10px]">({seasonLabel})</span>
-                                    </span>
-                                }
-                            />
+                            {!isGOMode && (
+                                <ReviewRow
+                                    label="Division Caps"
+                                    value={
+                                        totalDivCap > 0
+                                            ? `Jr: ${registration.capJuniors}, Sr: ${registration.capSeniors}, Ma: ${registration.capMasters}`
+                                            : "Unlimited per division"
+                                    }
+                                />
+                            )}
+                            {isGOMode && parseInt(registration.overallCapacity || '0') > 0 && (
+                                <ReviewRow
+                                    label="Open Division Cap"
+                                    value={`${registration.overallCapacity} players`}
+                                />
+                            )}
+                            {!isGOMode && (
+                                <ReviewRow
+                                    label="Age Cutoffs"
+                                    value={
+                                        <span className="text-right">
+                                            Jr ≥ {registration.jrMax}, Sr ≥ {registration.srMax}
+                                            <span className="text-muted-foreground ml-1 text-[10px]">({seasonLabel})</span>
+                                        </span>
+                                    }
+                                />
+                            )}
                         </div>
                     </div>
 

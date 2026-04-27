@@ -7,7 +7,7 @@
  * as a per-organiser, per-mode template in `tournament_templates`.
  */
 
-export type TemplateId = 'league-challenge' | 'league-cup' | 'prerelease' | 'vgc-premier' | 'custom';
+export type TemplateId = 'league-challenge' | 'league-cup' | 'prerelease' | 'vgc-premier' | 'go-premier' | 'custom';
 
 export interface TournamentFormDefaults {
     game_type: string;
@@ -26,6 +26,7 @@ export interface TournamentFormDefaults {
     capacity_masters: number;
     juniors_birth_year_max: number | null;
     seniors_birth_year_max: number | null;
+    capacity_open: number;
     payment_required: boolean;
     enable_queue: boolean;
 }
@@ -108,6 +109,7 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
+            capacity_open: 0,
         },
     },
     {
@@ -135,6 +137,7 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
+            capacity_open: 0,
         },
     },
     {
@@ -162,6 +165,7 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
+            capacity_open: 0,
         },
     },
     {
@@ -189,6 +193,35 @@ export const SYSTEM_TEMPLATES: TemplateOption[] = [
             seniors_birth_year_max: seniorsBornAfter,
             payment_required: false,
             enable_queue: false,
+            capacity_open: 0,
+        },
+    },
+    {
+        id: 'go-premier' as TemplateId,
+        label: 'GO Tournament',
+        description: 'Pokémon GO Premier event. Open division, team list submission.',
+        icon: '📱',
+        mode: 'GOPREMIER',
+        defaults: {
+            game_type: 'GO',
+            tournament_mode: 'GOPREMIER',
+            city: '',
+            country: '',
+            start_time: '10:00',
+            requires_deck_list: true,
+            deck_submission_cutoff_hours: 0,
+            registration_open: true,
+            publish_roster: false,
+            allow_online_match_reporting: false,
+            capacity: 0,
+            capacity_juniors: 0,
+            capacity_seniors: 0,
+            capacity_masters: 0,
+            juniors_birth_year_max: null,
+            seniors_birth_year_max: null,
+            capacity_open: 32,
+            payment_required: false,
+            enable_queue: false,
         },
     },
 ];
@@ -202,6 +235,7 @@ export function modeToTemplateId(mode: string): TemplateId | null {
         TCG1DAY: 'league-cup',
         PRERELEASE: 'prerelease',
         VGCPREMIER: 'vgc-premier',
+        GOPREMIER: 'go-premier',
     };
     return map[mode] || null;
 }

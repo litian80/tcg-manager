@@ -37,6 +37,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid XML: Missing tournament tag' }, { status: 400 });
         }
 
+        // --- Derive Game Type from TDF attributes ---
+        const tdfGametype = (tournamentRoot.gametype || '').toString().toUpperCase();
+        const tdfMode = (tournamentRoot.mode || '').toString().toUpperCase();
+        const isGOTdf = tdfGametype === 'GO';
+        const gameType = isGOTdf ? 'GO' : (tdfGametype === 'VIDEO_GAME' ? 'VIDEO_GAME' : 'TRADING_CARD_GAME');
+        const tournamentMode = isGOTdf ? (tdfMode || 'GOPREMIER') : (tdfMode || 'LEAGUECHALLENGE');
+
+        const isGO = gameType === 'GO';
+
         // --- Determine Status ---
         // Default to 'running'
         let tournamentStatus = 'running';
@@ -143,12 +152,12 @@ export async function POST(req: NextRequest) {
         // STRICT IDENTIFICATION CHECK
         // We use tom_uid, city, country, organizer_popid, date to identify.
         // OR, if the client provided a explicit targetId (e.g., updating an existing tournament), use that first.
-        let existingTournament: { id: string; currentName?: string } | null = null;
+        let existingTournament: { id: string; currentName?: string; currentGameType?: string; currentMode?: string } | null = null;
         
         if (targetId) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id, organizer_popid, tom_uid, name')
+                .select('id, organizer_popid, tom_uid, name, game_type, tournament_mode')
                 .eq('id', targetId)
                 .single();
 
@@ -174,7 +183,7 @@ export async function POST(req: NextRequest) {
                         error: 'Forbidden: You do not own the target tournament.'
                     }, { status: 403 });
                 }
-                existingTournament = { id: data.id, currentName: data.name || undefined };
+                existingTournament = { id: data.id, currentName: data.name || undefined, currentGameType: data.game_type || undefined, currentMode: data.tournament_mode || undefined };
             }
         }
 
@@ -182,24 +191,24 @@ export async function POST(req: NextRequest) {
         if (!existingTournament && tomUid) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id, name')
+                .select('id, name, game_type, tournament_mode')
                 .eq('tom_uid', tomUid)
                 .maybeSingle(); // Use maybeSingle in case there are duplicates, we grab the first.
             
-            if (data) existingTournament = { id: data.id, currentName: data.name || undefined };
+            if (data) existingTournament = { id: data.id, currentName: data.name || undefined, currentGameType: data.game_type || undefined, currentMode: data.tournament_mode || undefined };
         }
 
         // Fallback 2: If no tom_uid in the file (unofficial tournament), match on Name, Date, Organizer
         if (!existingTournament) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id, name')
+                .select('id, name, game_type, tournament_mode')
                 .eq('name', name)
                 .eq('date', date)
                 .eq('organizer_popid', organizerPopId)
                 .maybeSingle();
             
-            if (data) existingTournament = { id: data.id, currentName: data.name || undefined };
+            if (data) existingTournament = { id: data.id, currentName: data.name || undefined, currentGameType: data.game_type || undefined, currentMode: data.tournament_mode || undefined };
         }
 
         let tournamentId: string;
@@ -212,7 +221,10 @@ export async function POST(req: NextRequest) {
             const updatePayload: Record<string, unknown> = {
                 status: tournamentStatus,
                 is_published: isPublished,
-                parsed_data: parsedDataPayload
+                parsed_data: parsedDataPayload,
+                // Only set game_type/tournament_mode if not already present (prevent accidental mutation)
+                ...(!existingTournament.currentGameType ? { game_type: gameType } : {}),
+                ...(!existingTournament.currentMode ? { tournament_mode: tournamentMode } : {}),
             };
             if (!existingTournament.currentName || existingTournament.currentName.trim() === '') {
                 updatePayload.name = name;
@@ -251,7 +263,10 @@ export async function POST(req: NextRequest) {
                     country: country,
                     organizer_popid: organizerPopId,
                     is_published: isPublished,
-                    parsed_data: parsedDataPayload
+                    parsed_data: parsedDataPayload,
+                    game_type: gameType,
+                    tournament_mode: tournamentMode,
+                    ...(isGO ? { capacity_open: 0 } : {})
                 })
                 .select('id')
                 .single();
@@ -492,7 +507,7 @@ export async function POST(req: NextRequest) {
             else if (category === '2') division = 'Masters';
             else if (category === '0/1' || category === '8') division = 'Junior/Senior';
             else if (category === '9') division = 'Master/Senior';
-            else if (category === '10') division = 'Junior/Senior/Master';
+            else if (category === '10') division = isGO ? 'Open' : 'Junior/Senior/Master';
 
             // Ensure rounds are processed in chronological order
             let rounds = asArray(pod.rounds?.round);
@@ -740,6 +755,7 @@ export async function POST(req: NextRequest) {
                 // Or just use it if mapped, else 'Other'?
                 // Safe to include others if they exist.
                 if (category === "0/1" || category === "8") divisionName = "Junior/Senior"; // Legacy/Mix support
+                if (category === "10") divisionName = isGO ? "Open" : "Junior/Senior/Master";
                 if (!["Junior", "Senior", "Master"].includes(divisionName)) {
                     // If we strictly only want J/S/M as tabs, we might want to filter.
                     // But for data integrity, let's keep valid divisions.

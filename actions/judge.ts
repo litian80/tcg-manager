@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { isVGCGameType } from "@/lib/utils";
+import { isVGCGameType, isGOGameType } from "@/lib/utils";
 
 /**
  * Helper to check if a user is authorized to act as a judge/organizer/admin for a specific tournament.
@@ -155,9 +155,10 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
         .eq('id', tournamentId)
         .single();
     const isVGC = isVGCGameType(tournamentRecord?.game_type);
+    const isGO = isGOGameType(tournamentRecord?.game_type);
 
     // Fetch penalties, deck checks, and deck/team submission status in parallel
-    const [penaltiesResult, checksResult, deckListResult, teamListResult] = await Promise.all([
+    const [penaltiesResult, checksResult, deckListResult, teamListResult, goTeamListResult] = await Promise.all([
         supabase
             .from('player_penalties')
             .select('*')
@@ -170,7 +171,7 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
             .eq('tournament_id', tournamentId)
             .eq('player_id', playerTomId)
             .order('check_time', { ascending: false }),
-        !isVGC ? adminClient
+        (!isVGC && !isGO) ? adminClient
             .from('deck_lists')
             .select('validation_status, raw_text, validation_errors')
             .eq('tournament_id', tournamentId)
@@ -179,6 +180,12 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
         isVGC ? adminClient
             .from('vgc_team_lists')
             .select('raw_paste, submitted_at')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerTomId)
+            .maybeSingle() : Promise.resolve({ data: null, error: null }),
+        isGO ? adminClient
+            .from('go_team_lists' as any)
+            .select('parsed_team, player_name, in_game_nickname, submitted_at')
             .eq('tournament_id', tournamentId)
             .eq('player_id', playerTomId)
             .maybeSingle() : Promise.resolve({ data: null, error: null })
@@ -216,6 +223,10 @@ export async function getPlayerJudgeDetails(tournamentId: string, playerTomId: s
     let paperMeta: any = null;
     if (isVGC) {
         if (teamListResult.data) {
+            deckStatus = 'online';
+        }
+    } else if (isGO) {
+        if (goTeamListResult.data) {
             deckStatus = 'online';
         }
     } else if (deckListResult.data) {
@@ -363,6 +374,7 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
         .eq('id', tournamentId)
         .single();
     const isVGC = isVGCGameType(tournamentRecord?.game_type);
+    const isGO = isGOGameType(tournamentRecord?.game_type);
 
     if (isVGC) {
         // Fetch VGC team list
@@ -378,7 +390,24 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
             return { error: 'Failed to fetch team list' };
         }
 
-        return { deckList: null, teamList };
+        return { deckList: null, teamList, goTeamList: null };
+    }
+
+    if (isGO) {
+        // Fetch GO team list
+        const { data: goTeamList, error } = await adminClient
+            .from('go_team_lists' as any)
+            .select('id, parsed_team, player_name, in_game_nickname, submitted_at')
+            .eq('tournament_id', tournamentId)
+            .eq('player_id', playerId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching GO team list:', error);
+            return { error: 'Failed to fetch team list' };
+        }
+
+        return { deckList: null, teamList: null, goTeamList };
     }
 
     const { data: deckList, error } = await adminClient
@@ -400,5 +429,5 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
         return { error: "Failed to fetch deck list" };
     }
 
-    return { deckList, teamList: null };
+    return { deckList, teamList: null, goTeamList: null };
 }
