@@ -269,7 +269,7 @@ export function MatchCard({ match, stats, canEdit, myPlayerId, isJudge, onPlayer
             {!isFinished && isJudge && hasStatus && (
                 <div className="px-4 pb-2 -mt-1 ml-12">
                     {hasConfirmedResult && (
-                        <div className="flex flex-col items-center gap-1 mt-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 shadow-sm max-w-fit">
+                        <div className={cn("flex flex-col items-center gap-1 mt-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/40 text-green-900 dark:text-green-300 rounded-md border border-green-200 dark:border-green-800 shadow-sm max-w-fit", match.p1_reported_result === 'loss' && "ml-auto mr-0", match.p1_reported_result === 'tie' && "mx-auto")}>
                             <div className="flex items-center gap-1.5 text-xs font-semibold">
                                 <Check className="h-3.5 w-3.5" />
                                 <span>
