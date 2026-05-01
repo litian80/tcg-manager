@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseDeckList, normalizeCardName } from '@/utils/deck-validator'
+import { parseDeckList, normalizeCardName, normalizeSetCode } from '@/utils/deck-validator'
 
 describe('normalizeCardName', () => {
   it('normalizes curly apostrophes to straight ones', () => {
@@ -169,5 +169,66 @@ Energy: 12
     expect(result.Trainer).toHaveLength(0)
     expect(result.Energy).toHaveLength(0)
     expect(result.TotalCards).toBe(0)
+  })
+
+  it('normalizes PR-SV set code to SVP in standard format', () => {
+    const deck = `Pokémon: 1
+1 Pikachu PR-SV 39`
+    const result = parseDeckList(deck)
+    expect(result.Pokemon).toHaveLength(1)
+    expect(result.Pokemon[0].set).toBe('SVP')
+    expect(result.Pokemon[0].number).toBe('39')
+  })
+
+  it('normalizes PR-SW set code to SP', () => {
+    const deck = `Pokémon: 1
+1 Zacian V PR-SW 76`
+    const result = parseDeckList(deck)
+    expect(result.Pokemon).toHaveLength(1)
+    expect(result.Pokemon[0].set).toBe('SP')
+  })
+
+  it('normalizes PR-SV in parenthesized format', () => {
+    const deck = `Pokémon: 1
+1 Mew ex (PR-SV-53)`
+    const result = parseDeckList(deck)
+    expect(result.Pokemon).toHaveLength(1)
+    expect(result.Pokemon[0].set).toBe('SVP')
+    expect(result.Pokemon[0].number).toBe('53')
+  })
+})
+
+describe('normalizeSetCode', () => {
+  it('maps PR-SV to SVP', () => {
+    expect(normalizeSetCode('PR-SV')).toBe('SVP')
+  })
+
+  it('maps PR-SW to SP', () => {
+    expect(normalizeSetCode('PR-SW')).toBe('SP')
+  })
+
+  it('maps PR-SM to SMP', () => {
+    expect(normalizeSetCode('PR-SM')).toBe('SMP')
+  })
+
+  it('maps PR-XY to XYP', () => {
+    expect(normalizeSetCode('PR-XY')).toBe('XYP')
+  })
+
+  it('maps PR-BLW to BWP', () => {
+    expect(normalizeSetCode('PR-BLW')).toBe('BWP')
+  })
+
+  it('maps PR-ME to MEP', () => {
+    expect(normalizeSetCode('PR-ME')).toBe('MEP')
+  })
+
+  it('is case-insensitive', () => {
+    expect(normalizeSetCode('pr-sv')).toBe('SVP')
+  })
+
+  it('passes through unknown codes unchanged', () => {
+    expect(normalizeSetCode('BRS')).toBe('BRS')
+    expect(normalizeSetCode('SFA')).toBe('SFA')
   })
 })

@@ -15,6 +15,28 @@ const ENERGY_TYPE_MAP: Record<string, string> = {
     'C': 'Colorless',
 };
 
+// Alternate set code aliases → canonical database set code.
+// Pokemon TCG Live/Online uses "PR-SV", "PR-SW" etc. for promo sets,
+// while our database stores them as "SVP", "SP" etc.
+const SET_CODE_ALIASES: Record<string, string> = {
+    'PR-SV': 'SVP',
+    'PR-SW': 'SP',
+    'PR-SM': 'SMP',
+    'PR-XY': 'XYP',
+    'PR-BLW': 'BWP',
+    'PR-HS': 'HSP',
+    'PR-ME': 'MEP',
+};
+
+/**
+ * Normalize a set code by resolving known aliases to their canonical form.
+ * e.g. "PR-SV" → "SVP"
+ */
+export function normalizeSetCode(code: string): string {
+    const upper = code.toUpperCase();
+    return SET_CODE_ALIASES[upper] || upper;
+}
+
 export function normalizeCardName(name: string): string {
     return name
         .replace(/[\u2018\u2019\u00b4\u0060]/g, "'") // Curly apostrophes and backticks
@@ -95,7 +117,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
             const qty = parseInt(energyMatch[1], 10);
             const rawName = energyMatch[2].trim();
             const name = normalizeCardName(formatEnergyName(rawName));
-            const setCode = energyMatch[3]?.trim().toUpperCase() || "ENERGY";
+            const setCode = normalizeSetCode(energyMatch[3]?.trim().toUpperCase() || "ENERGY");
             const cardNumber = energyMatch[4]?.trim() || "0";
             
             const cardObj: ParsedCard = {
@@ -126,7 +148,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
             const cardObj: ParsedCard = {
                 qty,
                 name,
-                set: simpleMatch[3]?.trim().toUpperCase() || "ENERGY",
+                set: normalizeSetCode(simpleMatch[3]?.trim().toUpperCase() || "ENERGY"),
                 number: simpleMatch[4]?.trim() || "0",
                 raw: line,
                 isBasicEnergy: isBasicEnergy,
@@ -144,7 +166,7 @@ export function parseDeckList(deckText: string): DeckParseResult {
             const qty = parseInt(standardMatch[1], 10);
             const name = normalizeCardName(standardMatch[2]);
             const lowName = name.toLowerCase();
-            const setCode = standardMatch[3].trim().toUpperCase();
+            const setCode = normalizeSetCode(standardMatch[3].trim().toUpperCase());
             const cardNumber = standardMatch[4].trim();
             
             // Auto-detect category for Energy if name ends with 'Energy'
@@ -170,14 +192,14 @@ export function parseDeckList(deckText: string): DeckParseResult {
             continue;
         }
 
-        // Try parenthesized format: "3 Munkidori (TWM-95)"
-        const parenPattern = /^(\d+)(?:x\s*|\s+)(.+?)\s+\(([A-Z0-9]+)-(\d+)\)\s*$/i;
+        // Try parenthesized format: "3 Munkidori (TWM-95)" or "1 Mew ex (PR-SV-53)"
+        const parenPattern = /^(\d+)(?:x\s*|\s+)(.+?)\s+\(([A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?)-(\d+)\)\s*$/i;
         const parenMatch = line.match(parenPattern);
         if (parenMatch) {
             const qty = parseInt(parenMatch[1], 10);
             const name = normalizeCardName(parenMatch[2]);
             const lowName = name.toLowerCase();
-            const setCode = parenMatch[3].trim().toUpperCase();
+            const setCode = normalizeSetCode(parenMatch[3].trim().toUpperCase());
             const cardNumber = parenMatch[4].trim();
 
             // Respect currentCategory; auto-detect energy by name
