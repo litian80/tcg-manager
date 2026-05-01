@@ -26,10 +26,15 @@ export function normalizeCardName(name: string): string {
 
 function formatEnergyName(rawName: string): string {
     // Convert "Basic {G} Energy" → "Grass Energy"
-    return rawName.replace(/Basic\s+\{([A-Z])\}\s+Energy/i, (_match, code: string) => {
+    let name = rawName.replace(/Basic\s+\{([A-Z])\}\s+Energy/i, (_match, code: string) => {
         const typeName = ENERGY_TYPE_MAP[code.toUpperCase()] || code;
         return `${typeName} Energy`;
     });
+    // Convert any remaining {X} energy type codes (e.g. "Telepathic {P} Energy" → "Telepathic Psychic Energy")
+    name = name.replace(/\{([A-Z])\}/gi, (_match, code: string) => {
+        return ENERGY_TYPE_MAP[code.toUpperCase()] || code;
+    });
+    return name;
 }
 
 export function parseDeckList(deckText: string): DeckParseResult {

@@ -133,6 +133,18 @@ Energy: 12
     expect(result.Pokemon[0].number).toBe('95')
   })
 
+  it('expands {X} type codes in special energy names', () => {
+    const deck = `Energy: 6
+2 Telepathic {P} Energy
+2 Growing {G} Energy
+2 Rocky {F} Energy`
+    const result = parseDeckList(deck)
+    expect(result.Energy).toHaveLength(3)
+    expect(result.Energy[0].name).toBe('Telepathic Psychic Energy')
+    expect(result.Energy[1].name).toBe('Growing Grass Energy')
+    expect(result.Energy[2].name).toBe('Rocky Fighting Energy')
+  })
+
   it('auto-detects energy in name-only format', () => {
     const deck = `Energy: 7
 7 Darkness Energy`
