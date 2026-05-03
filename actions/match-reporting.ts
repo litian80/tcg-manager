@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { safeAction, ActionResult } from "@/lib/safe-action";
 import { MatchReportValue } from "@/utils/match-reporting";
 import { revalidatePath } from "next/cache";
+import { invalidateTournament } from "@/lib/cache-invalidation";
 
 export async function reportMatchResult(
   matchId: string,
@@ -85,6 +86,7 @@ export async function reportMatchResult(
     revalidatePath(`/organizer/tournaments/${match.tournament_id}`);
     revalidatePath(`/tournament/${match.tournament_id}`, 'layout');
     revalidatePath(`/organizer/tournaments/${match.tournament_id}`, 'layout');
+    invalidateTournament(match.tournament_id); // PERF-003
     
     return { success: true };
   });

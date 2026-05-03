@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { invalidateTournament, invalidatePublicListings } from "@/lib/cache-invalidation";
 import { randomUUID } from "crypto";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { tryDispatchNotification } from "@/utils/webhook-helpers";
@@ -294,6 +295,8 @@ export async function registerPlayer(tournamentId: string) {
     const status: string = rpcResult.status;
 
     revalidatePath(`/tournaments/${tournamentId}`);
+    invalidateTournament(tournamentId); // PERF-003
+    invalidatePublicListings(); // PERF-003: player count changed
 
     // If queued, return queue context and skip payment redirect/webhooks
     if (status === "queued") {
@@ -387,6 +390,8 @@ export async function withdrawPlayer(tournamentId: string) {
     await tryDispatchNotification(adminSupabase, tournamentId, 'registration.withdrawn', profile.pokemon_player_id);
 
     revalidatePath(`/tournaments/${tournamentId}`);
+    invalidateTournament(tournamentId); // PERF-003
+    invalidatePublicListings(); // PERF-003: player count changed
     return { success: true };
 
   } catch (error: any) {

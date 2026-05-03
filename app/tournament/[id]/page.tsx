@@ -9,6 +9,7 @@ import { RealtimeListener } from "@/components/tournament/realtime-listener";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { calculatePlayerDivision, Division } from "@/actions/registration";
 import { isVGCGameType, isGOGameType } from "@/lib/utils";
+import { getCachedTournamentDetail } from "@/lib/cached-queries";
 
 interface Profile {
     role?: string;
@@ -20,24 +21,33 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     const supabase = await createClient();
 
     // 1. Fetch Tournament Details and User Data in parallel
-    const [tournamentPromise, userData] = await Promise.all([
-        supabase
-            .from("tournaments")
-            .select("*")
-            .eq("id", id)
-            .single(),
+    // PERF-003: Try cached public fetch first (anon client, 10s TTL).
+    // Falls back to authenticated fetch for unpublished tournaments
+    // that organizers/admins need to see.
+    const [cachedTournament, userData] = await Promise.all([
+        getCachedTournamentDetail(id),
         supabase.auth.getUser()
     ]);
 
-    const { data: tournamentData, error: tournamentError } = await tournamentPromise;
-    
-    if (tournamentError || !tournamentData) {
-        console.error("Error fetching tournament:", tournamentError);
+    let tournamentData = cachedTournament;
+    const { user } = userData.data;
+
+    // Auth fallback: if the cached (anon) query returned null, the tournament
+    // may be unpublished. Try again with the authenticated client.
+    if (!tournamentData && user) {
+        const { data: authTournament } = await supabase
+            .from("tournaments")
+            .select("*")
+            .eq("id", id)
+            .single();
+        tournamentData = authTournament;
+    }
+
+    if (!tournamentData) {
         notFound();
     }
 
     const tournament = tournamentData as unknown as Tournament;
-    const { user } = userData.data;
 
     // 2. Fetch User Profile and Role
     let userRole: Role | undefined = undefined;

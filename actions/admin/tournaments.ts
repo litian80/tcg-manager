@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { safeAction, type ActionResult } from "@/lib/safe-action";
+import { invalidateTournament, invalidatePublicListings } from "@/lib/cache-invalidation";
 
 export async function updateTournamentStatus(id: string, isPublished: boolean): Promise<ActionResult> {
     return safeAction(async () => {
@@ -33,6 +34,8 @@ export async function updateTournamentStatus(id: string, isPublished: boolean): 
 
         revalidatePath('/admin/tournaments');
         revalidatePath('/');
+        invalidateTournament(id); // PERF-003
+        invalidatePublicListings(); // PERF-003: publishing changes public visibility
         return { success: true };
     });
 }
@@ -96,6 +99,8 @@ export async function deleteTournament(id: string): Promise<ActionResult> {
 
         revalidatePath('/admin/tournaments');
         revalidatePath('/');
+        invalidateTournament(id); // PERF-003
+        invalidatePublicListings(); // PERF-003: deletion changes public listings
         return { success: true };
     });
 }

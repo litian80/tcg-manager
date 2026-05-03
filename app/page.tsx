@@ -1,4 +1,5 @@
 import { getPublicTournaments, getOrganizerTournaments, getJudgeAssignedTournaments, getAdminTournamentsWithStats, PublicTournament } from "@/actions/tournament/queries";
+import { getCachedLandingStats, getCachedPublicTournaments } from "@/lib/cached-queries";
 import { createClient } from "@/utils/supabase/server";
 import { formatDate, formatLocation, formatTimeShort, getTournamentStatusConfig, MODE_LABELS } from "@/lib/utils";
 import Link from "next/link";
@@ -80,7 +81,9 @@ function PublicTournamentList({ tournaments, emptyTitle, emptyDesc, emptyIcon: I
   );
 }
 
-export const dynamic = 'force-dynamic';
+// PERF-003: Removed `force-dynamic`. The auth check in Home() naturally
+// makes this dynamic for authenticated users, while landing page data
+// fetching uses cached queries (getCachedLandingStats, getCachedPublicTournaments).
 
 export default async function Home() {
   const supabase = await createClient();
@@ -133,18 +136,14 @@ export default async function Home() {
    ============================================================================ */
 
 async function LandingPage() {
-  const supabase = await createClient();
-
-  // Fetch stats
-  const [tournamentCount, playerCount, matchCount, upcomingRes] = await Promise.all([
-    supabase.from('tournaments').select('*', { count: 'exact', head: true }).then(r => r.count ?? 0),
-    supabase.from('tournament_players').select('*', { count: 'exact', head: true }).then(r => r.count ?? 0),
-    supabase.from('matches').select('*', { count: 'exact', head: true }).then(r => r.count ?? 0),
-    getPublicTournaments({ statusFilter: 'upcoming' }),
+  // PERF-003: Use cached queries (anon client, 60–120s TTL)
+  const [stats, upcomingTournaments] = await Promise.all([
+    getCachedLandingStats(),
+    getCachedPublicTournaments('upcoming', 20),
   ]);
 
-  const upcomingTournaments: PublicTournament[] = ('success' in upcomingRes ? upcomingRes.success : []) ?? [];
-  const previewTournaments = upcomingTournaments.slice(0, 3);
+  const { tournamentCount, playerCount, matchCount } = stats;
+  const previewTournaments = (upcomingTournaments as PublicTournament[]).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

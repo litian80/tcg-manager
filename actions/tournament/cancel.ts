@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { invalidateTournament, invalidatePublicListings } from "@/lib/cache-invalidation";
 
 /**
  * Cancel a tournament. Sets status to 'cancelled' and closes registration.
@@ -68,6 +69,8 @@ export async function cancelTournament(tournamentId: string) {
   revalidatePath(`/organizer/tournaments/${tournamentId}`);
   revalidatePath(`/organizer/tournaments`);
   revalidatePath("/");
+  invalidateTournament(tournamentId); // PERF-003
+  invalidatePublicListings(); // PERF-003
 
   return { success: true };
 }

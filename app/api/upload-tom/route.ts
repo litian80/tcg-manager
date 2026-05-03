@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient } from '@/utils/supabase/server';
+import { invalidateTournament, invalidatePublicListings } from '@/lib/cache-invalidation';
 
 import { TomPlayer, TomMatch, TomRound, TomPod, TomTournament } from '@/types';
 
@@ -830,6 +831,10 @@ export async function POST(req: NextRequest) {
             // Non-blocking — don't fail the upload if archival fails
             console.error('[TDF Archive] Unexpected error:', archiveErr);
         }
+
+        // PERF-003: Invalidate caches for the affected tournament and public listings
+        invalidateTournament(tournamentId);
+        invalidatePublicListings();
 
         return NextResponse.json({
             success: true,

@@ -57,6 +57,7 @@ function checkRootCleanliness() {
     '.cursorrules',
     '.gitignore',
     '.vercelignore',
+    'vercel.json',
   ]);
 
   // Patterns allowed (dotfiles, env files, generated files, editor config)

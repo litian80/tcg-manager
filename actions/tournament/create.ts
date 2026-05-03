@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { invalidatePublicListings } from "@/lib/cache-invalidation";
 
 export async function createTournament(formData: FormData) {
     const supabase = await createClient();
@@ -267,5 +268,6 @@ export async function createTournament(formData: FormData) {
     }
 
     revalidatePath('/organizer/tournaments');
+    invalidatePublicListings(); // PERF-003: refresh landing page stats + tournament list
     redirect(`/organizer/tournaments/${data.id}`);
 }

@@ -1,0 +1,22 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/api/queue/status",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=2, stale-while-revalidate=5" }
+      ]
+    },
+    {
+      "source": "/api/tournaments/:id/download-tdf",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, no-store" }
+      ]
+    }
+  ]
+}

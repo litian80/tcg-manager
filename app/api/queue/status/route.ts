@@ -60,17 +60,11 @@ export async function GET(request: Request) {
   // SECURITY: Never expose payment_callback_token in API responses.
   // The token is an internal secret between BracketOps and the payment provider.
   // The client only needs status + queue position to render the UI.
-  return NextResponse.json(
-    { 
-      status: registration.registration_status, 
-      position,
-      // Indicate whether payment is expected (boolean), never leak the actual token
-      paymentPending: registration.registration_status === "pending_payment",
-    },
-    {
-      headers: {
-        "Cache-Control": "s-maxage=2, stale-while-revalidate",
-      },
-    }
-  );
+  // Cache-Control is managed centrally via vercel.json (PERF-001)
+  return NextResponse.json({ 
+    status: registration.registration_status, 
+    position,
+    // Indicate whether payment is expected (boolean), never leak the actual token
+    paymentPending: registration.registration_status === "pending_payment",
+  });
 }
