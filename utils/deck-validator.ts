@@ -377,6 +377,13 @@ export function isSetExcluded(
         // Exclude POR set prior to April 10
         if (setCode.toUpperCase() === 'POR') return true;
     }
+
+    // CRI is not legal until June 5, 2026
+    const criLegalDate = new Date("2026-06-05T00:00:00Z");
+    if (tournamentDate < criLegalDate) {
+        if (setCode.toUpperCase() === 'CRI') return true;
+    }
+
     return false;
 }
 

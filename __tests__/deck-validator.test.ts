@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseDeckList, normalizeCardName, normalizeSetCode } from '@/utils/deck-validator'
+import { parseDeckList, normalizeCardName, normalizeSetCode, isSetExcluded, isRegulationMarkLegal } from '@/utils/deck-validator'
 
 describe('normalizeCardName', () => {
   it('normalizes curly apostrophes to straight ones', () => {
@@ -230,5 +230,49 @@ describe('normalizeSetCode', () => {
   it('passes through unknown codes unchanged', () => {
     expect(normalizeSetCode('BRS')).toBe('BRS')
     expect(normalizeSetCode('SFA')).toBe('SFA')
+  })
+})
+
+describe('isSetExcluded', () => {
+  it('excludes CRI before June 5, 2026', () => {
+    const beforeLegal = new Date('2026-06-04T00:00:00Z')
+    expect(isSetExcluded('CRI', beforeLegal)).toBe(true)
+  })
+
+  it('allows CRI on June 5, 2026', () => {
+    const legalDate = new Date('2026-06-05T00:00:00Z')
+    expect(isSetExcluded('CRI', legalDate)).toBe(false)
+  })
+
+  it('allows CRI after June 5, 2026', () => {
+    const afterLegal = new Date('2026-07-01T00:00:00Z')
+    expect(isSetExcluded('CRI', afterLegal)).toBe(false)
+  })
+
+  it('is case-insensitive for CRI', () => {
+    const beforeLegal = new Date('2026-05-28T00:00:00Z')
+    expect(isSetExcluded('cri', beforeLegal)).toBe(true)
+  })
+
+  it('excludes POR before April 10, 2026', () => {
+    const beforeRotation = new Date('2026-04-09T00:00:00Z')
+    expect(isSetExcluded('POR', beforeRotation)).toBe(true)
+  })
+
+  it('allows POR on/after April 10, 2026', () => {
+    const rotationDate = new Date('2026-04-10T00:00:00Z')
+    expect(isSetExcluded('POR', rotationDate)).toBe(false)
+  })
+
+  it('does not exclude random sets', () => {
+    const now = new Date('2026-05-28T00:00:00Z')
+    expect(isSetExcluded('ASC', now)).toBe(false)
+    expect(isSetExcluded('PFL', now)).toBe(false)
+  })
+
+  it('returns false for null/undefined set code', () => {
+    const now = new Date('2026-05-28T00:00:00Z')
+    expect(isSetExcluded(null, now)).toBe(false)
+    expect(isSetExcluded(undefined, now)).toBe(false)
   })
 })
