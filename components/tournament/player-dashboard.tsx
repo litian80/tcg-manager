@@ -40,17 +40,27 @@ export function PlayerDashboard({
     registrationStatus = null,
     allowOnlineReporting = false
 }: PlayerDashboardProps) {
+    // Derive the player's actual current round from their own matches.
+    // Fixes multi-division desync where global currentRound (max across ALL divisions)
+    // could be higher than this player's division's round.
+    const effectiveRound = (() => {
+        if (myMatches.length === 0) return currentRound;
+        const unfinishedRounds = myMatches.filter(m => !m.is_finished).map(m => m.round_number);
+        if (unfinishedRounds.length > 0) return Math.max(...unfinishedRounds);
+        return Math.max(...myMatches.map(m => m.round_number));
+    })();
+
     // Determine the current match (if any)
     const currentMatch = tournamentStatus === 'completed' 
         ? undefined 
-        : myMatches.find(m => m.round_number === currentRound && !m.is_finished);
+        : myMatches.find(m => m.round_number === effectiveRound && !m.is_finished);
 
     const isPlayer1 = currentMatch && currentMatch.player1_tom_id === myPlayerId;
     const myReport = currentMatch ? (isPlayer1 ? currentMatch.p1_reported_result : currentMatch.p2_reported_result) : null;
 
     // Sort history matches descending
     const historyMatches = myMatches
-        .filter(m => m.round_number < currentRound || m.is_finished)
+        .filter(m => m.round_number < effectiveRound || m.is_finished)
         .sort((a, b) => b.round_number - a.round_number);
 
     let currentMatchResultNode: React.ReactNode = null;
@@ -165,7 +175,7 @@ export function PlayerDashboard({
                                     <p>The tournament has concluded.</p>
                                     <p className="text-xs mt-1">Check out the final standings!</p>
                                 </>
-                            ) : currentRound === 0 || myMatches.length === 0 ? (
+                            ) : effectiveRound === 0 || myMatches.length === 0 ? (
                                 <>
                                     <div className="text-4xl mb-3">👋</div>
                                     <p className="font-medium text-foreground">Welcome to the tournament!</p>
@@ -177,7 +187,7 @@ export function PlayerDashboard({
                                     <p className="font-medium text-foreground">Registration confirmed.</p>
                                     <p className="text-xs mt-1">Please see a judge to formally check in before the tournament starts.</p>
                                 </>
-                            ) : myMatches.some(m => m.round_number === currentRound && m.is_finished) ? (
+                            ) : myMatches.some(m => m.round_number === effectiveRound && m.is_finished) ? (
                                 <>
                                     <CheckCircle2 className="h-8 w-8 mb-2 opacity-50 text-green-500" />
                                     <p className="font-medium text-foreground">Match completed.</p>
