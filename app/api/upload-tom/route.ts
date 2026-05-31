@@ -14,13 +14,14 @@ const asArray = <T>(item: T | T[] | undefined): T[] => {
 };
 
 export async function POST(req: NextRequest) {
-    const supabase = createAdminClient();
-    const supabaseAuth = await createClient();
     const { searchParams } = new URL(req.url);
     const isPublished = searchParams.get('published') !== 'false'; // Default to true if missing
     const forceSync = searchParams.get('force') === 'true'; // DB-002: Force override for sync protection
 
     try {
+        const supabase = createAdminClient();
+        const supabaseAuth = await createClient();
+
         const xmlData = await req.text();
         if (!xmlData) {
             return NextResponse.json({ error: 'Empty body' }, { status: 400 });
@@ -847,8 +848,15 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Upload error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        // Provide a user-friendly message that distinguishes transient from unexpected errors
+        const message = error?.message || '';
+        const isTimeout = message.includes('timeout') || message.includes('ETIMEDOUT') || message.includes('ECONNRESET');
+        const isNetwork = message.includes('fetch') || message.includes('ENOTFOUND') || message.includes('ECONNREFUSED') || isTimeout;
+        const userMessage = isNetwork
+            ? 'Connection error — the server could not reach the database. This is usually temporary; please try again.'
+            : `Unexpected server error during sync. Please try again. (${message.slice(0, 120) || 'unknown'})`;
+        return NextResponse.json({ error: userMessage, retryable: true }, { status: 500 });
     }
 }

@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UploadCloud, RefreshCw, StopCircle, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, RefreshCw, StopCircle, FileText, AlertTriangle, CheckCircle2, WifiOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn, formatTimeShort } from '@/lib/utils';
 import { toast } from 'sonner';
+
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 declare global {
     interface Window {
@@ -27,11 +29,14 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
     const [isSyncing, setIsSyncing] = useState(false); // Visual syncing state
     const [isWatching, setIsWatching] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [errorKind, setErrorKind] = useState<'transient' | 'permanent' | null>(null);
+    const [consecutiveFailures, setConsecutiveFailures] = useState(0);
 
     // Refs for polling and concurrency control
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const isSyncingRef = useRef(false); // Lock for concurrency
     const lastModifiedRef = useRef<number>(0);
+    const consecutiveFailuresRef = useRef(0);
 
     useEffect(() => {
         // Check browser support
@@ -50,7 +55,7 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
         // Requirement says "Error Handling: Stop polling".
     };
 
-    const performUpload = async (file: File) => {
+    const performUpload = async (file: File): Promise<'success' | 'transient' | 'permanent'> => {
         try {
             setIsSyncing(true);
             // Compatibility Note: The existing /api/upload-tom endpoint expects the raw XML body (req.text()).
@@ -58,36 +63,88 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
             // We send the file directly as the body, mirroring the logic in app/admin/upload/page.tsx.
 
             const targetQuery = tournamentId ? `&targetId=${tournamentId}` : '';
-            const response = await fetch(`/api/upload-tom?published=${isPublished}${targetQuery}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/xml',
-                },
-                body: file,
-            });
+            let response: Response;
+            try {
+                response = await fetch(`/api/upload-tom?published=${isPublished}${targetQuery}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/xml',
+                    },
+                    body: file,
+                });
+            } catch (fetchErr: any) {
+                // Network-level failure (offline, DNS, connection refused)
+                console.warn('Auto-sync network error:', fetchErr.message);
+                return 'transient';
+            }
 
             if (!response.ok) {
-                const result = await response.json();
-                const errorMsg = result.error || 'Upload failed';
+                let errorMsg = 'Upload failed';
+                try {
+                    const result = await response.json();
+                    errorMsg = result.error || errorMsg;
+                } catch {
+                    // Response body wasn't JSON (e.g. Vercel timeout HTML page)
+                    errorMsg = `Server error (HTTP ${response.status})`;
+                }
+
                 // DB-003: Stop auto-sync on TDF mismatch (400) — the file belongs to a different tournament
                 if (response.status === 400 && errorMsg.includes('mismatch')) {
                     stopWatching();
                     setError('⚠️ Wrong TDF file: ' + errorMsg);
+                    setErrorKind('permanent');
                     toast.error('Auto-sync stopped: TDF file does not match this tournament. Please select the correct file.');
-                    return;
+                    return 'permanent';
                 }
-                throw new Error(errorMsg);
+
+                // 4xx = permanent (auth, validation); 5xx = transient (server/network)
+                if (response.status >= 400 && response.status < 500) {
+                    setError(errorMsg);
+                    setErrorKind('permanent');
+                    toast.error(errorMsg);
+                    return 'permanent';
+                }
+
+                // 5xx — treat as transient
+                console.warn(`Auto-sync server error (${response.status}):`, errorMsg);
+                return 'transient';
             }
 
             setLastSynced(new Date());
             setError(null);
+            setErrorKind(null);
+            consecutiveFailuresRef.current = 0;
+            setConsecutiveFailures(0);
             toast.success('Tournament data synced');
+            return 'success';
         } catch (err: any) {
-            console.error('Auto-sync error:', err);
-            setError(err.message || 'Failed to sync');
-            toast.error('Auto-sync failed: ' + (err.message || 'Unknown error'));
+            console.error('Auto-sync unexpected error:', err);
+            return 'transient';
         } finally {
             setIsSyncing(false);
+        }
+    };
+
+    /** Wrapper that handles retry logic around performUpload */
+    const uploadWithRetry = async (file: File) => {
+        const result = await performUpload(file);
+
+        if (result === 'success') return;
+        if (result === 'permanent') return; // Already handled above
+
+        // Transient failure — track consecutive failures
+        consecutiveFailuresRef.current += 1;
+        setConsecutiveFailures(consecutiveFailuresRef.current);
+
+        if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+            // Too many consecutive failures — surface the error
+            setError('Sync failed after multiple retries. Check your internet connection and try again.');
+            setErrorKind('transient');
+            toast.error('Auto-sync: multiple consecutive failures. Will keep retrying...');
+        } else {
+            // Show a subtle warning but keep syncing
+            setError(`Sync hiccup — retrying... (${consecutiveFailuresRef.current}/${MAX_CONSECUTIVE_FAILURES})`);
+            setErrorKind('transient');
         }
     };
 
@@ -116,7 +173,7 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
             lastModifiedRef.current = file.lastModified;
 
             // Initial upload
-            await performUpload(file);
+            await uploadWithRetry(file);
 
             setIsWatching(true);
 
@@ -135,12 +192,13 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
                     if (currentFile.lastModified > lastModifiedRef.current) {
                         console.log('File change detected, uploading...');
                         lastModifiedRef.current = currentFile.lastModified;
-                        await performUpload(currentFile);
+                        await uploadWithRetry(currentFile);
                     }
                 } catch (err) {
                     console.error('Polling error:', err);
                     stopWatching();
                     setError('Lost access to file. Please select it again.');
+                    setErrorKind('permanent');
                     toast.error('Sync stopped: Lost file access');
                 } finally {
                     isSyncingRef.current = false;
@@ -150,6 +208,7 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
         } catch (err: any) {
             if (err.name !== 'AbortError') {
                 setError('Failed to select file');
+                setErrorKind('permanent');
                 console.error(err);
             }
         }
@@ -234,7 +293,18 @@ export function AutoSyncUploader({ tournamentId, isPublished = true }: AutoSyncU
                 </div>
             )}
 
-            {error && (
+            {error && errorKind === 'transient' && (
+                <Alert className="bg-amber-50 border-amber-200">
+                    <WifiOff className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-amber-800">Connection Issue</AlertTitle>
+                    <AlertDescription className="text-amber-700">
+                        {error}
+                        {isWatching && <span className="block text-xs mt-1">Sync is still active and will recover automatically.</span>}
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {error && errorKind === 'permanent' && (
                 <Alert variant="destructive">
                     <AlertTitle>Sync Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
