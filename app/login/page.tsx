@@ -1,14 +1,30 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trophy } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Trophy, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react'
+import { isInAppBrowser } from '@/lib/utils'
 
 export default function LoginPage() {
     const supabase = createClient()
+    const [inApp, setInApp] = useState(false)
+    const [copied, setCopied] = useState(false)
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.navigator && window.navigator.userAgent) {
+            const isUAInApp = isInAppBrowser(window.navigator.userAgent)
+            if (isUAInApp) {
+                setTimeout(() => setInApp(true), 0)
+            }
+        }
+    }, [])
 
     const handleLogin = async () => {
+        if (inApp) return
+
         const params = new URLSearchParams(window.location.search)
         const next = params.get('next')
         // Pass the 'next' param to the callback URL so it can redirect correctly
@@ -26,6 +42,16 @@ export default function LoginPage() {
         })
     }
 
+    const handleCopyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        } catch (err) {
+            console.error('Failed to copy text: ', err)
+        }
+    }
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted p-4">
             <Card className="w-full max-w-md">
@@ -39,10 +65,29 @@ export default function LoginPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {inApp && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Action Required</AlertTitle>
+                            <AlertDescription className="mt-2 text-sm leading-relaxed">
+                                Google Login is not supported inside this app's browser. Please tap the menu button (•••) and select <strong>"Open in Browser"</strong> or <strong>"Open in System Browser"</strong> to continue.
+                                <Button 
+                                    variant="outline" 
+                                    className="mt-4 w-full bg-background text-foreground hover:bg-muted"
+                                    onClick={handleCopyLink}
+                                >
+                                    {copied ? <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
+                                    {copied ? 'Link Copied!' : 'Copy Link to Open in Safari/Chrome'}
+                                </Button>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     <Button
                         className="w-full"
                         size="lg"
                         onClick={handleLogin}
+                        disabled={inApp}
                     >
                         <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                             <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>

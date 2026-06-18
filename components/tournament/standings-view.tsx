@@ -88,11 +88,11 @@ export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) 
 
     if (standings.length === 0) return <div className="p-4 text-center text-muted-foreground">No standings available yet.</div>;
 
-    // Group by Division
+    // Group by Division (null divisions default to Master)
     const divisions = {
         Junior: standings.filter(s => s.division === 'Junior'),
         Senior: standings.filter(s => s.division === 'Senior'),
-        Master: standings.filter(s => s.division === 'Master'),
+        Master: standings.filter(s => s.division === 'Master' || !s.division),
     };
 
     const hasJuniors = divisions.Junior.length > 0;

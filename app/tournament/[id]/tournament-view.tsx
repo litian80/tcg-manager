@@ -436,7 +436,7 @@ export default function TournamentView({
                                     </p>
                                 ) : (
                                     <p className="text-xs text-muted-foreground font-medium truncate">
-                                        Round {currentRound} of {tournament.total_rounds}
+                                        {currentRound > tournament.total_rounds ? `Top Cut (Round ${currentRound})` : `Round ${currentRound} of ${tournament.total_rounds}`}
                                     </p>
                                 )}
                             </div>
@@ -707,7 +707,7 @@ export default function TournamentView({
                                                     value={String(round)}
                                                     className="rounded-full px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-shrink-0 mr-2"
                                                 >
-                                                    Round {round}
+                                                    {round > tournament.total_rounds ? `Top Cut (R${round})` : `Round ${round}`}
                                                 </TabsTrigger>
                                             ))}
                                         </TabsList>
@@ -720,7 +720,7 @@ export default function TournamentView({
                                             <TabsContent key={round} value={String(round)} className="mt-0">
                                                 {roundMatches.length === 0 ? (
                                                     <div className="text-center py-12 text-muted-foreground">
-                                                        <p>No matches found for &quot;{searchQuery}&quot; in Round {round}</p>
+                                                        <p>No matches found for &quot;{searchQuery}&quot; in {round > tournament.total_rounds ? `Top Cut (Round ${round})` : `Round ${round}`}</p>
                                                     </div>
                                                 ) : (
                                                     <div className="divide-y divide-border border-b">

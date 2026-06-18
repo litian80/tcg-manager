@@ -136,3 +136,22 @@ export function getTournamentStatusConfig(status: string): TournamentStatusConfi
       }
   }
 }
+
+/**
+ * Detect if the user is using an in-app browser (e.g. Facebook, Instagram, Line).
+ * These browsers often block OAuth popups or have other restrictions.
+ */
+export function isInAppBrowser(userAgent: string): boolean {
+  const rules = [
+    'FBAV', 'FBAN', // Facebook
+    'Instagram', // Instagram
+    'Line', // Line
+    'MicroMessenger', // WeChat
+    'Twitter', // Twitter
+    'LinkedIn', // LinkedIn
+    'Snapchat', // Snapchat
+    'TikTok', // TikTok
+  ]
+  const regex = new RegExp(`(${rules.join('|')})`, 'i')
+  return Boolean(userAgent.match(regex))
+}

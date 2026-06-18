@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { createCoreOpsClient } from "@/utils/supabase/core-ops";
 import { authorizeTournamentManagement } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -18,6 +19,8 @@ import { DashboardWidgets } from "./_components/dashboard-widgets";
 import { AnnouncementManager } from "./_components/announcement-manager";
 import { CancelTournamentButton } from "./_components/cancel-tournament-button";
 import { DownloadOriginalTdfButton } from "./_components/download-original-tdf-button";
+import { RoundControlPanel } from "@/components/organizer/round-control-panel";
+import { RoundFinalization } from "@/components/organizer/round-finalization";
 import { isVGCGameType, getListLabel } from "@/lib/utils";
 
 
@@ -50,6 +53,24 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
 
     const isActive = matchesCount !== null && matchesCount > 0;
     const isCancelled = tournament.status === 'cancelled';
+    const isBuiltInEngine = tournament.engine_type === 'BUILT_IN';
+
+    // Fetch current round info for BUILT_IN engine tournaments
+    let currentRoundNumber: number | null = null;
+    let currentRoundStatus: string | null = null;
+    if (isBuiltInEngine) {
+        const coreOps = await createCoreOpsClient();
+        const { data: rounds } = await coreOps
+            .from("rounds")
+            .select("round_number, status")
+            .eq("tournament_id", id)
+            .order("round_number", { ascending: false })
+            .limit(1);
+        if (rounds && rounds.length > 0) {
+            currentRoundNumber = rounds[0].round_number;
+            currentRoundStatus = rounds[0].status;
+        }
+    }
 
     // Determine the default tab based on tournament state
     const defaultTab = isActive ? "during" : "pre";
@@ -261,9 +282,28 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                     ),
                     during: (
                         <div className="space-y-6">
-                            <div className="max-w-2xl">
-                                <AutoSyncUploader tournamentId={tournament.id} />
-                            </div>
+                            {isBuiltInEngine ? (
+                                <>
+                                    <RoundControlPanel
+                                        tournamentId={tournament.id}
+                                        currentRound={currentRoundNumber}
+                                        roundStatus={currentRoundStatus}
+                                        totalRounds={tournament.total_rounds || 0}
+                                        tournamentStatus={tournament.status || "not_started"}
+                                    />
+                                    {currentRoundStatus === "FINALIZING" && currentRoundNumber && (
+                                        <RoundFinalization
+                                            tournamentId={tournament.id}
+                                            roundNumber={currentRoundNumber}
+                                            totalRounds={tournament.total_rounds || 0}
+                                        />
+                                    )}
+                                </>
+                            ) : (
+                                <div className="max-w-2xl">
+                                    <AutoSyncUploader tournamentId={tournament.id} />
+                                </div>
+                            )}
                         </div>
                     ),
                     announcements: (

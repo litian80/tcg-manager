@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -872,6 +872,7 @@ export type Database = {
           deck_submission_cutoff_hours: number | null
           details: string | null
           enable_queue: boolean | null
+          engine_type: string
           game_type: string
           id: string
           is_published: boolean | null
@@ -917,6 +918,7 @@ export type Database = {
           deck_submission_cutoff_hours?: number | null
           details?: string | null
           enable_queue?: boolean | null
+          engine_type?: string
           game_type?: string
           id?: string
           is_published?: boolean | null
@@ -962,6 +964,7 @@ export type Database = {
           deck_submission_cutoff_hours?: number | null
           details?: string | null
           enable_queue?: boolean | null
+          engine_type?: string
           game_type?: string
           id?: string
           is_published?: boolean | null

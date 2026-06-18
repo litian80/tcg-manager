@@ -15,6 +15,7 @@ import { DeckPanel } from "./settings/deck-panel";
 import { PaymentPanel } from "./settings/payment-panel";
 import { QueuePanel } from "./settings/queue-panel";
 import { WebhookPanel } from "./settings/webhook-panel";
+import { EngineTypeSelector } from "@/components/organizer/engine-type-selector";
 import { getListLabel } from "@/lib/utils";
 
 interface TournamentSettingsFormProps {
@@ -28,6 +29,8 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
     const [organizerPopid, setOrganizerPopid] = useState(tournament.organizer_popid || "");
     const [allowOnlineMatchReporting, setAllowOnlineMatchReporting] = useState(tournament.allow_online_match_reporting || false);
+    const [engineType, setEngineType] = useState(tournament.engine_type || "TOM");
+    const [totalRounds, setTotalRounds] = useState(tournament.total_rounds?.toString() || "0");
     const [startDate, setStartDate] = useState("");
     const [startTime, setStartTime] = useState("09:00");
 
@@ -188,6 +191,8 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                 payment_url_juniors: paymentRequired ? (paymentUrlJuniors || null) : null,
                 payment_url_seniors: paymentRequired ? (paymentUrlSeniors || null) : null,
                 payment_url_masters: paymentRequired ? (paymentUrlMasters || null) : null,
+                engine_type: engineType,
+                total_rounds: parseInt(totalRounds || "0", 10),
             })
             .eq("id", tournament.id);
 
@@ -225,7 +230,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
         requiresDeckList, deckSubmissionCutoffHours,
         enableQueue, queueBatchSize, queuePromotionWindow, queuePaused,
         paymentRequired, paymentProvider, paymentUrlJuniors, paymentUrlSeniors, paymentUrlMasters, paymentWebhookSecret,
-        notificationWebhookUrl, notificationWebhookSecret,
+        notificationWebhookUrl, notificationWebhookSecret, engineType, totalRounds,
     ]);
 
     return (
@@ -277,6 +282,27 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     isAdmin={isAdmin}
                                     allowOnlineMatchReporting={allowOnlineMatchReporting} setAllowOnlineMatchReporting={setAllowOnlineMatchReporting}
                                 />
+                                <div className="mt-6">
+                                    <EngineTypeSelector
+                                        value={engineType}
+                                        onChange={setEngineType}
+                                    />
+                                    {engineType === "BUILT_IN" && (
+                                        <div className="mt-4">
+                                            <label htmlFor="total-rounds" className="text-sm font-medium">Swiss Rounds</label>
+                                            <p className="text-xs text-muted-foreground mb-2">Number of Swiss rounds (0 = unlimited)</p>
+                                            <input
+                                                id="total-rounds"
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                value={totalRounds}
+                                                onChange={(e) => setTotalRounds(e.target.value)}
+                                                className="flex h-9 w-24 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="registration" className="mt-0">
