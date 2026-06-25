@@ -122,6 +122,16 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
             return;
         }
 
+        // Validate Swiss rounds for Built-in engine: must be 0 or >= 3
+        if (engineType === "BUILT_IN") {
+            const rounds = parseInt(totalRounds || "0", 10);
+            if (rounds === 1 || rounds === 2) {
+                toast.error("Swiss rounds must be 0 (Single Elimination) or 3 or more.");
+                setIsLoading(false);
+                return;
+            }
+        }
+
         const cutoffHours = parseInt(deckSubmissionCutoffHours, 10);
         if (cutoffHours < 0 || cutoffHours > 48) {
             toast.error("Deck submission cutoff must be between 0 and 48 hours.");
@@ -290,7 +300,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                     {engineType === "BUILT_IN" && (
                                         <div className="mt-4">
                                             <label htmlFor="total-rounds" className="text-sm font-medium">Swiss Rounds</label>
-                                            <p className="text-xs text-muted-foreground mb-2">Number of Swiss rounds (0 = unlimited)</p>
+                                            <p className="text-xs text-muted-foreground mb-2">0 = Single Elimination | 3+ = Swiss rounds</p>
                                             <input
                                                 id="total-rounds"
                                                 type="number"
@@ -300,6 +310,9 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                                                 onChange={(e) => setTotalRounds(e.target.value)}
                                                 className="flex h-9 w-24 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                             />
+                                            {(totalRounds === "1" || totalRounds === "2") && (
+                                                <p className="text-xs text-destructive mt-1">Swiss rounds must be 0 (Single Elimination) or 3 or more.</p>
+                                            )}
                                         </div>
                                     )}
                                 </div>

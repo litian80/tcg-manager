@@ -21,6 +21,7 @@ import { CancelTournamentButton } from "./_components/cancel-tournament-button";
 import { DownloadOriginalTdfButton } from "./_components/download-original-tdf-button";
 import { RoundControlPanel } from "@/components/organizer/round-control-panel";
 import { RoundFinalization } from "@/components/organizer/round-finalization";
+import { ActivePlayerList } from "@/components/organizer/active-player-list";
 import { isVGCGameType, getListLabel } from "@/lib/utils";
 
 
@@ -70,6 +71,38 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
             currentRoundNumber = rounds[0].round_number;
             currentRoundStatus = rounds[0].status;
         }
+    }
+
+    // Fetch tournament_players with W/L/T for the active player list (BUILT_IN engine)
+    let activePlayerData: any[] = [];
+    if (isBuiltInEngine) {
+        const adminSupabase = await createClient();
+        const { data: tpData } = await adminSupabase
+            .from('tournament_players')
+            .select(`
+                player_id,
+                wins,
+                losses,
+                ties,
+                registration_status,
+                division,
+                players:player_id (
+                    first_name,
+                    last_name
+                )
+            `)
+            .eq('tournament_id', id);
+
+        activePlayerData = (tpData || []).map((tp: any) => ({
+            player_id: tp.player_id,
+            first_name: tp.players?.first_name || null,
+            last_name: tp.players?.last_name || null,
+            wins: tp.wins || 0,
+            losses: tp.losses || 0,
+            ties: tp.ties || 0,
+            registration_status: tp.registration_status,
+            division: tp.division,
+        }));
     }
 
     // Determine the default tab based on tournament state
@@ -298,6 +331,12 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
                                             totalRounds={tournament.total_rounds || 0}
                                         />
                                     )}
+                                    <ActivePlayerList
+                                        tournamentId={tournament.id}
+                                        players={activePlayerData}
+                                        currentRound={currentRoundNumber}
+                                        totalRounds={tournament.total_rounds || 0}
+                                    />
                                 </>
                             ) : (
                                 <div className="max-w-2xl">

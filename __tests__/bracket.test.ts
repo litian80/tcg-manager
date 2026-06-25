@@ -101,4 +101,35 @@ describe("Bracket Generation", () => {
       "Need at least 4 seeds"
     );
   });
+
+  it("generates top 2 bracket (1 match, finals only)", () => {
+    const seeds = ["P1", "P2"];
+    const matches = generateSingleElimBracket(seeds, 2);
+    expect(matches).toHaveLength(1);
+
+    const final = matches[0];
+    expect(final.bracketRound).toBe(1);
+    expect(final.player1Id).toBe("P1");
+    expect(final.player2Id).toBe("P2");
+    expect(final.feedsWinnerToRound).toBeNull();
+    expect(final.feedsWinnerToPosition).toBeNull();
+  });
+
+  it("generates bracket for 5 players (top 8 bracket with 3 byes)", () => {
+    const seeds = ["P1", "P2", "P3", "P4", "P5"];
+    const matches = generateSingleElimBracket(seeds, 5);
+    // 5 players rounds up to 8-bracket → 7 matches
+    expect(matches).toHaveLength(7);
+
+    const r1 = matches.filter(m => m.bracketRound === 1);
+    expect(r1).toHaveLength(4);
+
+    // 3 byes: 3 round-1 matches should have one null player
+    const byeMatches = r1.filter(m => m.player1Id === null || m.player2Id === null);
+    expect(byeMatches).toHaveLength(3);
+
+    // 1 round-1 match should have two real players
+    const realMatches = r1.filter(m => m.player1Id !== null && m.player2Id !== null);
+    expect(realMatches).toHaveLength(1);
+  });
 });

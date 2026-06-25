@@ -15,8 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle2, Loader2, Play, Shuffle, Square, Trophy, Users, ArrowRight, ChevronRight, Eye } from "lucide-react";
-import { startRound, endRound, generatePairings, generateTopCutPairings, advanceTopCutRound, getTopCutStandings } from "@/actions/core-ops";
+import { CheckCircle2, Loader2, Play, Shuffle, Square, Trophy, Users, ArrowRight, ChevronRight, Eye, Flag, Zap } from "lucide-react";
+import { startRound, endRound, generatePairings, generateTopCutPairings, advanceTopCutRound, getTopCutStandings, finishTournamentWithoutTopCut, startSingleElimination } from "@/actions/core-ops";
 import type { TopCutStandingEntry } from "@/actions/core-ops";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -71,12 +71,13 @@ export function RoundControlPanel({
   const [error, setError] = useState<string | null>(null);
 
   // Top Cut Options
-  const [topCutBase, setTopCutBase] = useState<"4" | "8">("8");
+  const [topCutBase, setTopCutBase] = useState<"2" | "4" | "8">("8");
   const [isAsym, setIsAsym] = useState<boolean>(false);
   const [asymSize, setAsymSize] = useState<number>(5);
   const [standings, setStandings] = useState<TopCutStandingEntry[]>([]);
   const [standingsLoading, setStandingsLoading] = useState(false);
   const [topCutDialogOpen, setTopCutDialogOpen] = useState(false);
+  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
 
   const finalTopCutSize = isAsym ? asymSize : parseInt(topCutBase);
 
@@ -97,15 +98,19 @@ export function RoundControlPanel({
     : 1;
 
   const isLastRound = totalRounds > 0 && currentRound !== null && currentRound >= totalRounds;
+  const isSingleElimMode = totalRounds === 0;
   const canGeneratePairings =
-    (!currentRound || roundStatus === "FINISHED") && (totalRounds === 0 || nextRound <= totalRounds);
+    !isSingleElimMode && (!currentRound || roundStatus === "FINISHED") && (totalRounds === 0 || nextRound <= totalRounds);
+  const canStartSingleElim = isSingleElimMode && !currentRound;
   const canStartRound = roundStatus === "PAIRING_GENERATED";
   const canEndRound = roundStatus === "ACTIVE";
   
   const isTournamentCompleted = tournamentStatus === "completed";
   const isTopCut = totalRounds > 0 && currentRound !== null && currentRound > totalRounds;
+  const isBracketMode = isSingleElimMode && currentRound !== null;
   const canGenerateTopCut = totalRounds > 0 && currentRound === totalRounds && roundStatus === "FINISHED" && !isTournamentCompleted;
-  const canAdvanceTopCut = isTopCut && roundStatus === "FINISHED" && !isTournamentCompleted;
+  const canFinishWithoutTopCut = canGenerateTopCut; // same condition: last Swiss round finished
+  const canAdvanceTopCut = (isTopCut || isBracketMode) && roundStatus === "FINISHED" && !isTournamentCompleted;
   const canPublishStandings = roundStatus === "FINISHED" && !isTournamentCompleted;
 
   function handleAction(action: () => Promise<{ error?: string }>) {
@@ -155,6 +160,43 @@ export function RoundControlPanel({
         )}
 
         <div className="flex flex-wrap gap-2">
+          {/* Start Single Elimination */}
+          {canStartSingleElim && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="default"
+                  disabled={isPending}
+                  className="gap-2 bg-violet-600 hover:bg-violet-700"
+                  id="btn-start-single-elim"
+                >
+                  <Zap className="w-4 h-4" />
+                  Start Single Elimination
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Start Single Elimination?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will randomly seed all players into a single-elimination bracket.
+                    The bracket size will be determined automatically from the player count.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-violet-600 hover:bg-violet-700"
+                    onClick={() =>
+                      handleAction(() => startSingleElimination(tournamentId))
+                    }
+                  >
+                    Start
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           {/* Generate Pairings */}
           {canGeneratePairings && (
             <AlertDialog>
@@ -334,24 +376,27 @@ export function RoundControlPanel({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Base Bracket Size</Label>
-                      <Select value={topCutBase} onValueChange={(val: "4" | "8") => setTopCutBase(val)}>
+                      <Select value={topCutBase} onValueChange={(val: "2" | "4" | "8") => setTopCutBase(val)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select size" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="2">Top 2 (Finals)</SelectItem>
                           <SelectItem value="4">Top 4</SelectItem>
                           <SelectItem value="8">Top 8</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div className="flex items-end gap-3 pb-1">
-                      <div className="space-y-0.5">
-                        <Label>Asymmetric</Label>
-                        <div className="text-xs text-muted-foreground">Non-standard cut size</div>
+                    {topCutBase !== "2" && (
+                      <div className="flex items-end gap-3 pb-1">
+                        <div className="space-y-0.5">
+                          <Label>Asymmetric</Label>
+                          <div className="text-xs text-muted-foreground">Non-standard cut size</div>
+                        </div>
+                        <Switch checked={isAsym} onCheckedChange={setIsAsym} />
                       </div>
-                      <Switch checked={isAsym} onCheckedChange={setIsAsym} />
-                    </div>
+                    )}
                   </div>
 
                   {isAsym && (
@@ -382,6 +427,82 @@ export function RoundControlPanel({
                     }
                   >
                     Generate {isAsym ? `Top ${asymSize}` : `Top ${topCutBase}`}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* Finish Tournament (No Top Cut) */}
+          {canFinishWithoutTopCut && (
+            <AlertDialog open={finishDialogOpen} onOpenChange={(open) => {
+              setFinishDialogOpen(open);
+              if (open) loadStandings();
+            }}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={isPending}
+                  className="gap-2 border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                  id="btn-finish-tournament"
+                >
+                  <Flag className="w-4 h-4" />
+                  Finish Tournament
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Finish Tournament Without Top Cut?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will end the tournament. The #1 ranked player wins. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                {/* Final Standings Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="max-h-64 overflow-y-auto">
+                    {standingsLoading ? (
+                      <div className="flex items-center justify-center py-8 text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading standings…
+                      </div>
+                    ) : standings.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        No standings available.
+                      </div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                          <tr className="text-left">
+                            <th className="px-3 py-2 font-medium w-10">#</th>
+                            <th className="px-3 py-2 font-medium">Player</th>
+                            <th className="px-3 py-2 font-medium text-right">Record</th>
+                            <th className="px-3 py-2 font-medium text-right">Pts</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {standings.slice(0, 10).map((s, idx) => (
+                            <tr key={s.playerId} className={`border-t ${idx === 0 ? "bg-amber-500/10 font-semibold" : ""}`}>
+                              <td className="px-3 py-1.5">{s.rank}</td>
+                              <td className="px-3 py-1.5">{s.playerName}</td>
+                              <td className="px-3 py-1.5 text-right font-mono">{s.record}</td>
+                              <td className="px-3 py-1.5 text-right font-mono">{s.matchPoints}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-amber-600 hover:bg-amber-700"
+                    onClick={() =>
+                      handleAction(() => finishTournamentWithoutTopCut(tournamentId))
+                    }
+                  >
+                    Finish Tournament
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

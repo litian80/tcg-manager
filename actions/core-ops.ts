@@ -702,20 +702,93 @@ async function generateStandingSnapshot(
 
 export async function dropPlayer(
   tournamentId: string,
-  playerId: string
+  playerId: string // tom_player_id
 ): Promise<ActionResult> {
   return safeAction(async () => {
-    await requireOrganizer(tournamentId);
-    const adminSupabase = await createAdminClient();
+    const { tournament } = await requireOrganizer(tournamentId);
 
-    const { error } = await adminSupabase
+    if (tournament.engine_type !== "BUILT_IN") {
+      return { error: "This action is only available for Built-in engine tournaments" };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const coreOps = await createCoreOpsClient();
+
+    // Check if tournament is in top cut — drops not allowed during bracket play
+    const { data: tournamentData } = await adminSupabase
+      .from("tournaments")
+      .select("total_rounds")
+      .eq("id", tournamentId)
+      .single();
+
+    const totalRounds = tournamentData?.total_rounds || 0;
+
+    // Find the latest round
+    const { data: latestRound } = await coreOps
+      .from("rounds")
+      .select("round_number, status")
+      .eq("tournament_id", tournamentId)
+      .order("round_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestRound && totalRounds > 0 && latestRound.round_number > totalRounds) {
+      return { error: "Cannot drop players during Top Cut. Resolve the bracket match manually instead." };
+    }
+
+    // Verify the player is currently active (not already dropped)
+    const { data: tp } = await adminSupabase
+      .from("tournament_players")
+      .select("registration_status")
+      .eq("tournament_id", tournamentId)
+      .eq("player_id", playerId)
+      .single();
+
+    if (!tp) {
+      return { error: "Player not found in this tournament." };
+    }
+
+    if (tp.registration_status === "dropped") {
+      return { error: "Player is already dropped." };
+    }
+
+    // Set registration_status to 'dropped'
+    const { error: dropError } = await adminSupabase
       .from("tournament_players")
       .update({ registration_status: "dropped" })
       .eq("tournament_id", tournamentId)
       .eq("player_id", playerId);
 
-    if (error) {
-      return { error: `Failed to drop player: ${error.message}` };
+    if (dropError) {
+      return { error: `Failed to drop player: ${dropError.message}` };
+    }
+
+    // Check if the player has an unfinished match in the current active/finalizing round
+    if (latestRound && (latestRound.status === "ACTIVE" || latestRound.status === "FINALIZING" || latestRound.status === "PAIRING_GENERATED")) {
+      const { data: activeMatch } = await adminSupabase
+        .from("matches")
+        .select("id, player1_tom_id, player2_tom_id")
+        .eq("tournament_id", tournamentId)
+        .eq("round_number", latestRound.round_number)
+        .eq("is_finished", false)
+        .or(`player1_tom_id.eq.${playerId},player2_tom_id.eq.${playerId}`)
+        .maybeSingle();
+
+      if (activeMatch && activeMatch.player2_tom_id) {
+        // Auto-resolve: dropped player gets the loss, opponent gets the win
+        const isPlayer1 = activeMatch.player1_tom_id === playerId;
+        const winnerId = isPlayer1 ? activeMatch.player2_tom_id : activeMatch.player1_tom_id;
+        const outcome = isPlayer1 ? Outcome.PLAYER2_WIN : Outcome.PLAYER1_WIN;
+
+        await adminSupabase
+          .from("matches")
+          .update({
+            is_finished: true,
+            outcome,
+            winner_tom_id: winnerId,
+          })
+          .eq("id", activeMatch.id);
+      }
     }
 
     revalidateTournament(tournamentId);
@@ -1164,3 +1237,279 @@ export async function advanceTopCutRound(
   });
 }
 
+// --- Finish Tournament Without Top Cut ---
+
+export async function finishTournamentWithoutTopCut(
+  tournamentId: string
+): Promise<ActionResult> {
+  return safeAction(async () => {
+    const { tournament } = await requireOrganizer(tournamentId);
+
+    if (tournament.engine_type !== "BUILT_IN") {
+      return { error: "This action is only available for Built-in engine tournaments" };
+    }
+
+    const adminSupabase = await createAdminClient();
+
+    // Set tournament status to completed
+    const { error } = await adminSupabase
+      .from("tournaments")
+      .update({ status: "completed" })
+      .eq("id", tournamentId);
+
+    if (error) {
+      return { error: `Failed to finish tournament: ${error.message}` };
+    }
+
+    revalidateTournament(tournamentId);
+    return { success: true };
+  });
+}
+
+// --- Start Single Elimination (0 Swiss Rounds) ---
+
+export async function startSingleElimination(
+  tournamentId: string
+): Promise<ActionResult> {
+  return safeAction(async () => {
+    const { tournament } = await requireOrganizer(tournamentId);
+
+    if (tournament.engine_type !== "BUILT_IN") {
+      return { error: "This action is only available for Built-in engine tournaments" };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const coreOps = await createCoreOpsClient();
+
+    // Verify total_rounds === 0
+    const { data: tournamentData } = await adminSupabase
+      .from("tournaments")
+      .select("total_rounds, status")
+      .eq("id", tournamentId)
+      .single();
+
+    if (!tournamentData || tournamentData.total_rounds !== 0) {
+      return { error: "Single elimination mode requires Swiss Rounds to be set to 0." };
+    }
+
+    // Check no rounds exist yet
+    const { data: existingRound } = await coreOps
+      .from("rounds")
+      .select("id")
+      .eq("tournament_id", tournamentId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingRound) {
+      return { error: "Tournament already has rounds. Cannot start single elimination." };
+    }
+
+    // Get active players
+    const { data: tournamentPlayers, error: playersError } = await adminSupabase
+      .from("tournament_players")
+      .select("player_id, wins, losses, ties, division")
+      .eq("tournament_id", tournamentId)
+      .neq("registration_status", "dropped")
+      .neq("registration_status", "cancelled");
+
+    if (playersError || !tournamentPlayers || tournamentPlayers.length < 2) {
+      return { error: "Need at least 2 active players to start single elimination." };
+    }
+
+    // Randomly shuffle players for seeding
+    const shuffled = [...tournamentPlayers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const seeds = shuffled.map(tp => tp.player_id);
+    const bracketSize = Math.pow(2, Math.ceil(Math.log2(seeds.length)));
+
+    // Generate bracket
+    const bracketMatches = generateSingleElimBracket(seeds, seeds.length);
+
+    // Create the bracket record
+    const { data: bracket, error: bracketError } = await coreOps
+      .from("brackets")
+      .insert({
+        tournament_id: tournamentId,
+        type: "SINGLE_ELIM",
+        top_cut_size: bracketSize,
+      })
+      .select()
+      .single();
+
+    if (bracketError) return { error: `Failed to create bracket: ${bracketError.message}` };
+
+    // Insert bracket matches
+    const { error: bmInsertError } = await coreOps
+      .from("bracket_matches")
+      .insert(bracketMatches.map(m => ({
+        bracket_id: bracket.id,
+        bracket_round: m.bracketRound,
+        bracket_position: m.bracketPosition,
+        player1_id: m.player1Id,
+        player2_id: m.player2Id,
+      })));
+
+    if (bmInsertError) return { error: `Failed to insert bracket matches: ${bmInsertError.message}` };
+
+    // Fetch inserted bracket matches and wire up feeds_winner_to
+    const { data: insertedBMs } = await coreOps
+      .from("bracket_matches")
+      .select("id, bracket_round, bracket_position")
+      .eq("bracket_id", bracket.id);
+
+    for (const m of bracketMatches) {
+      if (m.feedsWinnerToRound && m.feedsWinnerToPosition !== null) {
+        const sourceMatch = insertedBMs?.find(i => i.bracket_round === m.bracketRound && i.bracket_position === m.bracketPosition);
+        const targetMatch = insertedBMs?.find(i => i.bracket_round === m.feedsWinnerToRound && i.bracket_position === m.feedsWinnerToPosition);
+        if (sourceMatch && targetMatch) {
+          await coreOps
+            .from("bracket_matches")
+            .update({ feeds_winner_to: targetMatch.id })
+            .eq("id", sourceMatch.id);
+        }
+      }
+    }
+
+    // Handle byes in round 1 (same logic as generateTopCutPairings)
+    const { data: round1BMs } = await coreOps
+      .from("bracket_matches")
+      .select("*")
+      .eq("bracket_id", bracket.id)
+      .eq("bracket_round", 1)
+      .eq("is_finished", false);
+
+    for (const bm of round1BMs || []) {
+      const hasP1 = !!bm.player1_id;
+      const hasP2 = !!bm.player2_id;
+      if ((hasP1 && !hasP2) || (!hasP1 && hasP2)) {
+        const winner = bm.player1_id || bm.player2_id;
+        await coreOps
+          .from("bracket_matches")
+          .update({ winner_id: winner, is_finished: true, outcome: 3 })
+          .eq("id", bm.id);
+
+        if (bm.feeds_winner_to) {
+          const { data: targetBm } = await coreOps
+            .from("bracket_matches")
+            .select("player1_id, player2_id")
+            .eq("id", bm.feeds_winner_to)
+            .single();
+
+          if (targetBm) {
+            if (!targetBm.player1_id) {
+              await coreOps.from("bracket_matches").update({ player1_id: winner }).eq("id", bm.feeds_winner_to);
+            } else if (!targetBm.player2_id) {
+              await coreOps.from("bracket_matches").update({ player2_id: winner }).eq("id", bm.feeds_winner_to);
+            }
+          }
+        }
+      }
+    }
+
+    // Resolve cascading byes
+    let resolvedMore = true;
+    while (resolvedMore) {
+      resolvedMore = false;
+      const { data: unfinished } = await coreOps
+        .from("bracket_matches")
+        .select("*")
+        .eq("bracket_id", bracket.id)
+        .eq("is_finished", false);
+
+      for (const bm of unfinished || []) {
+        const { data: feeders } = await coreOps
+          .from("bracket_matches")
+          .select("id, is_finished")
+          .eq("bracket_id", bracket.id)
+          .eq("feeds_winner_to", bm.id);
+
+        const allFeedersFinished = feeders && feeders.length > 0 && feeders.every(f => f.is_finished);
+        if (allFeedersFinished) {
+          const hasP1 = !!bm.player1_id;
+          const hasP2 = !!bm.player2_id;
+          if ((hasP1 && !hasP2) || (!hasP1 && hasP2)) {
+            const winner = bm.player1_id || bm.player2_id;
+            await coreOps
+              .from("bracket_matches")
+              .update({ winner_id: winner, is_finished: true, outcome: 3 })
+              .eq("id", bm.id);
+
+            if (bm.feeds_winner_to) {
+              const { data: targetBm } = await coreOps
+                .from("bracket_matches")
+                .select("player1_id, player2_id")
+                .eq("id", bm.feeds_winner_to)
+                .single();
+
+              if (targetBm) {
+                if (!targetBm.player1_id) {
+                  await coreOps.from("bracket_matches").update({ player1_id: winner }).eq("id", bm.feeds_winner_to);
+                } else if (!targetBm.player2_id) {
+                  await coreOps.from("bracket_matches").update({ player2_id: winner }).eq("id", bm.feeds_winner_to);
+                }
+              }
+            }
+            resolvedMore = true;
+          }
+        }
+      }
+    }
+
+    // Create public matches for bracket round 1
+    const division = tournamentPlayers[0]?.division || "master";
+    const recordMap = new Map(tournamentPlayers.map(tp => [
+      tp.player_id,
+      `${tp.wins || 0}-${tp.losses || 0}-${tp.ties || 0}`
+    ]));
+
+    const round1Matches = bracketMatches.filter(m => m.bracketRound === 1);
+    const publicMatchInserts: any[] = [];
+    let tableNum = 1;
+    for (const m of round1Matches) {
+      let p1 = m.player1Id;
+      let p2 = m.player2Id;
+      if (!p1 && p2) { p1 = p2; p2 = null; }
+      if (!p1 && !p2) continue;
+
+      const isBye = !p2;
+      publicMatchInserts.push({
+        tournament_id: tournamentId,
+        round_number: 1,
+        table_number: tableNum++,
+        player1_tom_id: p1,
+        player2_tom_id: p2,
+        winner_tom_id: isBye ? p1 : null,
+        outcome: isBye ? Outcome.BYE : null,
+        is_finished: isBye,
+        division,
+        p1_display_record: recordMap.get(p1!) || "0-0-0",
+        p2_display_record: p2 ? (recordMap.get(p2) || "0-0-0") : null,
+      });
+    }
+
+    if (publicMatchInserts.length > 0) {
+      await adminSupabase.from("matches").insert(publicMatchInserts);
+    }
+
+    // Create round record
+    await coreOps.from("rounds").insert({
+      tournament_id: tournamentId,
+      round_number: 1,
+      status: "PAIRING_GENERATED",
+    });
+
+    // Transition tournament to running
+    await adminSupabase
+      .from("tournaments")
+      .update({ status: "running" })
+      .eq("id", tournamentId)
+      .eq("status", "not_started");
+
+    revalidateTournament(tournamentId);
+    return { success: true };
+  });
+}
