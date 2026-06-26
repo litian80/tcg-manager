@@ -5,13 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -213,69 +206,114 @@ export function RoundFinalization({
               Requires Your Input
             </h3>
             {[...categories.penalty, ...categories.conflict, ...categories.missing].map(
-              (match) => (
-                <div
-                  key={match.id}
-                  className={`p-4 rounded-lg border ${CATEGORY_CONFIG[match.category].color} space-y-3`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {CATEGORY_CONFIG[match.category].icon}
-                      <span className="font-medium">
-                        {match.p1_name} <span className="text-muted-foreground font-normal text-sm">({match.player1_tom_id})</span> vs {match.p2_name} {match.player2_tom_id && <span className="text-muted-foreground font-normal text-sm">({match.player2_tom_id})</span>}
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {CATEGORY_CONFIG[match.category].label}
-                    </Badge>
-                  </div>
+              (match) => {
+                const currentValue = resolutions[match.id]
+                  ? resolutions[match.id].outcome === 1
+                    ? "p1_win"
+                    : resolutions[match.id].outcome === 2
+                      ? "p2_win"
+                      : "tie"
+                  : undefined;
 
-                  {/* Show reports */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">P1 reports: </span>
-                      <span className="font-medium">
-                        {match.p1_reported_result || "—"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">P2 reports: </span>
-                      <span className="font-medium">
-                        {match.p2_reported_result || "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Resolution selector */}
-                  <Select
-                    value={
-                      resolutions[match.id]
-                        ? resolutions[match.id].outcome === 1
-                          ? "p1_win"
-                          : resolutions[match.id].outcome === 2
-                            ? "p2_win"
-                            : "tie"
-                        : undefined
-                    }
-                    onValueChange={(val) => setMatchResult(match.id, val, match)}
+                return (
+                  <div
+                    key={match.id}
+                    className={`px-3 py-2 rounded-lg border ${CATEGORY_CONFIG[match.category].color} space-y-1.5`}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select result..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="p1_win">
-                        {match.p1_name} ({match.player1_tom_id}) wins
-                      </SelectItem>
-                      <SelectItem value="p2_win">
-                        {match.p2_name} {match.player2_tom_id && `(${match.player2_tom_id})`} wins
-                      </SelectItem>
-                      {!isTopCut && (
-                        <SelectItem value="tie">Tie / Draw</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )
+                    {/* Match header: names + category badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {CATEGORY_CONFIG[match.category].icon}
+                        <span className="text-sm font-medium truncate">
+                          {match.p1_name}{" "}
+                          <span className="text-muted-foreground font-normal text-xs">
+                            ({match.player1_tom_id})
+                          </span>{" "}
+                          vs {match.p2_name}{" "}
+                          {match.player2_tom_id && (
+                            <span className="text-muted-foreground font-normal text-xs">
+                              ({match.player2_tom_id})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] h-5 px-1.5 flex-shrink-0">
+                        {CATEGORY_CONFIG[match.category].label}
+                      </Badge>
+                    </div>
+
+                    {/* Reports + radio buttons row */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      {/* Reported results */}
+                      <div className="flex gap-3 text-xs text-muted-foreground">
+                        <span>
+                          P1: <span className="font-medium text-foreground">{match.p1_reported_result || "—"}</span>
+                        </span>
+                        <span>
+                          P2: <span className="font-medium text-foreground">{match.p2_reported_result || "—"}</span>
+                        </span>
+                      </div>
+
+                      {/* Radio buttons */}
+                      <div className="flex items-center gap-1">
+                        <label
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer border transition-colors ${
+                            currentValue === "p1_win"
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background hover:bg-muted border-input"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`result-${match.id}`}
+                            value="p1_win"
+                            checked={currentValue === "p1_win"}
+                            onChange={() => setMatchResult(match.id, "p1_win", match)}
+                            className="sr-only"
+                          />
+                          {match.p1_name} wins
+                        </label>
+                        <label
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer border transition-colors ${
+                            currentValue === "p2_win"
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background hover:bg-muted border-input"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`result-${match.id}`}
+                            value="p2_win"
+                            checked={currentValue === "p2_win"}
+                            onChange={() => setMatchResult(match.id, "p2_win", match)}
+                            className="sr-only"
+                          />
+                          {match.p2_name} wins
+                        </label>
+                        {!isTopCut && (
+                          <label
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer border transition-colors ${
+                              currentValue === "tie"
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted border-input"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`result-${match.id}`}
+                              value="tie"
+                              checked={currentValue === "tie"}
+                              onChange={() => setMatchResult(match.id, "tie", match)}
+                              className="sr-only"
+                            />
+                            Tie
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
             )}
           </div>
         )}

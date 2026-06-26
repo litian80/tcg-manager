@@ -59,19 +59,29 @@ export function ActivePlayerList({
     (p) => p.registration_status === "dropped"
   );
 
-  const filteredActive = searchQuery
+  const standingsSort = (a: ActivePlayer, b: ActivePlayer) => {
+    const aMP = a.wins * 3 + a.ties;
+    const bMP = b.wins * 3 + b.ties;
+    if (bMP !== aMP) return bMP - aMP;
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return a.losses - b.losses;
+  };
+
+  const filteredActive = (searchQuery
     ? activePlayers.filter((p) => {
         const name = `${p.first_name || ""} ${p.last_name || ""}`.toLowerCase();
         return name.includes(searchQuery.toLowerCase());
       })
-    : activePlayers;
+    : activePlayers
+  ).sort(standingsSort);
 
-  const filteredDropped = searchQuery
+  const filteredDropped = (searchQuery
     ? droppedPlayers.filter((p) => {
         const name = `${p.first_name || ""} ${p.last_name || ""}`.toLowerCase();
         return name.includes(searchQuery.toLowerCase());
       })
-    : droppedPlayers;
+    : droppedPlayers
+  ).sort(standingsSort);
 
   function handleDrop(playerId: string) {
     setDroppingId(playerId);
