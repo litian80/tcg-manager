@@ -6,11 +6,16 @@ The engine constructs a weighted graph where:
   - Edges are REMOVED between previous opponents (hard constraint)
   - A dummy "BYE" node is added for odd player counts
 
-Edge Weight Scheme:
-  Same score group:     BASE = 1000
-  Cross score group:    BASE = 1000 - |point_diff| × 100
+Edge Weight Scheme (exponential):
+  Uses W = base^(max_diff - actual_diff) where base = max(N, 10).
+  This guarantees that same-score-group pairings always dominate
+  cross-group pairings in the global matching — the combined weight
+  of any number of cross-group pairings cannot exceed a single
+  same-group pairing when base >= N.
+
   Previous opponents:   Edge REMOVED entirely
   Bye Dummy Node:       weight = rank_order (lower ranked → higher weight)
+                        Always less than any player-vs-player edge.
                         Edge removed if player already had a bye
 
 Determinism:
@@ -41,19 +46,29 @@ def _build_opponent_set(request: PairingRequest) -> dict[str, set[str]]:
     return opponents
 
 
-def _compute_edge_weight(p1: PlayerInput, p2: PlayerInput) -> int:
+def _compute_edge_weight(
+    p1: PlayerInput, p2: PlayerInput, n_players: int
+) -> int:
     """Compute the edge weight between two real players.
 
+    Uses an exponential scheme: W = base^(max_diff - actual_diff)
+    where base = max(n_players, 10).
+
+    This guarantees same-score-group pairings always dominate cross-group
+    pairings in the global matching. When base >= N, any single same-group
+    edge outweighs the sum of all possible cross-group edges, so the
+    Blossom algorithm will never sacrifice a same-group pairing to improve
+    lower groups.
+
     Higher weight = more desirable pairing.
-    Same score group gets BASE=1000.
-    Cross score group gets penalized by point difference.
     """
     point_diff = abs(p1.match_points - p2.match_points)
-    if point_diff == 0:
-        return 1000
-    # Cross-group: penalty grows with point difference
-    # Floor at 1 to ensure the edge is still considered
-    return max(1, 1000 - point_diff * 100)
+    base = max(n_players, 10)
+    # max_diff upper-bound: in a tournament, the maximum match point spread
+    # is bounded by 3 × (n_players - 1), but we cap it for practicality.
+    # A value of 18 (6 rounds × 3 pts) covers any realistic tournament.
+    max_diff = 18
+    return base ** (max_diff - point_diff)
 
 
 def generate_pairings(request: PairingRequest) -> tuple[list[PairingOutput], str | None]:
@@ -104,7 +119,9 @@ def generate_pairings(request: PairingRequest) -> tuple[list[PairingOutput], str
             if pid2 in opponent_sets.get(pid1, set()):
                 continue
 
-            weight = _compute_edge_weight(player_map[pid1], player_map[pid2])
+            weight = _compute_edge_weight(
+                player_map[pid1], player_map[pid2], len(active_players)
+            )
             # Ensure deterministic ordering of the edge tuple
             edge = tuple(sorted([pid1, pid2]))
             G.add_edge(edge[0], edge[1], weight=weight)

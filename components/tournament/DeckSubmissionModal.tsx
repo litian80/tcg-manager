@@ -126,6 +126,8 @@ export function DeckEditor({
 const CategorySection = React.memo(function CategorySection({ title, cards, color }: { title: string; cards: ParsedCard[]; color?: string }) {
   if (!cards || cards.length === 0) return null;
   const count = cards.reduce((sum, card) => sum + (card.qty || 0), 0);
+  const isTrainer = title.toLowerCase() === 'trainer';
+
   return (
     <div className="space-y-0.5">
       <div className={cn("flex items-center justify-between pb-0.5 mb-0.5 border-b", color)}>
@@ -133,22 +135,32 @@ const CategorySection = React.memo(function CategorySection({ title, cards, colo
         <span className="text-xs font-mono text-muted-foreground">{count}</span>
       </div>
       <div>
-        {cards.map((card, i) => (
-          <div 
-            key={`${card.name}-${card.set || 'unknown'}-${card.number || 'unknown'}-${card.qty}-${i}`} 
-            className="text-sm flex justify-between items-center py-0.5 px-1"
-          >
-            <div className="flex gap-2 items-center min-w-0">
-              <span className="font-mono w-4 text-right text-muted-foreground text-xs">{card.qty}</span>
-              <span className="truncate">{card.name}</span>
+        {cards.map((card, i) => {
+          const currentSubType = card.secondaryCategory?.toLowerCase();
+          const prevSubType = i > 0 ? cards[i - 1].secondaryCategory?.toLowerCase() : undefined;
+          const showSubHeader = isTrainer && !!currentSubType && currentSubType !== prevSubType;
+
+          return (
+            <div key={`${card.name}-${card.set || 'unknown'}-${card.number || 'unknown'}-${card.qty}-${i}`}>
+              {showSubHeader && (
+                <div className={cn("text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider pt-1.5", i > 0 && "mt-1")}>
+                  {card.secondaryCategory}
+                </div>
+              )}
+              <div className="text-sm flex justify-between items-center py-0.5 px-1">
+                <div className="flex gap-2 items-center min-w-0">
+                  <span className="font-mono w-4 text-right text-muted-foreground text-xs">{card.qty}</span>
+                  <span className="truncate">{card.name}</span>
+                </div>
+                {card.category === 'pokemon' && (card.set || card.number) && (
+                  <span className="text-[10px] text-muted-foreground font-mono flex-shrink-0 ml-2">
+                    {card.set} {card.number}
+                  </span>
+                )}
+              </div>
             </div>
-            {card.category === 'pokemon' && (card.set || card.number) && (
-              <span className="text-[10px] text-muted-foreground font-mono flex-shrink-0 ml-2">
-                {card.set} {card.number}
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

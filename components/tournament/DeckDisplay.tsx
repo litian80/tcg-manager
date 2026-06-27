@@ -138,16 +138,17 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false, isGO = fals
         fetchDeckList();
     }, [tournamentId, playerId]);
 
-    // Build a lookup map from DB card data: "name|set_code|card_number" → secondary_category
+    // Build a lookup map from DB card data: name → secondary_category
+    // We key by name only (not set+number) because the DB may resolve a
+    // different printing via equivalency groups than what appears in raw text.
     const secondaryCategoryMap = useMemo(() => {
         const map = new Map<string, string>();
         if (!deckListData?.deck_list_cards) return map;
         for (const dlc of deckListData.deck_list_cards) {
             const card = dlc.cards;
             if (!card) continue;
-            const setCode = card.sets?.code || '';
-            const key = `${(card.name || '').toLowerCase()}|${setCode.toLowerCase()}|${card.card_number}`;
-            if (card.secondary_category) {
+            const key = (card.name || '').toLowerCase();
+            if (card.secondary_category && !map.has(key)) {
                 map.set(key, card.secondary_category);
             }
         }
@@ -157,8 +158,7 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false, isGO = fals
     // Enrich parsed cards with secondaryCategory from DB lookup
     const enrichCards = (cards: ParsedCard[]): ParsedCard[] => {
         return cards.map(card => {
-            const key = `${card.name.toLowerCase()}|${card.set.toLowerCase()}|${card.number}`;
-            const secondaryCategory = secondaryCategoryMap.get(key);
+            const secondaryCategory = secondaryCategoryMap.get(card.name.toLowerCase());
             return secondaryCategory ? { ...card, secondaryCategory } : card;
         });
     };

@@ -166,6 +166,74 @@ class TestScoreGroupPairing:
         assert {"P001", "P002"} in pairs
         assert {"P003", "P004"} in pairs
 
+    def test_no_cross_group_when_intra_group_available(self):
+        """Regression: 2-0-0 player must NOT be paired with 0-0-2 player
+        when same-group pairings are available.
+
+        Reproduces the DG Champions Round 3 Table 3 bug where the old
+        linear weight scheme (1000 - diff*100) allowed the Blossom global
+        optimizer to pair a 6pt player with a 2pt player.
+        """
+        # Simulate the actual tournament state entering Round 3:
+        # 5 players at 6pts (2-0-0), 4 at 4pts (1-0-1), 6 at 3pts (1-1-0),
+        # 2 at 2pts (0-0-2), 4 at 1pts (0-1-1), 4 at 0pts (0-2-0), 3 at 0pts
+        # Simplified: just the key groups that trigger the bug
+        players = [
+            # 6-point group (5 players — odd, so 1 must float)
+            PlayerInput(id="A1", match_points=6, opponents=["X1"]),
+            PlayerInput(id="A2", match_points=6, opponents=["X2"]),
+            PlayerInput(id="A3", match_points=6, opponents=["X3"]),
+            PlayerInput(id="A4", match_points=6, opponents=["X4"]),
+            PlayerInput(id="A5", match_points=6, opponents=["X5"]),
+            # 4-point group (4 players)
+            PlayerInput(id="B1", match_points=4, opponents=["Y1"]),
+            PlayerInput(id="B2", match_points=4, opponents=["Y2"]),
+            PlayerInput(id="B3", match_points=4, opponents=["Y3"]),
+            PlayerInput(id="B4", match_points=4, opponents=["Y4"]),
+            # 3-point group (8 players)
+            PlayerInput(id="C1", match_points=3, opponents=["Z1"]),
+            PlayerInput(id="C2", match_points=3, opponents=["Z2"]),
+            PlayerInput(id="C3", match_points=3, opponents=["Z3"]),
+            PlayerInput(id="C4", match_points=3, opponents=["Z4"]),
+            PlayerInput(id="C5", match_points=3, opponents=["Z5"]),
+            PlayerInput(id="C6", match_points=3, opponents=["Z6"]),
+            PlayerInput(id="C7", match_points=3, opponents=["Z7"]),
+            PlayerInput(id="C8", match_points=3, opponents=["Z8"]),
+            # 2-point group (2 players)
+            PlayerInput(id="D1", match_points=2, opponents=["W1"]),
+            PlayerInput(id="D2", match_points=2, opponents=["W2"]),
+            # 0-point group (8 players)
+            PlayerInput(id="E1", match_points=0, opponents=["V1"]),
+            PlayerInput(id="E2", match_points=0, opponents=["V2"]),
+            PlayerInput(id="E3", match_points=0, opponents=["V3"]),
+            PlayerInput(id="E4", match_points=0, opponents=["V4"]),
+            PlayerInput(id="E5", match_points=0, opponents=["V5"]),
+            PlayerInput(id="E6", match_points=0, opponents=["V6"]),
+            PlayerInput(id="E7", match_points=0, opponents=["V7"]),
+            PlayerInput(id="E8", match_points=0, opponents=["V8"]),
+        ]
+        req = PairingRequest(players=players)
+        pairings, bye = generate_pairings(req)
+
+        pairs = [{p.p1, p.p2} for p in pairings]
+
+        # With 5 players in the 6pt group, exactly 2 pairs should be
+        # within the group. The 5th player floats down.
+        six_pt_ids = {"A1", "A2", "A3", "A4", "A5"}
+        intra_six_pairs = [p for p in pairs if p.issubset(six_pt_ids)]
+        assert len(intra_six_pairs) == 2, (
+            f"Expected 2 intra-6pt-group pairs, got {len(intra_six_pairs)}: {intra_six_pairs}"
+        )
+
+        # No 6pt player should be paired with a 2pt or 0pt player
+        low_pt_ids = {"D1", "D2", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"}
+        for pair in pairs:
+            cross = pair & six_pt_ids
+            low = pair & low_pt_ids
+            assert not (cross and low), (
+                f"6pt player paired with low-point player: {pair}"
+            )
+
 
 class TestDroppedPlayers:
     """Dropped players should be excluded from pairings."""
