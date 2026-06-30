@@ -1,5 +1,7 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -21,9 +23,10 @@ import { getListLabel } from "@/lib/utils";
 interface TournamentSettingsFormProps {
     tournament: Tournament;
     isAdmin?: boolean;
+    readOnly?: boolean;
 }
 
-export function TournamentSettingsForm({ tournament, isAdmin = false }: TournamentSettingsFormProps) {
+export function TournamentSettingsForm({ tournament, isAdmin = false, readOnly = false }: TournamentSettingsFormProps) {
     // === State: General ===
     const [tournamentMode, setTournamentMode] = useState(tournament.tournament_mode || "LEAGUECHALLENGE");
     const [tomUid, setTomUid] = useState(tournament.tom_uid || "");
@@ -246,14 +249,23 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Tournament Configuration</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle>Tournament Configuration</CardTitle>
+                    {readOnly && (
+                        <Badge variant="secondary" className="text-xs">
+                            Read Only
+                        </Badge>
+                    )}
+                </div>
                 <CardDescription>
-                    Configure tournament settings including start time and deck submission deadlines.
+                    {readOnly
+                        ? "Tournament is active. Settings are displayed in read-only mode."
+                        : "Configure tournament settings including start time and deck submission deadlines."}
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
                 <CardContent>
-                    <Tabs defaultValue="registration" className="w-full">
+                    <Tabs defaultValue="general" className="w-full">
                         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
                             <TabsTrigger value="general" className="gap-1.5 text-xs">
                                 <Settings className="h-3.5 w-3.5" />
@@ -281,7 +293,7 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                             </TabsTrigger>
                         </TabsList>
 
-                        <div className="mt-6">
+                        <div className={`mt-6${readOnly ? " opacity-70 pointer-events-none" : ""}`}>
                             <TabsContent value="general" className="mt-0">
                                 <GeneralPanel
                                     tournamentMode={tournamentMode} setTournamentMode={setTournamentMode}
@@ -370,12 +382,14 @@ export function TournamentSettingsForm({ tournament, isAdmin = false }: Tourname
                         </div>
                     </Tabs>
                 </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Settings
-                    </Button>
-                </CardFooter>
+                {!readOnly && (
+                    <CardFooter className="border-t px-6 py-4">
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Settings
+                        </Button>
+                    </CardFooter>
+                )}
             </form>
         </Card>
     );

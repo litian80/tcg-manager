@@ -36,7 +36,7 @@ export default async function ProfilePage() {
     const application = await getMyOrganiserApplication();
 
     return (
-        <div className="container py-10">
+        <div className="container mx-auto py-10">
             <ProfileForm profile={profile as Profile} />
             <OrganiserApplicationCard
                 application={application}

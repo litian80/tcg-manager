@@ -23,7 +23,7 @@ export default async function AdminUsersPage() {
     }
 
     return (
-        <div className="container py-10 space-y-8">
+        <div className="container mx-auto py-10 space-y-8">
             <div className="flex flex-col space-y-2">
                 <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
                 <p className="text-muted-foreground">

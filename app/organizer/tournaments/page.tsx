@@ -30,7 +30,7 @@ export default async function OrganizerTournamentsListPage() {
     }
 
     return (
-        <div className="container max-w-4xl py-8 space-y-8">
+        <div className="container max-w-4xl mx-auto py-8 space-y-8">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Tournament Management</h1>

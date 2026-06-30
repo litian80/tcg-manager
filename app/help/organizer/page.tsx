@@ -277,7 +277,7 @@ function ChineseManual() {
 
 export default function OrganizerHelpPage() {
    return (
-      <div className="container max-w-4xl py-8 space-y-8">
+      <div className="container max-w-4xl mx-auto py-8 space-y-8">
          <div className="flex items-center gap-4">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
                <ArrowLeft className="w-5 h-5" />

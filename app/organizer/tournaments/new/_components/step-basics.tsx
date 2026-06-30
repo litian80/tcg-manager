@@ -21,13 +21,14 @@ export interface StepBasicsData {
 interface StepBasicsProps {
     data: StepBasicsData;
     onChange: (data: StepBasicsData) => void;
+    onModeChange?: (mode: string) => void;
     onNext: () => void;
     userPopId: string;
     isAdmin: boolean;
     errors: Record<string, string>;
 }
 
-export function StepBasics({ data, onChange, onNext, userPopId, isAdmin, errors }: StepBasicsProps) {
+export function StepBasics({ data, onChange, onModeChange, onNext, userPopId, isAdmin, errors }: StepBasicsProps) {
     const update = (field: keyof StepBasicsData, value: string) => {
         onChange({ ...data, [field]: value });
     };
@@ -45,7 +46,10 @@ export function StepBasics({ data, onChange, onNext, userPopId, isAdmin, errors 
                     <Label htmlFor="tournament_mode">Tournament Type</Label>
                     <Select
                         value={data.tournamentMode}
-                        onValueChange={(v) => update("tournamentMode", v)}
+                        onValueChange={(v) => {
+                            update("tournamentMode", v);
+                            onModeChange?.(v);
+                        }}
                     >
                         <SelectTrigger>
                             <SelectValue placeholder="Select tournament type" />

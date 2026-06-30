@@ -19,7 +19,7 @@ export default async function JudgeDashboardPage() {
     const pastEvents = tournaments.filter(t => t.date < todayDateOnly);
 
     return (
-        <div className="container max-w-4xl py-8 space-y-10">
+        <div className="container max-w-4xl mx-auto py-8 space-y-10">
             <div className="space-y-1">
                 <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                     <Gavel className="h-6 w-6 text-primary" />

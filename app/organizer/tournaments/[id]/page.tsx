@@ -220,7 +220,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
     };
 
     return (
-        <div className="container max-w-7xl py-8 space-y-6">
+        <div className="container max-w-7xl mx-auto py-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -296,9 +296,7 @@ export default async function OrganizerTournamentPage({ params }: { params: Prom
 
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div className="space-y-6">
-                                    <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
-                                        <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} />
-                                    </div>
+                                    <TournamentSettingsForm tournament={tournament} isAdmin={profile.role === 'admin'} readOnly={isActive || isCancelled} />
 
                                     <div className={(isActive || isCancelled) ? "opacity-50 pointer-events-none grayscale" : ""}>
                                         <RosterManager tournamentId={tournament.id} currentRoster={currentRoster} requiresDeckList={!!tournament.requires_deck_list} listLabel={listLabel} />

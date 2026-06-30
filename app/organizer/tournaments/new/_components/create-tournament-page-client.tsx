@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { TemplateSelector } from "./template-selector";
 import { WizardSteps, getReviewStep, getAdvancedStep } from "./wizard-steps";
 import { StepBasics, type StepBasicsData } from "./step-basics";
 import { StepRegistration, type StepRegistrationData } from "./step-registration";
 import { StepAdvanced, type StepAdvancedData } from "./step-advanced";
 import { StepReview } from "./step-review";
-import type { TemplateOption, TemplateId, TournamentFormDefaults } from "@/lib/tournament-templates";
-import { getSeasonCutoffs } from "@/lib/tournament-templates";
+import type { TournamentFormDefaults } from "@/lib/tournament-templates";
+import { getSeasonCutoffs, getSystemDefaults } from "@/lib/tournament-templates";
 import { toast } from "sonner";
 
 interface CreateTournamentPageClientProps {
@@ -16,6 +15,18 @@ interface CreateTournamentPageClientProps {
     userPopId: string;
     savedTemplates: Record<string, Partial<TournamentFormDefaults>>;
     duplicateDefaults: (TournamentFormDefaults & { name: string; date: string }) | null;
+}
+
+/**
+ * Returns system defaults for a mode, merged with any saved organiser overrides.
+ */
+function getEffectiveDefaults(
+    mode: string,
+    savedTemplates: Record<string, Partial<TournamentFormDefaults>>
+): TournamentFormDefaults {
+    const systemDefaults = getSystemDefaults(mode);
+    const saved = savedTemplates[mode];
+    return saved ? { ...systemDefaults, ...saved } : systemDefaults;
 }
 
 /**
@@ -44,15 +55,17 @@ export function CreateTournamentPageClient({
     // Wizard step + advanced toggle state
     const [currentStep, setCurrentStep] = useState(1);
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(null);
-    const [showWizard, setShowWizard] = useState(!!duplicateDefaults);
     const [basicsErrors, setBasicsErrors] = useState<Record<string, string>>({});
 
     // Computed step IDs
     const reviewStep = getReviewStep(showAdvanced);
     const advancedStep = getAdvancedStep();
 
-    // --- Build initial state from defaults (template or duplicate) ---
+    // --- Build initial defaults ---
+    const initialMode = duplicateDefaults?.tournament_mode || 'LEAGUECHALLENGE';
+    const initialDefaults = duplicateDefaults || getEffectiveDefaults(initialMode, savedTemplates);
+
+    // --- Build state from defaults ---
     const buildBasicsFromDefaults = useCallback(
         (defaults?: TournamentFormDefaults | null, dupName?: string): StepBasicsData => ({
             tournamentMode: defaults?.tournament_mode || "LEAGUECHALLENGE",
@@ -111,24 +124,29 @@ export function CreateTournamentPageClient({
 
     // Form state for each step
     const [basics, setBasics] = useState<StepBasicsData>(
-        buildBasicsFromDefaults(duplicateDefaults, suggestedName)
+        buildBasicsFromDefaults(initialDefaults, suggestedName)
     );
     const [registration, setRegistration] = useState<StepRegistrationData>(
-        buildRegistrationFromDefaults(duplicateDefaults)
+        buildRegistrationFromDefaults(initialDefaults)
     );
     const [advanced, setAdvanced] = useState<StepAdvancedData>(defaultAdvanced);
 
-    // --- Template selection handler ---
-    const handleTemplateSelect = (template: TemplateOption) => {
-        setSelectedTemplate(template.id);
-        setBasics(buildBasicsFromDefaults(template.defaults));
-        setRegistration(buildRegistrationFromDefaults(template.defaults));
+    // --- Tournament Type change handler ---
+    // When the user changes Tournament Type in Step Basics, reload defaults
+    const handleModeChange = useCallback((newMode: string) => {
+        const effective = getEffectiveDefaults(newMode, savedTemplates);
+        // Update basics fields that come from the template (preserve user-entered name, date, etc.)
+        setBasics(prev => ({
+            ...prev,
+            startTime: effective.start_time || prev.startTime,
+            city: effective.city || prev.city,
+            country: effective.country || prev.country,
+        }));
+        setRegistration(buildRegistrationFromDefaults(effective));
         setAdvanced(defaultAdvanced);
-        setCurrentStep(1);
         setShowAdvanced(false);
         setBasicsErrors({});
-        setShowWizard(true);
-    };
+    }, [savedTemplates, buildRegistrationFromDefaults, defaultAdvanced]);
 
     // --- Step navigation ---
     const goToStep = (step: number) => {
@@ -167,70 +185,57 @@ export function CreateTournamentPageClient({
 
     return (
         <div className="space-y-6">
-            {/* Template selector — only when NOT duplicating */}
-            {!duplicateDefaults && (
-                <TemplateSelector
-                    selected={selectedTemplate}
-                    onSelect={handleTemplateSelect}
-                    savedTemplates={savedTemplates}
+            <WizardSteps
+                currentStep={currentStep}
+                showAdvanced={showAdvanced}
+                onStepClick={(step) => {
+                    if (step < currentStep) goToStep(step);
+                }}
+            />
+
+            {currentStep === 1 && (
+                <StepBasics
+                    data={basics}
+                    onChange={setBasics}
+                    onNext={handleNextFromBasics}
+                    onModeChange={handleModeChange}
+                    userPopId={userPopId}
+                    isAdmin={isAdmin}
+                    errors={basicsErrors}
                 />
             )}
 
-            {/* Wizard — shown once a template is selected or duplicating */}
-            {showWizard && (
-                <>
-                    <WizardSteps
-                        currentStep={currentStep}
-                        showAdvanced={showAdvanced}
-                        onStepClick={(step) => {
-                            if (step < currentStep) goToStep(step);
-                        }}
-                    />
+            {currentStep === 2 && (
+                <StepRegistration
+                    data={registration}
+                    onChange={setRegistration}
+                    onNext={handleNextFromRegistration}
+                    onBack={() => goToStep(1)}
+                    showAdvanced={showAdvanced}
+                    onToggleAdvanced={handleToggleAdvanced}
+                    tournamentMode={basics.tournamentMode}
+                />
+            )}
 
-                    {currentStep === 1 && (
-                        <StepBasics
-                            data={basics}
-                            onChange={setBasics}
-                            onNext={handleNextFromBasics}
-                            userPopId={userPopId}
-                            isAdmin={isAdmin}
-                            errors={basicsErrors}
-                        />
-                    )}
+            {showAdvanced && currentStep === advancedStep && (
+                <StepAdvanced
+                    data={advanced}
+                    onChange={setAdvanced}
+                    onNext={handleNextFromAdvanced}
+                    onBack={() => goToStep(2)}
+                />
+            )}
 
-                    {currentStep === 2 && (
-                        <StepRegistration
-                            data={registration}
-                            onChange={setRegistration}
-                            onNext={handleNextFromRegistration}
-                            onBack={() => goToStep(1)}
-                            showAdvanced={showAdvanced}
-                            onToggleAdvanced={handleToggleAdvanced}
-                            tournamentMode={basics.tournamentMode}
-                        />
-                    )}
-
-                    {showAdvanced && currentStep === advancedStep && (
-                        <StepAdvanced
-                            data={advanced}
-                            onChange={setAdvanced}
-                            onNext={handleNextFromAdvanced}
-                            onBack={() => goToStep(2)}
-                        />
-                    )}
-
-                    {currentStep === reviewStep && (
-                        <StepReview
-                            basics={basics}
-                            registration={registration}
-                            advanced={advanced}
-                            showAdvanced={showAdvanced}
-                            onBack={() => goToStep(showAdvanced ? advancedStep : 2)}
-                            onEditStep={goToStep}
-                            advancedStepId={advancedStep}
-                        />
-                    )}
-                </>
+            {currentStep === reviewStep && (
+                <StepReview
+                    basics={basics}
+                    registration={registration}
+                    advanced={advanced}
+                    showAdvanced={showAdvanced}
+                    onBack={() => goToStep(showAdvanced ? advancedStep : 2)}
+                    onEditStep={goToStep}
+                    advancedStepId={advancedStep}
+                />
             )}
         </div>
     );

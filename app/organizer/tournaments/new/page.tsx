@@ -59,7 +59,7 @@ export default async function NewTournamentPage({ searchParams }: Props) {
     }
 
     return (
-        <div className="container max-w-lg py-8 space-y-6">
+        <div className="container max-w-lg mx-auto py-8 space-y-6">
             <div className="flex items-center gap-4">
                 <Link href="/organizer/tournaments" className="text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="w-5 h-5" />
@@ -69,7 +69,7 @@ export default async function NewTournamentPage({ searchParams }: Props) {
                     <p className="text-muted-foreground">
                         {duplicateDefaults
                             ? "Duplicating from an existing tournament."
-                            : "Choose a template or start from scratch."
+                            : "Fill in the details for your new event."
                         }
                     </p>
                 </div>
