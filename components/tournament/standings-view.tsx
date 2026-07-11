@@ -90,9 +90,9 @@ export function StandingsView({ tournamentId, myPlayerId }: StandingsViewProps) 
 
     // Group by Division (null divisions default to Master)
     const divisions = {
-        Junior: standings.filter(s => s.division === 'Junior'),
-        Senior: standings.filter(s => s.division === 'Senior'),
-        Master: standings.filter(s => s.division === 'Master' || !s.division),
+        Junior: standings.filter(s => s.division?.toLowerCase() === 'junior'),
+        Senior: standings.filter(s => s.division?.toLowerCase() === 'senior'),
+        Master: standings.filter(s => s.division?.toLowerCase() === 'master' || !s.division),
     };
 
     const hasJuniors = divisions.Junior.length > 0;
