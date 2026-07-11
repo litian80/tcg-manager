@@ -6,7 +6,7 @@
  *
  * Edge Weight Scheme:
  *   Same score group:     BASE = 1000
- *   Cross score group:    BASE = 1000 - |point_diff| × 100
+ *   Cross score group:    BASE = 1000 - |point_diff|² × 10  (quadratic penalty)
  *   Previous opponents:   Edge REMOVED entirely
  *   Bye Dummy Node:       weight = rank_order × 100 + 1 (lower ranked → higher weight)
  *                          Edge removed if player already had a bye
@@ -78,7 +78,10 @@ function buildOpponentSets(
 function computeEdgeWeight(p1: PlayerInput, p2: PlayerInput): number {
   const pointDiff = Math.abs(p1.matchPoints - p2.matchPoints);
   if (pointDiff === 0) return 1000;
-  return Math.max(1, 1000 - pointDiff * 100);
+  // Quadratic penalty: big gaps cost disproportionately more than small ones.
+  // This prevents Blossom from choosing one large gap (e.g. 4-0 vs 1-3)
+  // when multiple small floats (e.g. 3× one-bracket floats) yield the same total.
+  return Math.max(1, 1000 - pointDiff * pointDiff * 10);
 }
 
 // --- Main Function ---
