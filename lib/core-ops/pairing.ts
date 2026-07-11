@@ -8,7 +8,7 @@
  *   Same score group:     BASE = 1000
  *   Cross score group:    BASE = 1000 - |point_diff| × 100
  *   Previous opponents:   Edge REMOVED entirely
- *   Bye Dummy Node:       weight = rank_order (lower ranked → higher weight)
+ *   Bye Dummy Node:       weight = rank_order × 100 + 1 (lower ranked → higher weight)
  *                          Edge removed if player already had a bye
  */
 
@@ -153,7 +153,7 @@ export function generatePairings(
     for (const p of activePlayers) {
       if (p.hasBye) continue; // Player already had a bye
       // Lower-ranked players get higher weight for bye
-      const byeWeight = (playerRank.get(p.id) ?? 0) + 1;
+      const byeWeight = (playerRank.get(p.id) ?? 0) * 100 + 1;
       edges.push([idToIndex.get(p.id)!, byeIdx, byeWeight]);
     }
   }
