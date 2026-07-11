@@ -274,13 +274,14 @@ export function parseDeckList(deckText: string): DeckParseResult {
 }
 
 /**
- * Merge duplicate ParsedCard entries (same name + set + number) by summing quantities.
- * Used by display components to consolidate identical lines like "1 Duskull PRE 35" × 2 → "2 Duskull PRE 35".
+ * Merge duplicate ParsedCard entries by summing quantities.
+ * - Default: merges by name + set + number (for Pokémon — different printings are distinct cards).
+ * - `byNameOnly`: merges by name only (for Trainers/Energy — same card name = same card regardless of printing).
  */
-export function mergeCards(cards: ParsedCard[]): ParsedCard[] {
+export function mergeCards(cards: ParsedCard[], byNameOnly = false): ParsedCard[] {
     const map = new Map<string, ParsedCard>();
     for (const card of cards) {
-        const key = `${card.name}|${card.set}|${card.number}`;
+        const key = byNameOnly ? card.name.toLowerCase() : `${card.name}|${card.set}|${card.number}`;
         const existing = map.get(key);
         if (existing) {
             existing.qty += card.qty;

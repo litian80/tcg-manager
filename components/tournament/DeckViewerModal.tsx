@@ -40,11 +40,11 @@ export function DeckViewerModal({
     [parsed]
   );
   const trainerCards = useMemo(
-    () => sortCards(mergeCards(parsed?.Trainer || []), "trainer"),
+    () => sortCards(mergeCards(parsed?.Trainer || [], true), "trainer"),
     [parsed]
   );
   const energyCards = useMemo(
-    () => sortCards(mergeCards(parsed?.Energy || []), "energy"),
+    () => sortCards(mergeCards(parsed?.Energy || [], true), "energy"),
     [parsed]
   );
 

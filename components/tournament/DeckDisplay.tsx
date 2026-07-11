@@ -138,21 +138,25 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false, isGO = fals
         fetchDeckList();
     }, [tournamentId, playerId]);
 
-    // Build a lookup map from DB card data: name → secondary_category
+    // Build lookup maps from DB card data: name → category
     // We key by name only (not set+number) because the DB may resolve a
     // different printing via equivalency groups than what appears in raw text.
-    const secondaryCategoryMap = useMemo(() => {
-        const map = new Map<string, string>();
-        if (!deckListData?.deck_list_cards) return map;
+    const { secondaryCategoryMap, primaryCategoryMap } = useMemo(() => {
+        const secMap = new Map<string, string>();
+        const priMap = new Map<string, string>();
+        if (!deckListData?.deck_list_cards) return { secondaryCategoryMap: secMap, primaryCategoryMap: priMap };
         for (const dlc of deckListData.deck_list_cards) {
             const card = dlc.cards;
             if (!card) continue;
             const key = (card.name || '').toLowerCase();
-            if (card.secondary_category && !map.has(key)) {
-                map.set(key, card.secondary_category);
+            if (card.secondary_category && !secMap.has(key)) {
+                secMap.set(key, card.secondary_category);
+            }
+            if (card.primary_category && !priMap.has(key)) {
+                priMap.set(key, card.primary_category);
             }
         }
-        return map;
+        return { secondaryCategoryMap: secMap, primaryCategoryMap: priMap };
     }, [deckListData]);
 
     // Enrich parsed cards with secondaryCategory from DB lookup
@@ -348,10 +352,39 @@ export function DeckDisplay({ tournamentId, playerId, isVGC = false, isGO = fals
 
     const parsed = parseDeckList(deckListData.raw_text);
 
+    // Detect header-less decklists: if all non-energy cards landed in Pokemon
+    // (i.e. Trainer bucket is empty but Pokemon has many cards), re-categorize
+    // using the DB primary_category data.
+    const isHeaderless = (parsed.Trainer || []).length === 0 && (parsed.Pokemon || []).length > 0;
+
+    let pokemonRaw = parsed.Pokemon || [];
+    let trainerRaw = parsed.Trainer || [];
+    let energyRaw = parsed.Energy || [];
+
+    if (isHeaderless && primaryCategoryMap.size > 0) {
+        const reclassified: { pokemon: ParsedCard[]; trainer: ParsedCard[]; energy: ParsedCard[] } = {
+            pokemon: [], trainer: [], energy: []
+        };
+        for (const card of pokemonRaw) {
+            const dbCategory = primaryCategoryMap.get(card.name.toLowerCase());
+            if (dbCategory === 'Trainer') {
+                reclassified.trainer.push({ ...card, category: 'trainer' });
+            } else if (dbCategory === 'Energy') {
+                reclassified.energy.push({ ...card, category: 'energy' });
+            } else {
+                // Pokemon or unknown — keep in pokemon
+                reclassified.pokemon.push(card);
+            }
+        }
+        pokemonRaw = reclassified.pokemon;
+        trainerRaw = reclassified.trainer;
+        energyRaw = [...energyRaw, ...reclassified.energy];
+    }
+
     // Merge → Enrich with DB sub-types → Sort
-    const pokemonCards = sortCards(enrichCards(mergeCards(parsed.Pokemon || [])), 'pokemon');
-    const trainerCards = sortCards(enrichCards(mergeCards(parsed.Trainer || [])), 'trainer');
-    const energyCards = sortCards(enrichCards(mergeCards(parsed.Energy || [])), 'energy');
+    const pokemonCards = sortCards(enrichCards(mergeCards(pokemonRaw)), 'pokemon');
+    const trainerCards = sortCards(enrichCards(mergeCards(trainerRaw, true)), 'trainer');
+    const energyCards = sortCards(enrichCards(mergeCards(energyRaw, true)), 'energy');
 
     return (
         <div className="space-y-3">

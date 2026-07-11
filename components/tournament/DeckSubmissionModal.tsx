@@ -527,8 +527,8 @@ export function DeckSubmissionModal({
                             </Badge>
                           </div>
                           <CategorySection title="Pokémon" cards={sortCards(mergeCards(parsedDeck.Pokemon || []), 'pokemon')} color="border-l-[3px] border-l-green-500" />
-                          <CategorySection title="Trainer" cards={sortCards(mergeCards(parsedDeck.Trainer || []), 'trainer')} color="border-l-[3px] border-l-blue-500" />
-                          <CategorySection title="Energy" cards={sortCards(mergeCards(parsedDeck.Energy || []), 'energy')} color="border-l-[3px] border-l-amber-500" />
+                          <CategorySection title="Trainer" cards={sortCards(mergeCards(parsedDeck.Trainer || [], true), 'trainer')} color="border-l-[3px] border-l-blue-500" />
+                          <CategorySection title="Energy" cards={sortCards(mergeCards(parsedDeck.Energy || [], true), 'energy')} color="border-l-[3px] border-l-amber-500" />
                         </div>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">

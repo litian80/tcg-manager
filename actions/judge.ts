@@ -417,7 +417,7 @@ export async function getPlayerDeckList(tournamentId: string, playerId: string) 
             deck_list_cards(
                 card_id,
                 quantity,
-                cards(name, card_number, set_id, secondary_category, sets(code))
+                cards(name, card_number, set_id, primary_category, secondary_category, sets(code))
             )
         `)
         .eq("tournament_id", tournamentId)
