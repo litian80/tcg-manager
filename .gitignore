@@ -43,6 +43,7 @@ next-env.d.ts
 # python
 __pycache__/
 *.pyc
+/core-ops-service/
 
 # generated reports
 /tools/

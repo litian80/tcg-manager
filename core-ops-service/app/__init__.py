@@ -1,1 +1,0 @@
-# Core Ops Pairing Service
