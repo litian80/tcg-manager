@@ -84,6 +84,32 @@ describe("Bye Handling", () => {
     expect(pairings).toHaveLength(1);
     expect(byePlayer).toBeNull();
   });
+
+  it("gives bye to lowest-ranked when bottom group has multiple players", () => {
+    // 3 players: P1=6pts, P2=0pts, P3=0pts
+    // Bug: old formula gave bye to P1 (highest) because pairing P2-P3 (weight 1000)
+    // was more attractive than P1-P2 or P1-P3 (weight 640)
+    const players = makePlayers(3, [6, 0, 0]);
+    const { byePlayer } = generatePairings(players);
+    expect(byePlayer).not.toBe("P001"); // Must NOT be the top player
+    expect(["P002", "P003"]).toContain(byePlayer);
+  });
+
+  it("gives bye to lowest-ranked with large point gap", () => {
+    // 5 players: P1=9pts, P2-P5=0pts
+    // Bug: old formula gave bye to P1 because removing them let all 0-pointers pair perfectly
+    const players = makePlayers(5, [9, 0, 0, 0, 0]);
+    const { byePlayer } = generatePairings(players);
+    expect(byePlayer).not.toBe("P001");
+    expect(["P004", "P005"]).toContain(byePlayer); // Should be one of the lowest ranked
+  });
+
+  it("gives bye to lowest-ranked in realistic mid-tournament", () => {
+    // 7 players with realistic spread: 3 at 9pts, 2 at 3pts, 2 at 0pts
+    const players = makePlayers(7, [9, 9, 9, 3, 3, 0, 0]);
+    const { byePlayer } = generatePairings(players);
+    expect(["P006", "P007"]).toContain(byePlayer); // Must be from the 0-point group
+  });
 });
 
 describe("Rematch Prevention", () => {

@@ -153,10 +153,15 @@ export function generatePairings(
   // Add bye edges
   if (needsBye && config.allowByes) {
     const byeIdx = idToIndex.get(BYE_SENTINEL)!;
+    // Scale bye weight so the lowest-ranked player's preference always
+    // dominates over any possible improvement in player-player pairing.
+    // Gap of N × 1000 per rank ensures bye assignment is unbreakable:
+    // max pairing improvement ≤ (N/2) × 999 < N × 1000 = one rank gap.
+    const BYE_WEIGHT_BASE = activePlayers.length * 1000;
     for (const p of activePlayers) {
       if (p.hasBye) continue; // Player already had a bye
       // Lower-ranked players get higher weight for bye
-      const byeWeight = (playerRank.get(p.id) ?? 0) * 100 + 1;
+      const byeWeight = (playerRank.get(p.id) ?? 0) * BYE_WEIGHT_BASE + 1;
       edges.push([idToIndex.get(p.id)!, byeIdx, byeWeight]);
     }
   }
