@@ -4,10 +4,10 @@ A modern tournament management companion app for Pokémon TCG events. Built with
 
 ## What It Does
 
-BracketOps serves as a **live visibility layer** and **roster management tool** that works alongside the official Tournament Operations Manager (TOM) software:
+BracketOps serves as both a **standalone tournament engine** and a **live visibility layer** that works alongside the official Tournament Operations Manager (TOM) software:
 
 - **Pre-Tournament**: Player registration, roster building, deck list submission, TDF file generation
-- **During Tournament**: Live pairings, standings (auto-synced from TOM), penalty tracking, deck checks
+- **During Tournament**: Live Swiss pairings (via built-in Blossom algorithm engine or synced from TOM), tiebreaker standings, single-elimination top cut brackets, penalty tracking, deck checks
 - **Post-Tournament**: Penalty export, tournament history
 
 ## Roles
@@ -57,6 +57,7 @@ components/     → React components (grouped by feature)
   ├── admin/
   └── ...
 lib/            → Auth, RBAC, types, utilities
+  ├── core-ops/ → Built-in Swiss pairing engine (Blossom algorithm), tiebreakers, brackets
 hooks/          → Custom React hooks
 utils/supabase/ → Supabase client factories & types
 supabase/       → Migrations & local dev config
