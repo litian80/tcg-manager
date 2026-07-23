@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { invalidatePublicListings } from "@/lib/cache-invalidation";
+import { assertSafeOutboundUrl } from "@/utils/url-safety";
 
 export async function createTournament(formData: FormData) {
     const supabase = await createClient();
@@ -97,6 +98,16 @@ export async function createTournament(formData: FormData) {
     // Validate deck submission cutoff
     if (deck_submission_cutoff_hours < 0 || deck_submission_cutoff_hours > 48) {
         return { error: "Deck submission cutoff must be between 0 and 48 hours." };
+    }
+
+    // SSRF guard: reject notification webhook URLs pointing at internal/reserved
+    // hosts before anything is persisted. The authoritative check runs again at
+    // dispatch time (utils/webhooks.ts); this is early, friendlier feedback.
+    if (notification_webhook_url) {
+        const safety = await assertSafeOutboundUrl(notification_webhook_url);
+        if (!safety.safe) {
+            return { error: `Notification webhook URL is not allowed: ${safety.reason}` };
+        }
     }
 
 

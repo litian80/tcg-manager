@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto';
+import { assertSafeOutboundUrl } from './url-safety';
 
 /**
  * Supported outbound notification webhook event types.
@@ -36,6 +37,14 @@ export async function dispatchWebhook(
   payload: Record<string, unknown>
 ): Promise<WebhookResult> {
   try {
+    // SSRF guard: never dispatch to internal/reserved hosts. Enforced here so
+    // it covers every save path (server action AND the client-side upsert).
+    const safety = await assertSafeOutboundUrl(webhookUrl);
+    if (!safety.safe) {
+      console.error(`[webhook] blocked ${event} → ${webhookUrl}: ${safety.reason}`);
+      return { ok: false, error: `Blocked unsafe webhook URL: ${safety.reason}` };
+    }
+
     const id = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     const body = JSON.stringify({
