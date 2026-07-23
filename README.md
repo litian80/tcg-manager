@@ -71,3 +71,30 @@ supabase/       → Migrations & local dev config
 - **Deployment**: Vercel
 - **File Sync**: TOM ↔ Web via `.tdf` files
 
+## Hosting & Free-Tier Capacity
+
+The app is designed to stay within the **Supabase Free** and **Vercel Hobby** tiers.
+Approximate ceilings (verify current values — providers change them):
+
+| Resource | Free-tier ceiling | How the app stays under it |
+|---|---|---|
+| Supabase egress | ~5 GB/mo | Public reads (tournament/matches/roster) served from a shared anon cache (`lib/cached-queries.ts`, 5–60s TTL) → egress scales with **number of tournaments**, not viewers |
+| Supabase Realtime | 200 concurrent conns / 2M msgs/mo | Only **participants + staff** hold a Realtime socket; spectators poll a CDN-cached fingerprint (`/api/tournaments/[id]/live-version`) → scales with **players**, not audience |
+| Supabase Auth | 50k MAU | Well within reach for event-scale usage |
+| Supabase DB / Storage | 500 MB / 1 GB | Rows are KB-scale; TDF files are small XML |
+| Vercel bandwidth | ~100 GB/mo | Static assets + small JSON payloads |
+| Vercel Edge Middleware | ~1M invocations/mo | Middleware does the profile read only on protected routes; `/api` is excluded from the matcher |
+
+**Scheduling** runs on Supabase `pg_cron` (payment expiry, queue drops, deck reminders),
+**not** Vercel Cron — this avoids Hobby's "cron once per day" limit, and the 15-min
+reminder job keeps the project from the 7-day inactivity pause.
+
+**Practical capacity:** comfortably handles multiple concurrent tournaments of typical
+size (tens to low-hundreds of players) with **unlimited spectators**. The binding
+constraint is ~200 concurrent *participants + staff* (Realtime connections) summed
+across all simultaneously-live tournaments.
+
+> ⚠️ **Vercel Hobby is non-commercial only.** Because this app takes payments (Stripe)
+> and runs real events, move to **Vercel Pro** before operating it commercially.
+> (Supabase's free tier permits commercial use.)
+
