@@ -7,6 +7,8 @@ import { Match, ExtendedTournament as Tournament, RosterPlayer } from "@/types";
 import { Role } from "@/lib/rbac";
 import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
+import { SpectatorPoller } from "@/components/tournament/spectator-poller";
+import { computeLiveVersion } from "@/lib/live-version";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { calculatePlayerDivision, Division } from "@/actions/registration";
 import { isVGCGameType, isGOGameType, formatDate, formatLocation, MODE_LABELS } from "@/lib/utils";
@@ -399,9 +401,26 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // We sort them by table number globally for consistency, though round-based sort happens in view.
     const allMatches = matches.sort((a, b) => a.table_number - b.table_number);
 
+    // Audience split (free-tier cost): participants + staff keep a Realtime
+    // subscription for near-instant updates; everyone else (anonymous or
+    // logged-in non-participants) polls a tiny edge-cached fingerprint instead,
+    // which caps Realtime connection count + message volume during big events.
+    const isParticipantOrStaff = !!user && (canManageStaff || isAssignedJudge || !!myRegistrationStatus);
+    const liveVersion = computeLiveVersion(
+        matches.map((m) => ({
+            is_finished: m.is_finished,
+            round_number: m.round_number,
+            outcome: m.outcome,
+        }))
+    );
+
     return (
         <>
-            <RealtimeListener tournamentId={id} />
+            {isParticipantOrStaff ? (
+                <RealtimeListener tournamentId={id} />
+            ) : (
+                <SpectatorPoller tournamentId={id} initialVersion={liveVersion} />
+            )}
             <TournamentView
                 tomStage={tomStage}
                 tournament={{

@@ -13,6 +13,12 @@
       ]
     },
     {
+      "source": "/api/tournaments/:id/live-version",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=8, stale-while-revalidate=15" }
+      ]
+    },
+    {
       "source": "/api/tournaments/:id/download-tdf",
       "headers": [
         { "key": "Cache-Control", "value": "private, no-store" }
