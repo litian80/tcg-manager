@@ -19,12 +19,107 @@ interface MissingDeckPlayer {
   tournament_id: string;
 }
 
+// ─── SSRF guard ────────────────────────────────────────────────────────────
+// Deno-native port of utils/url-safety.ts (this runtime can't import the Node
+// module). Blocks server-initiated requests to internal/reserved hosts —
+// cloud metadata (169.254.169.254), loopback, RFC1918, etc.
+function ipv4IsPrivateOrReserved(ip: string): boolean {
+  const parts = ip.split('.').map((p) => Number(p));
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return true;
+  const [a, b, c] = parts;
+  if (a === 0) return true; // 0.0.0.0/8
+  if (a === 10) return true; // private
+  if (a === 127) return true; // loopback
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  if (a === 169 && b === 254) return true; // link-local incl. metadata
+  if (a === 172 && b >= 16 && b <= 31) return true; // private
+  if (a === 192 && b === 0 && c === 0) return true; // 192.0.0.0/24
+  if (a === 192 && b === 168) return true; // private
+  if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
+  if (a >= 224) return true; // multicast + reserved
+  return false;
+}
+
+function ipv6IsPrivateOrReserved(ip: string): boolean {
+  let addr = ip.toLowerCase();
+  const zone = addr.indexOf('%');
+  if (zone !== -1) addr = addr.slice(0, zone);
+  if (addr === '::1' || addr === '::') return true;
+  const mapped = addr.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (mapped) return ipv4IsPrivateOrReserved(mapped[1]);
+  const head = addr.split(':')[0];
+  if (/^fe[89ab]/.test(head)) return true; // link-local
+  if (/^f[cd]/.test(head)) return true; // unique local
+  if (/^ff/.test(head)) return true; // multicast
+  return false;
+}
+
+function isIPv4(s: string): boolean {
+  const p = s.split('.');
+  return p.length === 4 && p.every((o) => /^\d{1,3}$/.test(o) && Number(o) <= 255);
+}
+
+function ipIsPrivateOrReserved(ip: string): boolean {
+  if (isIPv4(ip)) return ipv4IsPrivateOrReserved(ip);
+  if (ip.includes(':')) return ipv6IsPrivateOrReserved(ip);
+  return true; // fail-closed
+}
+
+async function assertSafeOutboundUrl(rawUrl: string): Promise<{ safe: true } | { safe: false; reason: string }> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return { safe: false, reason: 'Invalid URL' };
+  }
+  if (url.protocol !== 'https:') return { safe: false, reason: 'URL must use HTTPS' };
+
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  if (isIPv4(host) || host.includes(':')) {
+    return ipIsPrivateOrReserved(host)
+      ? { safe: false, reason: 'private or reserved IP' }
+      : { safe: true };
+  }
+
+  const lower = host.toLowerCase();
+  if (lower === 'localhost' || lower.endsWith('.localhost')) return { safe: false, reason: 'localhost' };
+
+  // Resolve DNS when the runtime allows it; every resolved address must be public.
+  const resolveDns = (Deno as unknown as { resolveDns?: (h: string, t: string) => Promise<string[]> }).resolveDns;
+  if (typeof resolveDns === 'function') {
+    let addrs: string[] = [];
+    try {
+      const [a, aaaa] = await Promise.all([
+        resolveDns(host, 'A').catch(() => [] as string[]),
+        resolveDns(host, 'AAAA').catch(() => [] as string[]),
+      ]);
+      addrs = [...a, ...aaaa];
+    } catch {
+      return { safe: false, reason: 'host could not be resolved' };
+    }
+    if (addrs.length === 0) return { safe: false, reason: 'host did not resolve' };
+    for (const ip of addrs) {
+      if (ipIsPrivateOrReserved(ip)) return { safe: false, reason: 'host resolves to a private or reserved IP' };
+    }
+  }
+  // If DNS resolution is unavailable in this runtime we still enforced HTTPS +
+  // literal-IP + localhost checks above; HTTPS cert validation mitigates the
+  // residual DNS-rebinding vector.
+  return { safe: true };
+}
+
 async function dispatchWebhook(
   webhookUrl: string,
   secret: string,
   event: string,
   payload: Record<string, unknown>
 ): Promise<void> {
+  const safety = await assertSafeOutboundUrl(webhookUrl);
+  if (!safety.safe) {
+    console.error(`[deck-reminder] blocked ${event} → ${webhookUrl}: ${safety.reason}`);
+    return;
+  }
+
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
   const body = JSON.stringify({ id, event, timestamp, data: payload });
