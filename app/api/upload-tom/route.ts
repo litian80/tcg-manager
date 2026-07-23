@@ -22,9 +22,39 @@ export async function POST(req: NextRequest) {
         const supabase = createAdminClient();
         const supabaseAuth = await createClient();
 
+        // --- AUTH GATE (before parsing untrusted XML) ---
+        // fast-xml-parser must never run on anonymous/unauthorized input. Require a
+        // logged-in organizer or admin here; fine-grained ownership (the POP ID in
+        // the TDF must match the uploader) is enforced after parse.
+        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized: You must be logged in to upload.' }, { status: 401 });
+        }
+
+        const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, pokemon_player_id')
+            .eq('id', user.id)
+            .single();
+        if (profileError || !userProfile) {
+            return NextResponse.json({ error: 'Forbidden: User profile not found.' }, { status: 403 });
+        }
+
+        const isAdmin = userProfile.role === 'admin';
+        const isOrganizer = userProfile.role === 'organizer';
+        if (!isAdmin && !isOrganizer) {
+            return NextResponse.json({ error: 'Forbidden: Only organizers or admins can upload TOM files.' }, { status: 403 });
+        }
+
+        // --- Read + size-limit the body before parsing ---
         const xmlData = await req.text();
         if (!xmlData) {
             return NextResponse.json({ error: 'Empty body' }, { status: 400 });
+        }
+        // TDF files are small XML; cap the parser input to bound resource use.
+        const MAX_TDF_BYTES = 5_000_000;
+        if (xmlData.length > MAX_TDF_BYTES) {
+            return NextResponse.json({ error: 'File too large' }, { status: 413 });
         }
 
         const parser = new XMLParser({
@@ -97,27 +127,11 @@ export async function POST(req: NextRequest) {
             // fast-xml-parser with ignoreAttributes: false, attributeNamePrefix: '' -> attributes are properties
         }
 
-        // --- Step B: Fetch Uploader Profile & Apply Strict Guard Clauses ---
-        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized: You must be logged in to upload.' }, { status: 401 });
-        }
-
-        const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, pokemon_player_id')
-            .eq('id', user.id)
-            .single();
-
-        if (profileError || !userProfile) {
-            return NextResponse.json({ error: 'Forbidden: User profile not found.' }, { status: 403 });
-        }
-
-        const isAdmin = userProfile.role === 'admin';
-        const isOrganizer = userProfile.role === 'organizer';
+        // --- Fine-grained ownership guard ---
+        // Coarse auth (logged-in organizer/admin) was enforced above, before parsing.
+        // Now that the TDF is parsed, require the uploader to be the organizer named
+        // in the file (POP ID match) or an admin.
         const isMatchingOrganizer = isOrganizer && userProfile.pokemon_player_id === organizerPopId;
-
         if (!isAdmin && !isMatchingOrganizer) {
             return NextResponse.json({
                 error: `Upload Rejected. You must be the Organizer listed in the TDF file (PID Match: ${organizerPopId}) or an Admin to perform this action.`
@@ -193,11 +207,22 @@ export async function POST(req: NextRequest) {
         if (!existingTournament && tomUid) {
             const { data } = await supabase
                 .from('tournaments')
-                .select('id, name, game_type, tournament_mode')
+                .select('id, name, game_type, tournament_mode, organizer_popid')
                 .eq('tom_uid', tomUid)
                 .maybeSingle(); // Use maybeSingle in case there are duplicates, we grab the first.
-            
-            if (data) existingTournament = { id: data.id, currentName: data.name || undefined, currentGameType: data.game_type || undefined, currentMode: data.tournament_mode || undefined };
+
+            if (data) {
+                // SEC-009: a tom_uid match must still belong to the uploader. Otherwise an
+                // organizer could hijack another organizer's tournament by putting its
+                // Sanction ID in a TDF whose <organizer popid> is their own (which passes
+                // the ownership guard above).
+                if (!isAdmin && data.organizer_popid !== userProfile.pokemon_player_id) {
+                    return NextResponse.json({
+                        error: 'Forbidden: a tournament with this Sanction ID belongs to another organizer.'
+                    }, { status: 403 });
+                }
+                existingTournament = { id: data.id, currentName: data.name || undefined, currentGameType: data.game_type || undefined, currentMode: data.tournament_mode || undefined };
+            }
         }
 
         // Fallback 2: If no tom_uid in the file (unofficial tournament), match on Name, Date, Organizer
