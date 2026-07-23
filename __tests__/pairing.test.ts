@@ -211,3 +211,54 @@ describe("Edge Cases", () => {
     expect(() => generatePairings(players)).toThrow("at least 2 active");
   });
 });
+
+describe("Incomplete Pairing Detection", () => {
+  it("throws when partial matching leaves players unpaired", () => {
+    // 6 players: A, B, C have all played D, E, F. D, E, F have all played each other.
+    // So D, E, F have NO valid opponents left. A-B-C can form at most 1 pair (3 is odd).
+    // Blossom will pair some but leave others out — must throw, not silently drop.
+    const players: PlayerInput[] = [
+      { id: "A", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "B", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "C", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "D", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "E", "F"] },
+      { id: "E", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "D", "F"] },
+      { id: "F", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "D", "E"] },
+    ];
+    expect(() => generatePairings(players, [], { allowByes: false })).toThrow(
+      "Failed to generate a complete pairing"
+    );
+  });
+
+  it("throws for a fully isolated player and includes their ID in error", () => {
+    // P003 has already played every other active player — completely isolated.
+    const players: PlayerInput[] = [
+      { id: "P001", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["P003"] },
+      { id: "P002", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["P003"] },
+      { id: "P003", matchPoints: 0, isDropped: false, hasBye: false, opponents: ["P001", "P002", "P004"] },
+      { id: "P004", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["P003"] },
+    ];
+    expect(() => generatePairings(players, [], { allowByes: false })).toThrow("P003");
+  });
+
+  it("error message lists all uncovered player IDs", () => {
+    // D, E, F are all isolated (played everyone else). Error should list all three.
+    const players: PlayerInput[] = [
+      { id: "A", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "B", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "C", matchPoints: 6, isDropped: false, hasBye: false, opponents: ["D", "E", "F"] },
+      { id: "D", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "E", "F"] },
+      { id: "E", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "D", "F"] },
+      { id: "F", matchPoints: 3, isDropped: false, hasBye: false, opponents: ["A", "B", "C", "D", "E"] },
+    ];
+    try {
+      generatePairings(players, [], { allowByes: false });
+      expect.fail("Should have thrown");
+    } catch (e: unknown) {
+      const msg = (e as Error).message;
+      expect(msg).toContain("D");
+      expect(msg).toContain("E");
+      expect(msg).toContain("F");
+    }
+  });
+});

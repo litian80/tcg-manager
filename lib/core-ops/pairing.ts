@@ -198,6 +198,33 @@ export function generatePairings(
     }
   }
 
+  // --- Completeness validation ---
+  // Verify every active player is covered by either a pairing or the bye.
+  // This catches partial matches (blossom returns mate[i] === -1 for some
+  // players) AND the case where mate is shorter than nodeIds (completely
+  // isolated players whose high indices fall outside mate's range).
+  const coveredIds = new Set<string>();
+  for (const [a, b] of pairingPairs) {
+    coveredIds.add(a);
+    coveredIds.add(b);
+  }
+  if (byePlayer) coveredIds.add(byePlayer);
+
+  const uncoveredPlayers = activePlayers.filter((p) => !coveredIds.has(p.id));
+
+  // When byes are disabled and the player count is odd, exactly 1 player
+  // will inevitably be left out — that's an expected limitation, not a bug.
+  const expectedUncovered = needsBye && !config.allowByes ? 1 : 0;
+
+  if (uncoveredPlayers.length > expectedUncovered) {
+    const uncoveredIds = uncoveredPlayers.map((p) => p.id);
+    throw new Error(
+      `Failed to generate a complete pairing: ${uncoveredIds.length} player(s) could not be paired ` +
+        `without a rematch: [${uncoveredIds.join(", ")}]. This usually happens when the field has ` +
+        `asymmetric match histories (drops/re-adds, late entries).`
+    );
+  }
+
   // Sort pairings by combined match points descending (table 1 = highest scoring)
   pairingPairs.sort((a, b) => {
     const scoreA =
