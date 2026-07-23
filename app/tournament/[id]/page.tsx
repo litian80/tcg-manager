@@ -10,7 +10,7 @@ import { RealtimeListener } from "@/components/tournament/realtime-listener";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { calculatePlayerDivision, Division } from "@/actions/registration";
 import { isVGCGameType, isGOGameType, formatDate, formatLocation, MODE_LABELS } from "@/lib/utils";
-import { getCachedTournamentDetail } from "@/lib/cached-queries";
+import { getCachedTournamentDetail, getCachedTournamentMatchesDetailed, getCachedTournamentRosterPlayers } from "@/lib/cached-queries";
 
 interface Profile {
     role?: string;
@@ -206,54 +206,27 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         isAssignedJudge = (count ?? 0) > 0;
     }
 
-    const [matchesPromise, penaltiesPromise, deckChecksPromise] = await Promise.all([
-        supabase
-            .from("matches")
-            .select(`
-                id,
-                round_number,
-                table_number,
-                player1_tom_id,
-                player2_tom_id,
-                winner_tom_id,
-                division,
-                is_finished,
-                outcome,
-                time_extension_minutes,
-                p1_display_record,
-                p2_display_record,
-                p1_reported_result,
-                p2_reported_result,
-                player1_win,
-                tie,
-                player2_win,
-                p1:players!player1_tom_id(first_name, last_name),
-                p2:players!player2_tom_id(first_name, last_name)
-            `)
-            .eq("tournament_id", id),
+    const [matchesData, penaltiesPromise, deckChecksPromise] = await Promise.all([
+        // PERF: matches are public and re-fetched on every realtime refresh —
+        // served from a shared anon cache so concurrent viewers share one read.
+        getCachedTournamentMatchesDetailed(id),
 
-        (isAssignedJudge || canManageStaff) ? 
+        (isAssignedJudge || canManageStaff) ?
             supabase
                 .from('player_penalties')
                 .select('player_id')
-                .eq('tournament_id', id) : 
+                .eq('tournament_id', id) :
             Promise.resolve({ data: null, error: null })
-        , (isAssignedJudge || canManageStaff) ? 
+        , (isAssignedJudge || canManageStaff) ?
             supabase
                 .from('deck_checks')
                 .select('player_id, round_number')
-                .eq('tournament_id', id) : 
+                .eq('tournament_id', id) :
             Promise.resolve({ data: null, error: null })
     ]);
-    const { data: matchesData, error: matchesError } = await matchesPromise;
-
-    if (matchesError) {
-        console.error("Error fetching matches:", matchesError);
-        return <div>Error loading matches.</div>;
-    }
 
     // Cast matches to Match[]
-    const matches = matchesData as unknown as Match[];
+    const matches = (matchesData ?? []) as unknown as Match[];
 
     // Determine current round (max round number)
     const currentRound = matches.length > 0
@@ -290,19 +263,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // 3. Fetch Roster (always — needed for pre-tournament view AND the Roster tab during active play)
     let rosterPlayers: RosterPlayer[] = [];
     {
-        const { data: rosterData, error: rosterError } = await supabase
-            .from("tournament_players")
-            .select(`
-                player_id,
-                registration_status,
-                division,
-                player:players!player_id(first_name, last_name, tom_player_id)
-            `)
-            .eq("tournament_id", id);
+        // PERF: roster (tournament_players + players join) is public — served
+        // from a shared anon cache. Deck-list status is fetched below with the
+        // authenticated client (deck_lists is auth-scoped, not cacheable here).
+        const rosterData = await getCachedTournamentRosterPlayers(id);
 
-        if (rosterError) {
-            console.error("Error fetching roster:", rosterError);
-        } else if (rosterData) {
+        if (rosterData && rosterData.length > 0) {
             const [{ data: deckStatusData }, { data: teamStatusData }] = await Promise.all([
                 (tournamentRecord.requires_deck_list && !isVGC)
                     ? supabase

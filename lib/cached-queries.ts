@@ -157,6 +157,75 @@ export const getCachedTournamentRoster = maybeCached(
   { revalidate: 10 }
 );
 
+// ─── Detailed Matches (public tournament page) ─────────────────────────
+// The public tournament page re-fetches matches on every realtime refresh.
+// matches/players are anon-readable (FOR SELECT TO public), so caching here
+// collapses N concurrent viewers into one shared read per TTL window — the
+// single biggest egress lever during live events. TTL: 5s.
+export const getCachedTournamentMatchesDetailed = maybeCached(
+  async (id: string) => {
+    const supabase = getAnonSupabase();
+    const { data, error } = await supabase
+      .from('matches')
+      .select(`
+        id,
+        round_number,
+        table_number,
+        player1_tom_id,
+        player2_tom_id,
+        winner_tom_id,
+        division,
+        is_finished,
+        outcome,
+        time_extension_minutes,
+        p1_display_record,
+        p2_display_record,
+        p1_reported_result,
+        p2_reported_result,
+        player1_win,
+        tie,
+        player2_win,
+        p1:players!player1_tom_id(first_name, last_name),
+        p2:players!player2_tom_id(first_name, last_name)
+      `)
+      .eq('tournament_id', id);
+
+    if (error) {
+      console.error('[cached-queries] getCachedTournamentMatchesDetailed error:', error);
+      return [];
+    }
+    return data ?? [];
+  },
+  ['tournament-matches-detailed'],
+  { revalidate: 5 }
+);
+
+// ─── Roster with player join (public tournament page) ──────────────────
+// tournament_players + players are anon-readable. Deck-list status is fetched
+// separately by the caller (deck_lists is auth-scoped, not cached here). TTL: 8s.
+export const getCachedTournamentRosterPlayers = maybeCached(
+  async (id: string) => {
+    const supabase = getAnonSupabase();
+    const { data, error } = await supabase
+      .from('tournament_players')
+      .select(`
+        player_id,
+        registration_status,
+        division,
+        player:players!player_id(first_name, last_name, tom_player_id)
+      `)
+      .eq('tournament_id', id);
+
+    if (error) {
+      console.error('[cached-queries] getCachedTournamentRosterPlayers error:', error);
+      return [];
+    }
+    return data ?? [];
+  },
+  ['tournament-roster-players'],
+  { revalidate: 8 }
+);
+
 // ─── Sitemap: All Public Tournament IDs ────────────────────────────────
 // Used only by app/sitemap.ts. Not wrapped in maybeCached — the route
 // file's own `revalidate` already caches this at the route level.
