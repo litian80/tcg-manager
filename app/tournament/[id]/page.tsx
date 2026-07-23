@@ -1,4 +1,5 @@
 /* eslint-disable prefer-const */
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import TournamentView from "./tournament-view";
@@ -8,12 +9,35 @@ import { UserResult } from "@/actions/tournament/staff";
 import { RealtimeListener } from "@/components/tournament/realtime-listener";
 import { buildPaymentRedirectUrl } from "@/utils/payment";
 import { calculatePlayerDivision, Division } from "@/actions/registration";
-import { isVGCGameType, isGOGameType } from "@/lib/utils";
+import { isVGCGameType, isGOGameType, formatDate, formatLocation, MODE_LABELS } from "@/lib/utils";
 import { getCachedTournamentDetail } from "@/lib/cached-queries";
 
 interface Profile {
     role?: string;
     pokemon_player_id?: string;
+}
+
+export async function generateMetadata(
+    { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+    const { id } = await params;
+    const tournament = await getCachedTournamentDetail(id);
+
+    if (!tournament) {
+        return {
+            title: 'Tournament — BracketOps',
+            description: 'View live Pokémon TCG tournament brackets, standings, and results on BracketOps.',
+        };
+    }
+
+    const location = formatLocation(tournament.city, tournament.country);
+    const modeLabel = MODE_LABELS[tournament.tournament_mode] ?? tournament.tournament_mode;
+    const parts = [modeLabel, formatDate(tournament.date), location].filter(Boolean);
+
+    return {
+        title: `${tournament.name} — BracketOps`,
+        description: `${tournament.name} — ${parts.join(' · ')}`.slice(0, 160),
+    };
 }
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {

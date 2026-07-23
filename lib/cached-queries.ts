@@ -156,3 +156,30 @@ export const getCachedTournamentRoster = maybeCached(
   ['tournament-roster'],
   { revalidate: 10 }
 );
+
+// ─── Sitemap: All Public Tournament IDs ────────────────────────────────
+// Used only by app/sitemap.ts. Not wrapped in maybeCached — the route
+// file's own `revalidate` already caches this at the route level.
+export async function getPublicTournamentSitemapEntries() {
+  const supabase = getAnonSupabase();
+  const pageSize = 1000;
+  let rows: { id: string; created_at: string }[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('id, created_at')
+      .or('is_published.eq.true,registration_open.eq.true')
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error('[cached-queries] getPublicTournamentSitemapEntries error:', error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    rows = rows.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return rows;
+}
